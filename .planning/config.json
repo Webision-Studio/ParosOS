@@ -1,0 +1,17 @@
+{
+  "project_name": "BistroPulse",
+  "description": "Lightweight POS, CRM, and Kitchen Display SaaS for local cafes and indie eateries",
+  "commit_style": "atomic",
+  "tech_stack": {
+    "frontend": "Next.js 15 (App Router), React, Tailwind CSS, Lucide Icons",
+    "backend": "Next.js Server Actions / Route Handlers, Prisma ORM",
+    "database": "SQLite (dev) / PostgreSQL (production-ready)",
+    "realtime": "Server-Sent Events (SSE) or WebSockets for live Kitchen Display",
+    "state_management": "Zustand / React Context"
+  },
+  "workflow": {
+    "tdd": false,
+    "auto_commit": true,
+    "research": true
+  }
+}
