@@ -53,6 +53,18 @@
 - **FR-7.4**: Instant direct sync: Table QR order instantly pops up on the Cashier POS and Kitchen KDS screen with a distinctive "Table QR Order" badge.
 - **FR-7.5**: Optional Pay-at-Table or Pay-at-Counter mode.
 
+### FR-8: SaaS Founder & Super-Admin Control Tower (`/admin`)
+- **FR-8.1**: Global Platform Pulse: Total registered cafes, active cafes today, platform Gross Merchandise Value (GMV), total orders processed, and Monthly Recurring Revenue (MRR).
+- **FR-8.2**: Cafe Health & Adoption Scorecard (Is the software helping them?):
+  - **Live Status:** 🟢 Active Now (orders firing), 🟡 Idle Today, 🔴 At-Risk / Inactive (>48 hrs without an order).
+  - **QR vs POS Adoption Rate:** % of orders placed by customers scanning table QR vs manual waiter punching (proves labor saved).
+  - **Paperless Impact Counter:** Count of digital WhatsApp bills generated (translates to ₹ saved on paper rolls).
+  - **Kitchen Speed Metrics:** Average ticket turnaround time across their kitchen.
+  - **Google Review Booster Impact:** Count of 5-star Google review clicks generated for each cafe.
+- **FR-8.3**: Cafe Fleet Directory & Impersonation Support: View any cafe's profile, contact details, table count, and 1-click "Support Login" to help them configure their menu or troubleshoot.
+- **FR-8.4**: Subscription Lifecycle Tracker: 14-day trial countdown, active paid plans (₹2,499/mo), payment status, and renewal reminders.
+
+
 
 ---
 
