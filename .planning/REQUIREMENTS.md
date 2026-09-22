@@ -45,6 +45,14 @@
 - **FR-6.3**: Best-selling items and categories of the day.
 - **FR-6.4**: 1-click Day-End Closure (Z-Report) summarizing total revenue, tax collected, and cash reconciliations.
 
+### FR-7: Customer Table QR Scan-to-Order
+- **FR-7.1**: Unique printable QR code generated for each table (e.g. `/order?table=4`).
+- **FR-7.2**: Mobile-optimized guest digital menu: browse dishes, high-res photos, veg/non-veg tags, allergen warnings.
+- **FR-7.3**: Self-checkout cart: customer customizes variants & add-ons, enters their phone/name, and places order directly.
+- **FR-7.4**: Instant direct sync: Table QR order instantly pops up on the Cashier POS and Kitchen KDS screen with a distinctive "Table QR Order" badge.
+- **FR-7.5**: Optional Pay-at-Table or Pay-at-Counter mode.
+
+
 ---
 
 ## 2. Non-Functional Requirements

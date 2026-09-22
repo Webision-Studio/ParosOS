@@ -31,14 +31,16 @@
   - Realistic seed database with cafe inventory (Espresso drinks, teas, pastries, breakfast), sample tables, and customers.
 - **Verification:** Database seeded successfully; mock queries verify schema integrity.
 
-### Phase 2: Table Floor Grid & High-Velocity POS Ordering
-- **Objective:** Create the visual floor management screen and touch-optimized POS checkout experience.
+### Phase 2: Table Floor Grid, High-Velocity POS & Customer Table QR Ordering
+- **Objective:** Create the visual floor management screen, touch-optimized POS checkout experience, and customer mobile scan-to-order flow.
 - **Deliverables:**
   - Table grid with live status indicators (`Vacant`, `Occupied`, `KOT Fired`, `Bill Requested`).
-  - Takeaway / Quick counter order switcher.
-  - Fast POS item catalog: categories, instant search, variant selection (Hot/Iced, Size), and modifiers (Almond milk, Extra shot).
-  - Active order cart with quantity controls and cooking instructions.
-- **Verification:** User can select a table or takeaway, add customized items, and save/fire the order.
+  - Table QR Code generator: printable table QR codes for each table (`/order?table=[number]`).
+  - Guest Mobile Web Menu (`/order`): touch-friendly customer ordering interface with photos, variants, modifiers, and self-checkout.
+  - POS Counter Interface: category tabs, instant search, variant/modifier customization, cooking notes, and takeaway mode.
+  - Active order cart with quantity controls and real-time state.
+- **Verification:** Both Cashier (via POS) and Customer (via Table QR on phone) can create orders that sync into the active table state.
+
 
 ### Phase 3: Real-Time Digital Kitchen Display System (KDS) & KOT
 - **Objective:** Build the paperless kitchen screen that updates instantaneously as orders are fired from the POS.
