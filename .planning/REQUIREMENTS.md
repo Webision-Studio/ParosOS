@@ -33,11 +33,12 @@
 - **FR-4.3**: Payment method selection: Cash, UPI (Dynamic UPI QR Code generation with bill amount), Card, or Split Pay.
 - **FR-4.4**: Receipt generation with sequential bill numbering.
 
-### FR-5: Customer CRM & WhatsApp Digital Receipts
-- **FR-5.1**: Customer phone number entry during or before order completion.
-- **FR-5.2**: Instant recognition: Displays Customer Name, Total Visits, Favorite / Last Ordered Items, and Special Notes.
-- **FR-5.3**: **WhatsApp Digital Bill**: 1-click generation of a pre-formatted WhatsApp message link with an itemized digital receipt URL, allowing paperless operation.
-- **FR-5.4**: Customer Directory with visit logs, lifetime spend, and repeat rate metrics.
+### FR-5: Lean Customer CRM & Growth Engine
+- **FR-5.1**: Customer Phone Number capture at POS / QR checkout (auto-recalls Name, Total Visits, and Last Ordered Item).
+- **FR-5.2**: **Smart Google Review Booster** (WhatsApp receipt includes 1-tap rating: 5-star ratings route directly to the cafe's Google Maps Review page; 1–3 star ratings route to private owner WhatsApp feedback).
+- **FR-5.3**: **"We Miss You" Win-Back WhatsApp Engine** (System identifies customers with no visits in 20+ days; owner can send a pre-filled 1-click re-engagement message with special offer).
+- **FR-5.4**: Clean customer directory with visit counts, last visit date, and lifetime spend.
+
 
 ### FR-6: Owner Dashboard & Day-End (Z-Report)
 - **FR-6.1**: Real-time summary dashboard: Today's Total Gross & Net Sales, Total Orders, Average Order Value (AOV).
@@ -55,8 +56,14 @@
 
 ---
 
-## 2. Non-Functional Requirements
+## 2. Non-Functional & Architecture Requirements
 - **NFR-1 (Speed & Latency):** Sub-100ms item selection and immediate optimistic cart updates.
-- **NFR-2 (Responsive & Device Agnostic):** Fully responsive touch UI optimized for 10-inch tablets (cashier/kitchen) and mobile phones (waiters/captains).
-- **NFR-3 (Ease of Use):** Zero onboarding curve—new staff can punch their first order in under 60 seconds.
-- **NFR-4 (Reliability):** Local caching and fault-tolerant state so an accidental browser refresh does not discard an active cart or table state.
+- **NFR-2 (Web-First PWA):** Progressive Web App architecture (installable on iPad, Android tablet, phone, desktop with zero software downloads). Fullscreen app experience with offline resilience.
+- **NFR-3 (Role-Based Access Control - RBAC):**
+  - **Owner Role:** Full access via Email/Password (Settings, Menu prices, Financial Analytics, CRM export, Z-reports).
+  - **Cashier / POS Role:** Fast 4-digit PIN unlock. Access limited to `/pos` (table grid, order punching, WhatsApp receipts). Blocked from viewing owner profits, raw customer exports, or sensitive business settings.
+  - **Kitchen / KDS Role:** Dedicated view `/kitchen` showing only pending order tickets. Zero financial or customer PII visible.
+  - **Customer Table Guest:** Public `/order?table=X` session for scanning and ordering directly from tables.
+- **NFR-4 (Ease of Use):** Zero onboarding curve—new staff can punch their first order in under 60 seconds.
+- **NFR-5 (Reliability & Cache):** Local caching and fault-tolerant state so an accidental browser refresh does not discard an active cart or table state.
+
