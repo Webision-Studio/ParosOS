@@ -11,19 +11,21 @@
 - **FR-1.2**: Support Quick-Service / Takeaway counter orders without assigning a table.
 - **FR-1.3**: Ability to switch, merge, or reassign tables for an active order.
 
-### FR-2: Menu & POS Order Punching
-- **FR-2.1**: Category-based quick navigation (e.g., Coffee, Cold Brews, Pastries, Breakfast, Sandwiches).
-- **FR-2.2**: Fast search bar with keyboard/touch shortcuts.
-- **FR-2.3**: Item Variants (e.g., Hot / Iced, Regular / Large) and Modifiers/Add-ons (e.g., Almond Milk, Extra Shot, Less Sugar).
-- **FR-2.4**: Kitchen special instructions per item or per ticket (e.g., "Oat milk, extra hot, no sugar").
+### FR-2: Menu Management & POS Order Punching
+- **FR-2.1**: **Rich Cafe Menu Manager (`/menu`)**:
+  - Drag-and-drop CSV / Excel upload for bulk menu import with downloadable sample template.
+  - Visual item creator: Item Name, Price, Category, Photo, Veg/Non-Veg badge, Description, Variants (Regular/Large), and Add-ons (Oat milk, Extra cheese).
+  - Quick toggle: "In Stock" / "86'd Out of Stock" to instantly disable unavailable items across POS and Table QR menus.
+- **FR-2.2**: Category-based quick navigation and keyboard/touch instant search.
+- **FR-2.3**: Kitchen special instructions per item (e.g., "Oat milk, extra hot, no sugar").
 
-### FR-3: Real-Time Kitchen Display System (KDS) & KOT
-- **FR-3.1**: Instant live order push to the Kitchen Display screen when an order or additional item is fired.
-- **FR-3.2**: Order cards displaying Table #, Ticket #, order timestamp, item checklist, and cooking notes.
-- **FR-3.3**: Elapsed time color indicator:
-  - Green (< 10 mins)
-  - Amber (10–18 mins)
-  - Red (> 18 mins overdue)
+### FR-3: Real-Time Kitchen Display System (KDS) & Legit Prep Speed
+- **FR-3.1**: Instant live order push to the Kitchen Display screen (`/kitchen`) with audio chime.
+- **FR-3.2**: **Legit Speed & Time Tracking**:
+  - `orderFiredAt` timestamp automatically recorded when order is submitted from POS or Table QR.
+  - Kitchen Chef taps `"Mark Ready"` when order is plated, recording exact `orderReadyAt` timestamp.
+  - Legit prep duration = `orderReadyAt - orderFiredAt` (true, verifiable metric calculated down to the second).
+- **FR-3.3**: Elapsed time color indicator: Green (< 10 mins), Amber (10–18 mins), Red (> 18 mins overdue).
 - **FR-3.4**: Chef action buttons: Mark Item / Ticket as `In Progress`, `Ready`, or `Completed`.
 - **FR-3.5**: Thermal receipt print fallback (Web Print CSS formatted for 58mm / 80mm thermal printers).
 
@@ -39,30 +41,38 @@
 - **FR-5.3**: **"We Miss You" Win-Back WhatsApp Engine** (System identifies customers with no visits in 20+ days; owner can send a pre-filled 1-click re-engagement message with special offer).
 - **FR-5.4**: Clean customer directory with visit counts, last visit date, and lifetime spend.
 
+### FR-6: Owner Dashboard & Historical Date-Picker
+- **FR-6.1**: **Date-Range Switcher**: Real-time "Today" view, "Yesterday", "This Week", "This Month", or Custom Calendar Date Picker to inspect historical daily performance.
+- **FR-6.2**: Real-time summary metrics: Gross Sales, Net Sales, Total Orders, Average Order Value (AOV).
+- **FR-6.3**: Payment mode ledger (Cash vs. UPI vs. Card breakdown) with transaction-by-transaction audit log.
+- **FR-6.4**: **1-Click Export**: Download daily/monthly sales data as CSV/Excel (compatible with Google Sheets).
+- **FR-6.5**: 1-click Day-End Closure (Z-Report) summarizing total revenue, tax collected, and cash reconciliations.
 
-### FR-6: Owner Dashboard & Day-End (Z-Report)
-- **FR-6.1**: Real-time summary dashboard: Today's Total Gross & Net Sales, Total Orders, Average Order Value (AOV).
-- **FR-6.2**: Payment mode breakdown (UPI vs. Cash vs. Card).
-- **FR-6.3**: Best-selling items and categories of the day.
-- **FR-6.4**: 1-click Day-End Closure (Z-Report) summarizing total revenue, tax collected, and cash reconciliations.
-
-### FR-7: Customer Table QR Scan-to-Order
+### FR-7: Customer Table QR Scan-to-Order & Mobile Cart
 - **FR-7.1**: Unique printable QR code generated for each table (e.g. `/order?table=4`).
-- **FR-7.2**: Mobile-optimized guest digital menu: browse dishes, high-res photos, veg/non-veg tags, allergen warnings.
-- **FR-7.3**: Self-checkout cart: customer customizes variants & add-ons, enters their phone/name, and places order directly.
-- **FR-7.4**: Instant direct sync: Table QR order instantly pops up on the Cashier POS and Kitchen KDS screen with a distinctive "Table QR Order" badge.
-- **FR-7.5**: Optional Pay-at-Table or Pay-at-Counter mode.
+- **FR-7.2**: **Complete Mobile Guest Journey**:
+  - Welcome Banner with Cafe Name & Table Number.
+  - Search bar + Category scroll (Coffee, Shakes, Breakfast, Bakery) + Veg/Non-veg filter tags.
+  - Item detail sheet: Photos, descriptions, size selector (Regular/Large), modifier checkboxes (Oat milk, extra shot).
+  - **Interactive Floating Cart**: item list, quantity `+ / -` adjustments, cooking notes input ("extra crispy").
+  - Guest details input: Name & Phone number (to get WhatsApp receipt & loyalty memory).
+  - Flexible checkout: "Pay via UPI on Phone" or "Pay at Counter".
+  - Live order tracking screen: "Order #14 Placed ➔ In Kitchen 🍳 (Est. 10m)".
+- **FR-7.3**: Instant direct sync: Table QR order instantly pops up on the Cashier POS and Kitchen KDS screen with a distinctive "Table QR Order" badge.
 
 ### FR-8: SaaS Founder & Super-Admin Control Tower (`/admin`)
 - **FR-8.1**: Global Platform Pulse: Total registered cafes, active cafes today, platform Gross Merchandise Value (GMV), total orders processed, and Monthly Recurring Revenue (MRR).
-- **FR-8.2**: Cafe Health & Adoption Scorecard (Is the software helping them?):
+- **FR-8.2**: **Founder Cafe & Payment Ledger (Google Sheets / CSV Sync)**:
+  - Table of all cafes: Cafe Name, Owner Name, Phone, City, Registration Date, Plan (Trial vs Paid ₹2,499), Payment Status (Paid, Pending, Overdue), Renewal Date.
+  - 1-Click "Export to Google Sheets / CSV" button + optional Google Sheets Webhook sync.
+- **FR-8.3**: Cafe Health & Adoption Scorecard (Is the software helping them?):
   - **Live Status:** 🟢 Active Now (orders firing), 🟡 Idle Today, 🔴 At-Risk / Inactive (>48 hrs without an order).
   - **QR vs POS Adoption Rate:** % of orders placed by customers scanning table QR vs manual waiter punching (proves labor saved).
   - **Paperless Impact Counter:** Count of digital WhatsApp bills generated (translates to ₹ saved on paper rolls).
-  - **Kitchen Speed Metrics:** Average ticket turnaround time across their kitchen.
+  - **Legitimate Kitchen Speed:** Verifiable prep timestamps (`orderReadyAt` - `orderFiredAt`).
   - **Google Review Booster Impact:** Count of 5-star Google review clicks generated for each cafe.
-- **FR-8.3**: Cafe Fleet Directory & Impersonation Support: View any cafe's profile, contact details, table count, and 1-click "Support Login" to help them configure their menu or troubleshoot.
-- **FR-8.4**: Subscription Lifecycle Tracker: 14-day trial countdown, active paid plans (₹2,499/mo), payment status, and renewal reminders.
+- **FR-8.4**: Cafe Fleet Directory & Impersonation Support: 1-click "Support Login" to view any cafe's dashboard and assist them.
+
 
 
 
