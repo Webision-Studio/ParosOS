@@ -2,14 +2,13 @@
 
 ## 1. Functional Requirements
 
-### FR-1: Table & Floor Management
-- **FR-1.1**: Visual interactive floor plan displaying tables with real-time status badges:
-  - `Available` (Green)
-  - `Occupied` (Amber)
-  - `KOT Fired / In Kitchen` (Blue)
-  - `Bill Requested` (Purple)
+### FR-1: Table & Floor Management (Zones, Split & Merge)
+- **FR-1.1**: Visual interactive floor plan displaying tables with real-time status badges (`Available`, `Occupied`, `KOT Fired`, `Bill Requested`).
 - **FR-1.2**: Support Quick-Service / Takeaway counter orders without assigning a table.
-- **FR-1.3**: Ability to switch, merge, or reassign tables for an active order.
+- **FR-1.3**: **Table Operations**:
+  - **Merge Tables:** Join Table 2 and Table 3 into a single combined tab for large groups.
+  - **Move / Transfer Table:** Shift an active order from Table 1 to Table 5 in 1 click.
+  - **Table Enable / Disable Toggle:** Temporarily disable a table QR code if the table is reserved or under maintenance.
 
 ### FR-2: Menu Management & POS Order Punching
 - **FR-2.1**: **Rich Cafe Menu Manager (`/menu`)**:
@@ -17,7 +16,8 @@
   - Visual item creator: Item Name, Price, Category, Photo, Veg/Non-Veg badge, Description, Variants (Regular/Large), and Add-ons (Oat milk, Extra cheese).
   - Quick toggle: "In Stock" / "86'd Out of Stock" to instantly disable unavailable items across POS and Table QR menus.
 - **FR-2.2**: Category-based quick navigation and keyboard/touch instant search.
-- **FR-2.3**: Kitchen special instructions per item (e.g., "Oat milk, extra hot, no sugar").
+- **FR-2.3**: **Park Orders ("Hold Bill")**: Cashier can temporarily park an in-progress order to serve the next customer in line, then resume it in 1 click.
+- **FR-2.4**: Kitchen special instructions per item (e.g., "Oat milk, extra hot, no sugar").
 
 ### FR-3: Real-Time Kitchen Display System (KDS) & Dynamic Chef ETA
 - **FR-3.1**: Instant live order push to the Kitchen Display screen (`/kitchen`) with audio chime.
@@ -33,14 +33,19 @@
 - **FR-3.6**: Thermal receipt print fallback (Web Print CSS formatted for 58mm / 80mm thermal printers).
 
 ### FR-4: Billing, Payments, GST & Cash Drawer Reconciliation
-- **FR-4.1**: Automatic calculation of Subtotal, Taxes (customizable GST/VAT toggle), and Service Charge.
-- **FR-4.2**: Flat or percentage-based discount application with pre-set buttons (5%, 10%, 20%, Custom).
-- **FR-4.3**: Payment method selection: Cash, UPI (Dynamic UPI QR Code generation with bill amount), Card, or Split Pay.
-- **FR-4.4**: **Automated Cash Drawer Tracking**:
-  - When cashier selects "Cash", quick tender buttons (e.g. Bill ₹240, tapped ₹500 -> "Change to return: ₹260").
-  - Cashier taps "Settle", automatically logging cash amount to the shift register without manual data entry.
-  - **Day-End Cash Reconciliation**: System calculates "Expected Cash in Drawer"; manager enters physical note count at night to detect any theft/shortage discrepancies.
-- **FR-4.5**: Receipt generation with sequential bill numbering.
+- **FR-4.1**: **Split Bills & Refunds**:
+  - Split bill equally (e.g. across 4 guests) or item-wise.
+  - Refund / void item with mandatory reason logging for manager audit.
+- **FR-4.2**: **GST Invoicing**:
+  - Automatic CGST (2.5%) + SGST (2.5%) for restaurant tax compliance or IGST.
+  - Sequential tax invoice numbering (e.g. `INV-2026-00142`) and HSN code (`996331`).
+- **FR-4.3**: **Hardware-Agnostic Web Thermal Printing**:
+  - Web Print API layout formatted for standard 58mm and 80mm ESC/POS thermal receipt printers (works with any printer the cafe already owns).
+- **FR-4.4**: Flat or percentage-based discount application with pre-set buttons (5%, 10%, 20%, Custom).
+- **FR-4.5**: Payment method selection: Cash, UPI (Dynamic UPI QR Code generation with bill amount), Card, or Split Pay.
+- **FR-4.6**: **Automated Cash Drawer Tracking**:
+  - Quick tender cash buttons (e.g. Bill ₹240, tapped ₹500 -> "Change to return: ₹260").
+  - Day-End Cash Reconciliation: Expected vs counted physical cash to prevent staff shortages.
 
 ### FR-5: Lean Customer CRM & Growth Engine
 - **FR-5.1**: Customer Phone Number capture at POS / QR checkout (auto-recalls Name, Total Visits, and Last Ordered Item).
@@ -55,17 +60,19 @@
 - **FR-6.4**: **1-Click Export**: Download daily/monthly sales data as CSV/Excel (compatible with Google Sheets).
 - **FR-6.5**: 1-click Day-End Closure (Z-Report) summarizing total revenue, tax collected, and cash reconciliations.
 
-### FR-7: Customer Table QR Scan-to-Order & Mobile Cart
+### FR-7: Customer Table QR Scan-to-Order & Guest Service
 - **FR-7.1**: Unique printable QR code generated for each table (e.g. `/order?table=4`).
 - **FR-7.2**: **Complete Mobile Guest Journey**:
   - Welcome Banner with Cafe Name & Table Number.
   - Search bar + Category scroll (Coffee, Shakes, Breakfast, Bakery) + Veg/Non-veg filter tags.
   - Item detail sheet: Photos, descriptions, size selector (Regular/Large), modifier checkboxes (Oat milk, extra shot).
   - **Interactive Floating Cart**: item list, quantity `+ / -` adjustments, cooking notes input ("extra crispy").
+  - **Guest Action Buttons**: 1-tap **"Call Waiter"** (alerts cashier/waiter: *"Table 4 needs assistance"*) and **"Request Bill"**.
   - Guest details input: Name & Phone number (to get WhatsApp receipt & loyalty memory).
   - Flexible checkout: "Pay via UPI on Phone" or "Pay at Counter".
   - **Live Order Status Screen**: Shows real-time dynamic countdown: *"Your order will be ready in ~X minutes!"* as set by the kitchen master, updating to *"🎉 Your order is READY for pickup!"*.
 - **FR-7.3**: Instant direct sync: Table QR order instantly pops up on the Cashier POS and Kitchen KDS screen with a distinctive "Table QR Order" badge.
+
 
 ### FR-8: SaaS Founder & Super-Admin Control Tower (`/admin`)
 - **FR-8.1**: Global Platform Pulse: Total registered cafes, active cafes today, platform Gross Merchandise Value (GMV), total orders processed, and Monthly Recurring Revenue (MRR).
@@ -91,12 +98,18 @@
 
 ## 2. Non-Functional & Architecture Requirements
 - **NFR-1 (Speed & Latency):** Sub-100ms item selection and immediate optimistic cart updates.
-- **NFR-2 (Web-First PWA):** Progressive Web App architecture (installable on iPad, Android tablet, phone, desktop with zero software downloads). Fullscreen app experience with offline resilience.
+- **NFR-2 (Offline-First Web PWA Engine):**
+  - **Service Worker & Cache API:** App shell, UI components, icons, audio chimes cached locally. App launches in 0.5s even with zero internet.
+  - **IndexedDB Local Storage:** Cafe menu, categories, and table states mirrored locally in the browser database.
+  - **Offline Order Queue:** Orders punched when the internet drops are stored in an indexed `offline_queue`.
+  - **Visual Status Badge:** Screen indicates `⚡ Offline Mode (X orders waiting to sync)` without halting counter billing or thermal printing.
+  - **Automatic Background Sync:** Flushes queue to PostgreSQL/Prisma database the second WiFi/cellular reconnects.
 - **NFR-3 (Role-Based Access Control - RBAC):**
   - **Owner Role:** Full access via Email/Password (Settings, Menu prices, Financial Analytics, CRM export, Z-reports).
   - **Cashier / POS Role:** Fast 4-digit PIN unlock. Access limited to `/pos` (table grid, order punching, WhatsApp receipts). Blocked from viewing owner profits, raw customer exports, or sensitive business settings.
   - **Kitchen / KDS Role:** Dedicated view `/kitchen` showing only pending order tickets. Zero financial or customer PII visible.
   - **Customer Table Guest:** Public `/order?table=X` session for scanning and ordering directly from tables.
-- **NFR-4 (Ease of Use):** Zero onboarding curve—new staff can punch their first order in under 60 seconds.
-- **NFR-5 (Reliability & Cache):** Local caching and fault-tolerant state so an accidental browser refresh does not discard an active cart or table state.
+- **NFR-4 (Hardware-Agnostic Printing):** Standard CSS `@media print` formatted for 58mm/80mm thermal receipt printers without proprietary drivers.
+- **NFR-5 (Ease of Use):** Zero onboarding curve—new staff can punch their first order in under 60 seconds.
+
 
