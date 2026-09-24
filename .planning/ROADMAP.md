@@ -35,11 +35,12 @@
 - **Objective:** Create the visual floor management screen, touch-optimized POS checkout experience, and customer mobile scan-to-order flow.
 - **Deliverables:**
   - Table grid with live status indicators (`Vacant`, `Occupied`, `KOT Fired`, `Bill Requested`).
-  - Table QR Code generator: printable table QR codes for each table (`/order?table=[number]`).
-  - Guest Mobile Web Menu (`/order`): touch-friendly customer ordering interface with photos, variants, modifiers, and self-checkout.
+  - Universal Common QR Code generator (`/order`) with printable branded stand template.
+  - Guest Mobile Web Menu (`/order`): instant table number selection grid (`[ 1 ][ 2 ][ 3 ]...` or `Takeaway`), food photos, variants, modifiers, and mobile self-checkout.
   - POS Counter Interface: category tabs, instant search, variant/modifier customization, cooking notes, and takeaway mode.
   - Active order cart with quantity controls and real-time state.
-- **Verification:** Both Cashier (via POS) and Customer (via Table QR on phone) can create orders that sync into the active table state.
+- **Verification:** Both Cashier (via POS) and Customer (via Common QR on phone with table selector) can create orders that sync into the active table state.
+
 
 
 ### Phase 3: Real-Time Digital Kitchen Display System (KDS) & KOT

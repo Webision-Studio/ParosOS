@@ -1,14 +1,19 @@
-# BistroPulse (Project Overview)
+# Paros (Project Overview)
+
+> **Tagline:** *Table se Kitchen tak. Bas Paros.*  
+> *(English: The Operating System for Modern Cafes & Indie Eateries)*
 
 ## 🎯 Vision & Objective
-**BistroPulse** is an agile, modern SaaS platform engineered specifically for **local cafes, neighbourhood bakeries, cloud kitchens, and small indie eateries**.
+**Paros** is an agile, modern SaaS platform engineered specifically for **local cafes, neighbourhood bakeries, cloud kitchens, and small indie eateries**.
 
-While enterprise POS giants like Petpooja dominate large restaurant chains with dense, hardware-heavy, and expensive systems (₹15,000–₹30,000+/yr with hidden module fees), BistroPulse delivers an **affordable, zero-training, web-first solution** that covers the essential 80% of daily cafe operations:
-1. **Interactive Floor & Table Management**
-2. **Lightning-fast POS Billing & Add-on Modifiers**
-3. **Live Digital Kitchen Display System (KDS)** (saving paper and printer costs)
-4. **Built-in Customer CRM & WhatsApp Digital Receipts**
-5. **Real-time Sales & Day-End Insights**
+While enterprise POS giants like Petpooja dominate large restaurant chains with dense, hardware-heavy, and expensive systems (₹15,000–₹30,000+/yr with hidden module fees), Paros delivers an **affordable, zero-training, web-first solution** that covers the essential 80% of daily cafe operations:
+1. **Interactive Floor & Table Management (Mode A Universal QR Code)**
+2. **Lightning-fast POS Billing, Modifiers, Split/Merge & Park Orders**
+3. **Live Digital Kitchen Display System (KDS)** (Dynamic Chef ETA & paperless kitchen)
+4. **Built-in Customer CRM, 1-Click WhatsApp Receipts & Web Push Offers**
+5. **Deep Expense Manager (Cash Drawer tied) & Swiggy/Zomato Tracking**
+6. **Real-time Sales, Historical Date-Picker & Day-End Z-Report**
+
 
 ---
 
@@ -24,7 +29,10 @@ While enterprise POS giants like Petpooja dominate large restaurant chains with 
 - **No Hardware Lock-in:** 100% web-responsive. Runs seamlessly on an iPad, Android tablet, phone, or existing laptop.
 - **Paperless Kitchen (KDS First):** Includes a real-time Kitchen Display System out of the box so cafes don't need dedicated thermal KOT printers.
 - **Customer Relationship at POS:** Recognizes regular customers by phone number, remembers their favorites, and generates instant WhatsApp bills.
-- **Transparent & Accessible Pricing:** Accessible monthly/annual subscription suited for micro and small food entrepreneurs.
+- **Transparent & Accessible Pricing (Silver & Gold):**
+  - **Silver Plan (₹499/month or ₹4,999/year):** Counter POS Billing, Kitchen KDS, WhatsApp Receipts, Expense Manager, Offline PWA.
+  - **Gold Plan (₹899/month or ₹8,499/year):** Everything in Silver + Customer Table QR Scan-to-Order, Free Web Push Broadcasts, Live Floor Management, and Swiggy/Zomato Delivery Tracking.
+
 
 ---
 

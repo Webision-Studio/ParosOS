@@ -1,6 +1,8 @@
 {
-  "project_name": "BistroPulse",
-  "description": "Lightweight POS, CRM, and Kitchen Display SaaS for local cafes and indie eateries",
+  "project_name": "Paros",
+  "tagline": "Table se Kitchen tak. Bas Paros.",
+  "description": "Lightweight POS, Table QR, Kitchen KDS, and Expense Management SaaS for local cafes and indie eateries",
+
   "commit_style": "atomic",
   "tech_stack": {
     "frontend": "Next.js 15 (App Router), React, Tailwind CSS, Lucide Icons",

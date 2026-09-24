@@ -47,22 +47,50 @@
   - Quick tender cash buttons (e.g. Bill ₹240, tapped ₹500 -> "Change to return: ₹260").
   - Day-End Cash Reconciliation: Expected vs counted physical cash to prevent staff shortages.
 
-### FR-5: Lean Customer CRM & Growth Engine
+### FR-5: Lean Customer CRM, Web Push Broadcasts & Growth Engine
 - **FR-5.1**: Customer Phone Number capture at POS / QR checkout (auto-recalls Name, Total Visits, and Last Ordered Item).
-- **FR-5.2**: **Smart Google Review Booster** (WhatsApp receipt includes 1-tap rating: 5-star ratings route directly to the cafe's Google Maps Review page; 1–3 star ratings route to private owner WhatsApp feedback).
+- **FR-5.2**: **Smart Google Review Booster & Private Feedback Shield**:
+  - 5-Star rating on digital receipt routes directly to the cafe's Google Maps Review page.
+  - 1–3 Star ratings open a private direct feedback box sent to the owner's dashboard/WhatsApp (captures concerns privately, no automatic refund mentions).
 - **FR-5.3**: **"We Miss You" Win-Back WhatsApp Engine** (System identifies customers with no visits in 20+ days; owner can send a pre-filled 1-click re-engagement message with special offer).
-- **FR-5.4**: Clean customer directory with visit counts, last visit date, and lifetime spend.
 
-### FR-6: Owner Dashboard & Historical Date-Picker
+- **FR-5.4**: **1-Click Web Push Notification Broadcasts (100% Free Marketing)**:
+  - When customer opens the Table QR menu, 1-tap prompt: *"Get exclusive cafe offers & discounts on your phone? [Allow]"*.
+  - Stores browser Web Push token (supports Android Chrome & iOS Safari 16.4+).
+  - Owner can broadcast instant flash offers (e.g. *"🌧️ Rainy Day Special: 20% off all Hot Coffees until 6 PM!"*) directly to all subscribed customer phone lock screens with zero SMS cost.
+- **FR-5.5**: Clean customer directory with visit counts, last visit date, and lifetime spend.
+
+### FR-6: Owner Dashboard, Deep Expense Manager & Channel Ledger
 - **FR-6.1**: **Date-Range Switcher**: Real-time "Today" view, "Yesterday", "This Week", "This Month", or Custom Calendar Date Picker to inspect historical daily performance.
 - **FR-6.2**: Real-time summary metrics: Gross Sales, Net Sales, Total Orders, Average Order Value (AOV).
-- **FR-6.3**: Payment mode ledger (Cash vs. UPI vs. Card breakdown) with transaction-by-transaction audit log.
-- **FR-6.4**: **1-Click Export**: Download daily/monthly sales data as CSV/Excel (compatible with Google Sheets).
-- **FR-6.5**: 1-click Day-End Closure (Z-Report) summarizing total revenue, tax collected, and cash reconciliations.
+- **FR-6.3**: **Deep Expense Manager ("Money-Out" Ledger)**:
+  - **Quick Entry Modal**: Date, Category (`Milk / Dairy`, `Produce / Veg`, `Packaging & Disposables`, `Staff Daily Wages`, `Gas / Utilities`, `Repairs / Maintenance`), Amount, Payment Source (`Cash Drawer`, `Bank / UPI`), Description/Notes, and Receipt photo upload.
+  - **Cash Drawer Linkage**: If paid via "Cash Drawer", the system automatically deducts this from the expected cash balance at day-end close, preventing false cash shortage alarms!
+  - **True Net Profit Calculation**: Displays `Gross Sales - Total Operating Expenses = True Daily Net Cash Flow`.
+  - **Monthly Expense Analytics**: Category breakdown pie-chart showing where money was spent.
+- **FR-6.4**: **Swiggy & Zomato Delivery Order Tracking**:
+  - **Channel Tagging at POS**: Cashier punches delivery orders with 1 tap: `[ Zomato ]` or `[ Swiggy ]`.
+  - **Order Fields**: Aggregator Order ID (e.g. `ZOM-4821` / `SWIG-9120`), Rider Name & Phone (optional), Items, and Subtotal.
+  - **Kitchen Routing**: Ticket sends directly to Kitchen KDS with a distinct badge: `🛵 ZOMATO RIDER PICKUP` so cooks package it in delivery containers instead of dine-in plates.
+  - **Aggregator Financial Ledger**:
+    * Gross Sales from Swiggy/Zomato.
+    * Configurable commission deduction estimate (e.g., 20%–25%) to calculate **Net Payout Expected** from aggregators.
+    * Comparison report: Revenue from `Dine-In` vs `Takeaway` vs `Zomato` vs `Swiggy`.
+- **FR-6.5**: Payment mode ledger (Cash vs. UPI vs. Card breakdown) with transaction-by-transaction audit log.
+- **FR-6.6**: **1-Click Export**: Download daily/monthly sales, expenses, and channel data as CSV/Excel (compatible with Google Sheets).
+- **FR-6.7**: 1-click Day-End Closure (Z-Report) summarizing total revenue, expenses, tax collected, and cash reconciliations.
+
+
 
 ### FR-7: Customer Table QR Scan-to-Order & Guest Service
-- **FR-7.1**: Unique printable QR code generated for each table (e.g. `/order?table=4`).
+- **FR-7.1**: **Single Common QR Code Architecture**:
+  - One universal QR code for the entire cafe (`/order`). Cafe owners only print a single, identical QR sticker/stand across all tables.
+  - Upon scanning, guest is prompted: *"Select Your Table Number"* with an ergonomic visual grid (`[ 1 ] [ 2 ] [ 3 ]...`) or `[ Takeaway ]`.
+  - Prominent sticky banner throughout ordering: `📍 Ordering for Table 4 (Tap to Change)`.
+  - Eliminates physical stand-swap attacks and reduces printing setup friction to zero!
 - **FR-7.2**: **Complete Mobile Guest Journey**:
+
+
   - Welcome Banner with Cafe Name & Table Number.
   - Search bar + Category scroll (Coffee, Shakes, Breakfast, Bakery) + Veg/Non-veg filter tags.
   - Item detail sheet: Photos, descriptions, size selector (Regular/Large), modifier checkboxes (Oat milk, extra shot).
@@ -111,5 +139,16 @@
   - **Customer Table Guest:** Public `/order?table=X` session for scanning and ordering directly from tables.
 - **NFR-4 (Hardware-Agnostic Printing):** Standard CSS `@media print` formatted for 58mm/80mm thermal receipt printers without proprietary drivers.
 - **NFR-5 (Ease of Use):** Zero onboarding curve—new staff can punch their first order in under 60 seconds.
+- **NFR-6 (Buttery Smooth 60 FPS UI/UX Standards):**
+  - **0ms Optimistic UI:** Cart modifications, item selections, and category switches update instantaneously via Zustand before network sync.
+  - **Tactile Micro-Interactions:** Micro-scale transitions (`:active:scale-[0.97] transition-transform duration-100 ease-out`), crisp visual feedback, and optional soft audio chimes on ticket firing.
+  - **Ergonomic Touch Targets:** Minimum 48px x 48px touch bounding boxes across all buttons to prevent miss-taps during rush-hour madness.
+  - **Zero Layout Shift (CLS = 0):** Hardware-accelerated CSS transforms (`will-change: transform`), skeleton shimmer loaders, and fixed-aspect media wrappers.
+- **NFR-7 (Advanced Security & Anti-Fraud Hardening):**
+  - **Inactivity Station Auto-Lock:** 60-second idle timer locks the counter POS screen back to the 4-digit PIN numpad to prevent unauthorized tampering when staff steps away.
+  - **Anti-Double-Billing Concurrency Lock:** Row-level optimistic concurrency checks prevent simultaneous double-settlement if two devices or cashiers tap settle at the same millisecond.
+  - **Offline Price Tamper Proofing:** When offline orders sync to the cloud, the server recalculates every single item against master database pricing; client-side price tampering is mathematically impossible.
+  - **PII Masking & Anti-Scraping:** Customer phone numbers are masked on staff screens (`+91 98765 •••••`), and database columns are encrypted.
+
 
 
