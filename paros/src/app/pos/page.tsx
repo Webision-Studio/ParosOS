@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 interface CartItem {
   id: string;
@@ -57,20 +58,100 @@ interface LiveOrderQueue {
 }
 
 export default function PosRegisterPage() {
+  const router = useRouter();
+
   // POS View state: menu, floor, orders (expediter)
   const [activeView, setActiveView] = useState<'menu' | 'floor' | 'orders'>('menu');
-  const [selectedTable, setSelectedTable] = useState<string>('4');
+  const [selectedTable, setSelectedTable] = useState<string>('1');
   const [selectedCategory, setSelectedCategory] = useState<string>('All Items');
   const [searchQuery, setSearchQuery] = useState('');
   const [currentTime, setCurrentTime] = useState('14:32:15');
+  const [cafeName, setCafeName] = useState<string>('Artisan Roastery');
 
-  // Customer metadata
-  const [customerName, setCustomerName] = useState('Aarav Sharma');
-  const [customerPhone, setCustomerPhone] = useState('+91 98450 44321');
+  // Customer metadata per table
+  const [tableCustomers, setTableCustomers] = useState<Record<string, { name: string; phone: string }>>({
+    '1': { name: '', phone: '' },
+    '2': { name: 'Rohan Mehra', phone: '+91 98201 55432' },
+    '3': { name: '', phone: '' },
+    '4': { name: 'Aarav Sharma', phone: '+91 98450 44321' },
+    '5': { name: '', phone: '' },
+    '6': { name: 'Sneha Patel', phone: '+91 98765 43210' },
+    '7': { name: '', phone: '' },
+    '8': { name: '', phone: '' },
+    'Takeaway': { name: 'Counter Walk-in', phone: '+91 98450 00000' },
+  });
+
+  // Isolated Carts per Table
+  const [tableCarts, setTableCarts] = useState<Record<string, CartItem[]>>({
+    '1': [],
+    '2': [
+      {
+        id: 't2-1',
+        name: 'Specialty Pour Over (Ratnagiri)',
+        price: 260,
+        quantity: 1,
+        notes: 'Hot Coffee • Single origin',
+        isVeg: true,
+      },
+      {
+        id: 't2-2',
+        name: 'French Butter Croissant',
+        price: 180,
+        quantity: 1,
+        notes: 'Warm from oven',
+        isVeg: true,
+      },
+    ],
+    '3': [],
+    '4': [
+      {
+        id: 't4-1',
+        name: 'Iced Oat Latte',
+        price: 250,
+        quantity: 1,
+        notes: 'Large (+₹40) • Oatly',
+        isVeg: true,
+      },
+      {
+        id: 't4-2',
+        name: 'Avocado & Danish Feta Toast',
+        price: 280,
+        quantity: 1,
+        notes: 'Extra feta & chili flakes',
+        isVeg: true,
+      },
+    ],
+    '5': [],
+    '6': [
+      {
+        id: 't6-1',
+        name: 'Cold Brew with Tonic & Orange',
+        price: 210,
+        quantity: 2,
+        notes: 'Botanical tonic',
+        isVeg: true,
+      },
+      {
+        id: 't6-2',
+        name: 'Wild Herb Sourdough Toast',
+        price: 160,
+        quantity: 1,
+        notes: 'Cultured butter',
+        isVeg: true,
+      },
+    ],
+    '7': [],
+    '8': [],
+    'Takeaway': [],
+  });
 
   // Settlement Bill Modal State
   const [settledBill, setSettledBill] = useState<SettlementBill | null>(null);
   const [whatsappSentStatus, setWhatsappSentStatus] = useState(false);
+
+  // System Reset Modal State
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
 
   // KDS Ready Notification Banner
   const [readyNotification, setReadyNotification] = useState<{
@@ -80,49 +161,21 @@ export default function PosRegisterPage() {
   } | null>({
     table: '4',
     orderNumber: '#1042',
-    items: 'Flat White (Oat) + Butter Croissant',
+    items: 'Iced Oat Latte + Avocado Toast',
   });
 
-  // Cart State
-  const [cart, setCart] = useState<CartItem[]>([
-    {
-      id: 'item-1',
-      name: 'Iced Vanilla Bean Latte',
-      price: 280,
-      quantity: 1,
-      notes: 'Large (+₹40) • Oatly • 50% Sugar',
-      isVeg: true,
-    },
-    {
-      id: 'item-2',
-      name: 'Wild Herb Sourdough Toast',
-      price: 160,
-      quantity: 1,
-      notes: 'Extra cultured butter • Well toasted',
-      isVeg: true,
-    },
-    {
-      id: 'item-3',
-      name: 'French Butter Croissant',
-      price: 180,
-      quantity: 1,
-      notes: 'Warm from oven',
-      isVeg: true,
-    },
-  ]);
-
   // Tender / Cash State
-  const [tenderAmount, setTenderAmount] = useState<number>(1000);
+  const [tenderAmount, setTenderAmount] = useState<number>(500);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Live tables
   const [tables, setTables] = useState<TableNode[]>([
     { id: '1', tableNumber: '1', capacity: 2, currentStatus: 'AVAILABLE' },
-    { id: '2', tableNumber: '2', capacity: 4, currentStatus: 'OCCUPIED', orderNumber: '#1039', amount: 540 },
+    { id: '2', tableNumber: '2', capacity: 4, currentStatus: 'OCCUPIED', orderNumber: '#1039' },
     { id: '3', tableNumber: '3', capacity: 2, currentStatus: 'AVAILABLE' },
-    { id: '4', tableNumber: '4', capacity: 4, currentStatus: 'READY_TO_SERVE', orderNumber: '#1042', amount: 651 },
+    { id: '4', tableNumber: '4', capacity: 4, currentStatus: 'READY_TO_SERVE', orderNumber: '#1042' },
     { id: '5', tableNumber: '5', capacity: 6, currentStatus: 'AVAILABLE' },
-    { id: '6', tableNumber: '6', capacity: 4, currentStatus: 'OCCUPIED', orderNumber: '#1043', amount: 720 },
+    { id: '6', tableNumber: '6', capacity: 4, currentStatus: 'OCCUPIED', orderNumber: '#1043' },
     { id: '7', tableNumber: '7', capacity: 4, currentStatus: 'AVAILABLE' },
     { id: '8', tableNumber: '8', capacity: 4, currentStatus: 'AVAILABLE' },
     { id: 'takeaway', tableNumber: 'Takeaway', capacity: 0, currentStatus: 'AVAILABLE' },
@@ -136,7 +189,7 @@ export default function PosRegisterPage() {
       table: 'Table 4',
       customerName: 'Aarav Sharma',
       status: 'READY_AT_PASS',
-      itemsSummary: '1x Flat White (Oat), 1x Sourdough Toast, 1x Croissant',
+      itemsSummary: '1x Iced Oat Latte, 1x Avocado & Feta Toast',
       elapsedTime: '7m ago',
     },
     {
@@ -154,7 +207,7 @@ export default function PosRegisterPage() {
       table: 'Table 6',
       customerName: 'Sneha Patel',
       status: 'IN_KITCHEN',
-      itemsSummary: '2x Cold Brew Reserve, 1x Herb Toast',
+      itemsSummary: '2x Cold Brew Tonic, 1x Herb Toast',
       elapsedTime: '2m ago',
     },
   ]);
@@ -177,11 +230,22 @@ export default function PosRegisterPage() {
       setCurrentTime(now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
     }, 1000);
 
-    // Fetch initial DB data
+    // Fetch DB data
     fetch('/api/pos')
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
+        if (data?.cafe?.name) setCafeName(data.cafe.name);
         if (data?.menuItems?.length) setMenuItems(data.menuItems);
+        if (data?.tables?.length) {
+          setTables(
+            data.tables.map((t: { id: string; tableNumber: string; capacity: number; currentStatus: string }) => ({
+              id: t.id,
+              tableNumber: t.tableNumber,
+              capacity: t.capacity || 4,
+              currentStatus: (t.currentStatus as 'AVAILABLE' | 'OCCUPIED' | 'READY_TO_SERVE') || 'AVAILABLE',
+            }))
+          );
+        }
       })
       .catch(() => {});
 
@@ -213,47 +277,69 @@ export default function PosRegisterPage() {
     });
   }, [menuItems, selectedCategory, searchQuery]);
 
-  // Cart Calculations
+  // Helper to compute total for any table
+  const getTableAmount = (tableNum: string) => {
+    const items = tableCarts[tableNum] || [];
+    if (items.length === 0) return 0;
+    const sub = items.reduce((s, it) => s + it.price * it.quantity, 0);
+    return Math.round(sub * 1.05); // 5% GST
+  };
+
+  // Current Active Table Data
+  const currentCart = tableCarts[selectedTable] || [];
+  const currentCustomer = tableCustomers[selectedTable] || { name: '', phone: '' };
+
   const subtotal = useMemo(() => {
-    return cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  }, [cart]);
+    return currentCart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  }, [currentCart]);
 
   const cgst = Math.round(subtotal * 0.025 * 100) / 100;
   const sgst = Math.round(subtotal * 0.025 * 100) / 100;
   const grandTotal = Math.round(subtotal + cgst + sgst);
   const changeDue = tenderAmount - grandTotal;
 
-  // Add Item to Cart
+  // Add Item to Current Table Cart
   function addToCart(item: MenuItemData) {
-    setCart((prev) => {
-      const existing = prev.find((i) => i.name === item.name);
-      if (existing) {
-        return prev.map((i) =>
+    setTableCarts((prev) => {
+      const existingCart = prev[selectedTable] || [];
+      const existingItem = existingCart.find((i) => i.name === item.name);
+      let updatedCart: CartItem[];
+
+      if (existingItem) {
+        updatedCart = existingCart.map((i) =>
           i.name === item.name ? { ...i, quantity: i.quantity + 1 } : i
         );
+      } else {
+        updatedCart = [
+          ...existingCart,
+          {
+            id: `item-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+            name: item.name,
+            price: item.price,
+            quantity: 1,
+            isVeg: item.isVeg,
+            notes: item.category?.name || '',
+          },
+        ];
       }
-      return [
+
+      return {
         ...prev,
-        {
-          id: `item-${Date.now()}`,
-          name: item.name,
-          price: item.price,
-          quantity: 1,
-          isVeg: item.isVeg,
-          notes: item.category?.name || '',
-        },
-      ];
+        [selectedTable]: updatedCart,
+      };
     });
 
-    // Mark current selected table as occupied
+    // Mark current table occupied on floor
     setTables((prev) =>
       prev.map((t) => (t.tableNumber === selectedTable ? { ...t, currentStatus: 'OCCUPIED' } : t))
     );
   }
 
+  // Update Quantity for Current Table Cart
   function updateQty(id: string, delta: number) {
-    setCart((prev) =>
-      prev
+    setTableCarts((prev) => {
+      const existingCart = prev[selectedTable] || [];
+      const updatedCart = existingCart
         .map((item) => {
           if (item.id === id) {
             const newQty = item.quantity + delta;
@@ -261,12 +347,25 @@ export default function PosRegisterPage() {
           }
           return item;
         })
-        .filter(Boolean) as CartItem[]
-    );
+        .filter(Boolean) as CartItem[];
+
+      return {
+        ...prev,
+        [selectedTable]: updatedCart,
+      };
+    });
   }
 
+  // Remove Item from Current Table Cart
   function removeItem(id: string) {
-    setCart((prev) => prev.filter((item) => item.id !== id));
+    setTableCarts((prev) => {
+      const existingCart = prev[selectedTable] || [];
+      const updatedCart = existingCart.filter((item) => item.id !== id);
+      return {
+        ...prev,
+        [selectedTable]: updatedCart,
+      };
+    });
   }
 
   function showToast(msg: string) {
@@ -274,25 +373,25 @@ export default function PosRegisterPage() {
     setTimeout(() => setToastMessage(null), 3200);
   }
 
-  // ═══ SETTLE BILL (Opens Settlement Modal) ═══
+  // ═══ SETTLE BILL (Opens Settlement Modal for Selected Table) ═══
   function handleSettle(method: 'CASH' | 'UPI') {
-    if (cart.length === 0) {
-      showToast('⚠️ Cart is empty. Add items first!');
+    if (currentCart.length === 0) {
+      showToast(`⚠️ Table ${selectedTable} cart is empty. Add items first!`);
       return;
     }
 
     const billData: SettlementBill = {
       billNumber: `INV-${Math.floor(1000 + Math.random() * 9000)}`,
-      orderNumber: `#1042`,
+      orderNumber: `#${Math.floor(1000 + Math.random() * 9000)}`,
       tableNumber: selectedTable,
-      items: [...cart],
+      items: [...currentCart],
       subtotal,
       cgst,
       sgst,
       total: grandTotal,
       paymentMethod: method,
-      customerName,
-      customerPhone,
+      customerName: currentCustomer.name || `Guest Table ${selectedTable}`,
+      customerPhone: currentCustomer.phone || '+91 98450 00000',
       changeDue: Math.max(0, changeDue),
       time: currentTime,
     };
@@ -307,33 +406,45 @@ export default function PosRegisterPage() {
       body: JSON.stringify({
         action: 'settle-bill',
         tableId: selectedTable,
-        items: cart,
+        items: currentCart,
         subtotal,
         cgst,
         sgst,
         total: grandTotal,
         paymentMethod: method,
-        customerName,
-        customerPhone,
+        customerName: currentCustomer.name || `Guest Table ${selectedTable}`,
+        customerPhone: currentCustomer.phone || '+91 98450 00000',
       }),
     }).catch(() => {});
   }
 
-  // Close Settlement Modal & Free Table
+  // Close Settlement Modal & Free ONLY this Table
   function handleCompleteAndFreeTable() {
+    const tableToFree = settledBill?.tableNumber || selectedTable;
+
     // Free Table on Floor Grid
     setTables((prev) =>
       prev.map((t) =>
-        t.tableNumber === settledBill?.tableNumber
+        t.tableNumber === tableToFree
           ? { ...t, currentStatus: 'AVAILABLE', orderNumber: undefined, amount: undefined }
           : t
       )
     );
 
-    // Clear cart and modal
-    setCart([]);
+    // Clear ONLY this table's cart
+    setTableCarts((prev) => ({
+      ...prev,
+      [tableToFree]: [],
+    }));
+
+    // Reset customer metadata for this table
+    setTableCustomers((prev) => ({
+      ...prev,
+      [tableToFree]: { name: '', phone: '' },
+    }));
+
     setSettledBill(null);
-    showToast(`✓ Table ${selectedTable} settled & cleared for next guest!`);
+    showToast(`✓ Table ${tableToFree} settled & freed for next guests!`);
   }
 
   // Mark Order as Handed Over to Guest
@@ -351,152 +462,140 @@ export default function PosRegisterPage() {
   }
 
   // Park Order
-  async function handlePark() {
-    if (cart.length === 0) return;
-    showToast(`⏸️ Table ${selectedTable} order parked in active queue.`);
-    setCart([]);
+  function handlePark() {
+    if (currentCart.length === 0) {
+      showToast('⚠️ Cart is empty. Nothing to park.');
+      return;
+    }
+    showToast(`🅿️ Order for Table ${selectedTable} parked in Kitchen!`);
+  }
+
+  // System Wipe / Register New Cafe
+  async function handleWipeDatabaseAndRegisterNew() {
+    setResetLoading(true);
+    try {
+      const res = await fetch('/api/system/reset', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to reset system');
+
+      if (typeof window !== 'undefined') {
+        localStorage.clear();
+      }
+
+      showToast('✓ Local database & cache wiped! Redirecting to setup...');
+      setTimeout(() => {
+        router.push('/onboarding');
+      }, 1000);
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : 'Error resetting database');
+      setResetLoading(false);
+    }
   }
 
   return (
-    <div className="min-h-screen bg-paros-cream text-espresso font-body flex flex-col select-none antialiased">
-      {/* ── Fixed Top Header Bar ── */}
-      <header className="fixed top-0 left-0 right-0 h-16 bg-white z-50 flex items-center justify-between px-4 sm:px-6 border-b-2 border-espresso shadow-brutal-sm">
-        <div className="flex items-center gap-4">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-paros-orange text-white flex items-center justify-center font-display font-black text-sm border-2 border-espresso shadow-brutal-sm">
-              P
+    <div className="min-h-screen bg-paros-cream text-espresso font-body flex flex-col">
+      {/* ── Fixed Top Header ── */}
+      <header className="sticky top-0 w-full z-40 bg-white/95 backdrop-blur-md border-b-2 border-espresso">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+          {/* Brand */}
+          <div className="flex items-center gap-3">
+            <Link href="/" className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-paros-orange text-white flex items-center justify-center font-display font-black text-base border-2 border-espresso shadow-brutal-sm">
+                P
+              </div>
+              <span className="font-display text-xl font-black text-espresso tracking-tight">
+                PAROS<span className="text-paros-orange">.</span>
+              </span>
+            </Link>
+            <span className="hidden sm:inline-block w-px h-5 bg-espresso/20" />
+            <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-paros-yellow border border-espresso font-display text-xs font-bold uppercase shadow-brutal-sm">
+              <span className="w-2 h-2 rounded-full bg-paros-matcha animate-ping" />
+              <span>{cafeName}</span>
             </div>
-            <span className="font-display text-xl font-black text-espresso tracking-tight">
-              PAROS<span className="text-paros-orange">.</span>
-            </span>
-          </Link>
-          <div className="h-6 w-px bg-espresso/20 hidden sm:block" />
-          <div className="flex flex-col">
-            <span className="font-display text-[10px] uppercase font-bold text-espresso/60 tracking-wider">
-              Terminal Node 01
-            </span>
-            <span className="font-display text-sm font-black text-espresso">
-              Artisan Roastery • Main Counter
-            </span>
           </div>
-        </div>
 
-        {/* Status Indicators */}
-        <div className="flex items-center gap-3">
-          <div className="hidden lg:flex items-center gap-1.5 px-3 py-1 rounded-full bg-paros-mint border border-espresso font-display text-xs font-bold text-espresso">
-            <span className="w-2 h-2 rounded-full bg-paros-matcha animate-pulse" />
-            <span>Live Sync (0ms)</span>
+          {/* Quick Route Switches */}
+          <div className="hidden md:flex items-center gap-2">
+            <Link
+              href="/pos"
+              className="px-3 py-1.5 rounded-xl font-display text-xs font-black uppercase bg-paros-orange text-white border-2 border-espresso shadow-brutal-sm flex items-center gap-1.5"
+            >
+              <span className="material-symbols-outlined text-[16px]">point_of_sale</span>
+              Counter POS
+            </Link>
+            <Link
+              href="/kds"
+              className="px-3 py-1.5 rounded-xl font-display text-xs font-black uppercase bg-white hover:bg-paros-yellow text-espresso border-2 border-espresso shadow-brutal-sm flex items-center gap-1.5"
+            >
+              <span className="material-symbols-outlined text-[16px]">soup_kitchen</span>
+              Kitchen KDS
+            </Link>
+            <Link
+              href="/order"
+              className="px-3 py-1.5 rounded-xl font-display text-xs font-black uppercase bg-white hover:bg-paros-yellow text-espresso border-2 border-espresso shadow-brutal-sm flex items-center gap-1.5"
+            >
+              <span className="material-symbols-outlined text-[16px]">qr_code_scanner</span>
+              Table QR Dine-in
+            </Link>
+            <Link
+              href="/admin"
+              className="px-3 py-1.5 rounded-xl font-display text-xs font-black uppercase bg-white hover:bg-paros-yellow text-espresso border-2 border-espresso shadow-brutal-sm flex items-center gap-1.5"
+            >
+              <span className="material-symbols-outlined text-[16px]">analytics</span>
+              Z-Report
+            </Link>
           </div>
-          <div className="hidden md:flex items-center gap-1.5 px-3 py-1 rounded-full bg-paros-yellow/60 border border-espresso font-display text-xs font-bold text-espresso">
-            <span className="material-symbols-outlined text-[15px] text-espresso">cloud_done</span>
-            <span>Offline Ready</span>
-          </div>
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-white border border-espresso rounded-lg font-mono text-xs font-bold text-espresso">
-            <span className="material-symbols-outlined text-[15px] text-espresso/70">schedule</span>
-            <span className="tabular-nums">{currentTime}</span>
-          </div>
-          <div className="flex items-center gap-2 bg-paros-cream border border-espresso px-2.5 py-1 rounded-lg">
-            <div className="w-6 h-6 rounded-full bg-paros-orange text-white flex items-center justify-center font-display font-bold text-xs">
-              R
+
+          {/* Clock & Fresh Registration Button */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="hidden sm:flex items-center gap-1 font-mono text-xs font-bold text-espresso bg-paros-cream px-2.5 py-1 rounded-lg border border-espresso">
+              <span className="material-symbols-outlined text-[14px]">schedule</span>
+              <span>{currentTime}</span>
             </div>
-            <span className="hidden sm:inline font-display text-xs font-bold text-espresso">
-              Rahul (Cashier)
-            </span>
+
+            {/* Wipe Cache & New Cafe Modal Trigger */}
+            <button
+              onClick={() => setShowResetModal(true)}
+              className="brutal-btn px-2.5 sm:px-3 py-1.5 rounded-xl bg-red-100 hover:bg-red-200 text-red-700 font-display text-xs font-black uppercase border-2 border-espresso shadow-brutal-sm flex items-center gap-1"
+              title="Delete local DB & register a new cafe"
+            >
+              <span className="material-symbols-outlined text-[16px]">cleaning_services</span>
+              <span className="hidden sm:inline">Reset / New Cafe</span>
+            </button>
           </div>
         </div>
       </header>
 
-      {/* ── Left Vertical Navigation Dock ── */}
-      <aside className="fixed left-0 top-16 bottom-0 w-20 bg-white border-r-2 border-espresso z-40 flex flex-col items-center py-4 shadow-brutal-sm">
-        <nav className="flex flex-col items-center gap-2 w-full px-2">
-          <button
-            onClick={() => setActiveView('menu')}
-            className={`flex flex-col items-center justify-center w-full py-2.5 rounded-xl border-2 transition-all ${
-              activeView === 'menu'
-                ? 'bg-paros-orange text-white border-espresso shadow-brutal-sm'
-                : 'text-espresso border-transparent hover:bg-paros-yellow/40'
-            }`}
-          >
-            <span className="material-symbols-outlined text-[22px]">point_of_sale</span>
-            <span className="font-display text-[10px] font-black uppercase mt-0.5">Register</span>
-          </button>
-
-          <button
-            onClick={() => setActiveView('orders')}
-            className={`relative flex flex-col items-center justify-center w-full py-2.5 rounded-xl border-2 transition-all ${
-              activeView === 'orders'
-                ? 'bg-paros-orange text-white border-espresso shadow-brutal-sm'
-                : 'text-espresso border-transparent hover:bg-paros-yellow/40'
-            }`}
-          >
-            <span className="material-symbols-outlined text-[22px]">receipt_long</span>
-            <span className="font-display text-[10px] font-bold uppercase mt-0.5">Orders</span>
-            {readyNotification && (
-              <span className="absolute top-1 right-2 w-2.5 h-2.5 rounded-full bg-paros-matcha ring-2 ring-white animate-ping" />
-            )}
-          </button>
-
-          <Link
-            href="/kds"
-            className="flex flex-col items-center justify-center w-full py-2.5 rounded-xl text-espresso hover:bg-paros-yellow/40 transition-all"
-          >
-            <span className="material-symbols-outlined text-[22px]">soup_kitchen</span>
-            <span className="font-display text-[10px] font-bold uppercase mt-0.5">KDS Live</span>
-          </Link>
-
-          <button
-            onClick={() => setActiveView('floor')}
-            className={`flex flex-col items-center justify-center w-full py-2.5 rounded-xl border-2 transition-all ${
-              activeView === 'floor'
-                ? 'bg-paros-orange text-white border-espresso shadow-brutal-sm'
-                : 'text-espresso border-transparent hover:bg-paros-yellow/40'
-            }`}
-          >
-            <span className="material-symbols-outlined text-[22px]">table_restaurant</span>
-            <span className="font-display text-[10px] font-bold uppercase mt-0.5">Tables</span>
-          </button>
-
-          <button
-            onClick={() => showToast('Opening Drawer: Float ₹2,000 intact | Current Till ₹5,400')}
-            className="flex flex-col items-center justify-center w-full py-2.5 rounded-xl text-espresso hover:bg-paros-yellow/40 transition-all"
-          >
-            <span className="material-symbols-outlined text-[22px]">payments</span>
-            <span className="font-display text-[10px] font-bold uppercase mt-0.5">Drawer</span>
-          </button>
-        </nav>
-      </aside>
-
       {/* ── Main POS Workspace ── */}
-      <div className="pl-20 pt-16 flex-1 flex flex-col xl:flex-row gap-4 p-4">
-        {/* ═══ LEFT PANEL (60%): Floor & Menu Catalog ═══ */}
+      <div className="max-w-[1600px] w-full mx-auto p-3 sm:p-4 lg:p-6 flex-1 flex flex-col xl:flex-row gap-4">
+        {/* ═══ LEFT PANEL (60%): Menu Catalog / Floor Grid ═══ */}
         <div className="w-full xl:w-[60%] flex flex-col gap-4">
-          {/* 🛎️ KDS REAL-TIME READY NOTIFICATION ALERT 🛎️ */}
+          {/* ── HIGH PRIORITY KDS NOTIFICATION BANNER ── */}
           {readyNotification && (
-            <div className="bg-paros-mint border-2 border-espresso p-3.5 rounded-2xl shadow-brutal flex items-center justify-between animate-bounce">
+            <div className="bg-paros-orange text-white p-3.5 rounded-2xl border-2 border-espresso shadow-brutal flex items-center justify-between gap-3 animate-in slide-in-from-top-4">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-paros-matcha text-white flex items-center justify-center font-bold text-lg shadow-sm">
+                <div className="w-8 h-8 rounded-xl bg-white text-paros-orange flex items-center justify-center font-black text-lg border border-espresso shadow-sm animate-bounce">
                   🛎️
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="font-display text-sm font-black text-espresso">
+                    <span className="font-display font-black text-sm uppercase tracking-wide">
                       KDS ALERT: Table {readyNotification.table} is READY for Service!
                     </span>
-                    <span className="font-mono text-xs bg-white px-2 py-0.5 rounded border border-espresso font-bold">
+                    <span className="font-mono text-xs bg-white/20 px-2 py-0.5 rounded font-bold">
                       {readyNotification.orderNumber}
                     </span>
                   </div>
-                  <p className="font-body text-xs text-espresso/70 mt-0.5">
-                    {readyNotification.items} • Runner pickup required at kitchen pass.
+                  <p className="font-body text-xs text-white/90 font-medium">
+                    {readyNotification.items} • Handover to table runner now.
                   </p>
                 </div>
               </div>
-
               <button
-                onClick={() => handleMarkOrderServed('ord-1', readyNotification.table)}
-                className="brutal-btn px-4 py-2 bg-espresso text-white font-display text-xs font-black uppercase rounded-xl border border-espresso shadow-brutal-sm"
+                onClick={() => setActiveView('orders')}
+                className="brutal-btn px-3 py-1.5 bg-white text-espresso font-display text-xs font-black uppercase rounded-xl border border-espresso shadow-brutal-sm shrink-0"
               >
-                Mark Served ➔
+                View Queue
               </button>
             </div>
           )}
@@ -505,19 +604,19 @@ export default function PosRegisterPage() {
           <div className="bg-white p-3.5 rounded-2xl border-2 border-espresso shadow-brutal flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-paros-orange text-white flex items-center justify-center font-display font-black text-sm border-2 border-espresso shadow-brutal-sm">
-                R
+                P
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="font-display text-sm font-black text-espresso">Chef Kabir / Rahul</span>
+                  <span className="font-display text-sm font-black text-espresso">{cafeName} Counter</span>
                   <span className="font-mono text-[10px] bg-paros-cream px-1.5 py-0.5 rounded border border-espresso font-bold">
-                    PIN: 1234
+                    ACTIVE REGISTER
                   </span>
                 </div>
                 <div className="flex items-center gap-2 font-display text-xs text-espresso/60 font-medium">
-                  <span>Shift: 4h 12m</span>
+                  <span>Shift: Open</span>
                   <span>•</span>
-                  <span className="text-paros-matcha font-bold">Local SQLite DB Synced</span>
+                  <span className="text-paros-matcha font-bold">SQLite DB Synced</span>
                 </div>
               </div>
             </div>
@@ -560,13 +659,13 @@ export default function PosRegisterPage() {
             </div>
           </div>
 
-          {/* ═══ FLOOR GRID STATUS NODES STRIP ═══ */}
+          {/* ═══ FLOOR GRID STATUS NODES STRIP (Every Table Has Separate Bill Amount) ═══ */}
           <div className="bg-white p-3.5 rounded-2xl border-2 border-espresso shadow-brutal">
             <div className="flex items-center justify-between pb-2 mb-2 border-b-2 border-dashed border-espresso/20">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-paros-orange text-[18px]">table_restaurant</span>
                 <span className="font-display text-xs font-black uppercase text-espresso">
-                  Seating Floor Grid ({tables.length} Tables)
+                  Seating Floor Grid ({tables.length} Tables) — Click Table to Switch Tab
                 </span>
               </div>
               <div className="flex items-center gap-3 text-xs font-display font-bold">
@@ -584,8 +683,10 @@ export default function PosRegisterPage() {
 
             <div className="grid grid-cols-4 sm:grid-cols-9 gap-2">
               {tables.map((t) => {
+                const tableAmt = getTableAmount(t.tableNumber);
+                const hasItems = (tableCarts[t.tableNumber]?.length || 0) > 0;
                 const isReady = t.currentStatus === 'READY_TO_SERVE';
-                const isOccupied = t.currentStatus === 'OCCUPIED';
+                const isOccupied = hasItems || t.currentStatus === 'OCCUPIED';
                 const isSelected = selectedTable === t.tableNumber;
 
                 return (
@@ -606,17 +707,21 @@ export default function PosRegisterPage() {
                       {t.tableNumber === 'Takeaway' ? '🥡 Out' : `T-${t.tableNumber}`}
                     </span>
                     <span
-                      className={`font-display text-[9px] uppercase font-bold mt-1 ${
+                      className={`font-display text-[9px] uppercase font-bold mt-1 tabular-nums ${
                         isSelected
                           ? 'text-white'
                           : isReady
                           ? 'text-emerald-800 font-black'
                           : isOccupied
-                          ? 'text-amber-800'
+                          ? 'text-amber-800 font-bold'
                           : 'text-paros-matcha'
                       }`}
                     >
-                      {isReady ? '🛎️ Ready' : isOccupied ? 'Dine-In' : 'Free'}
+                      {isReady
+                        ? `🛎️ ₹${tableAmt}`
+                        : isOccupied
+                        ? `₹${tableAmt}`
+                        : 'Free'}
                     </span>
                   </button>
                 );
@@ -775,7 +880,7 @@ export default function PosRegisterPage() {
                         className="brutal-btn px-3 py-1 bg-paros-orange text-white font-display text-xs font-black uppercase rounded-lg border-2 border-espresso shadow-brutal-sm flex items-center gap-1"
                       >
                         <span className="material-symbols-outlined text-[14px]">add</span>
-                        Add
+                        Add to Table {selectedTable}
                       </button>
                     </div>
                   </div>
@@ -785,7 +890,7 @@ export default function PosRegisterPage() {
           )}
         </div>
 
-        {/* ═══ RIGHT PANEL (40%): Active Ticket & Settle ═══ */}
+        {/* ═══ RIGHT PANEL (40%): Active Table Ticket & Settle ═══ */}
         <div className="w-full xl:w-[40%] flex flex-col gap-4">
           <div className="bg-white p-5 rounded-3xl border-2 border-espresso shadow-brutal-xl flex-1 flex flex-col justify-between">
             {/* Ticket Header */}
@@ -797,32 +902,68 @@ export default function PosRegisterPage() {
                       restaurant
                     </span>
                     <span className="font-display text-xl font-black text-espresso">
-                      Table {selectedTable}
+                      Table {selectedTable} Tab
                     </span>
                     <span className="px-2 py-0.5 rounded bg-paros-peach border border-espresso font-display text-[10px] font-black uppercase">
-                      Order #1042
+                      {currentCart.length > 0 ? `${currentCart.length} Items` : 'Empty'}
                     </span>
                   </div>
-                  <p className="font-body text-xs text-espresso/70 mt-0.5">
-                    Guest: <strong className="text-espresso">{customerName}</strong> ({customerPhone})
-                  </p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <input
+                      type="text"
+                      placeholder="Guest Name (optional)"
+                      value={currentCustomer.name}
+                      onChange={(e) =>
+                        setTableCustomers((prev) => ({
+                          ...prev,
+                          [selectedTable]: { ...currentCustomer, name: e.target.value },
+                        }))
+                      }
+                      className="px-2 py-0.5 bg-paros-cream border border-espresso rounded font-body text-xs font-semibold text-espresso outline-none w-36"
+                    />
+                    <input
+                      type="tel"
+                      placeholder="Phone (WhatsApp)"
+                      value={currentCustomer.phone}
+                      onChange={(e) =>
+                        setTableCustomers((prev) => ({
+                          ...prev,
+                          [selectedTable]: { ...currentCustomer, phone: e.target.value },
+                        }))
+                      }
+                      className="px-2 py-0.5 bg-paros-cream border border-espresso rounded font-mono text-xs font-semibold text-espresso outline-none w-36"
+                    />
+                  </div>
                 </div>
                 <div className="text-right">
                   <span className="font-mono text-xs font-bold text-espresso">{currentTime}</span>
-                  <div className="font-display text-[10px] font-black text-paros-matcha uppercase flex items-center justify-end gap-1">
-                    <span className="w-2 h-2 rounded-full bg-paros-matcha" /> Dine-In
+                  <div className="font-display text-[10px] font-black text-paros-matcha uppercase flex items-center justify-end gap-1 mt-1">
+                    <span
+                      className={`w-2 h-2 rounded-full ${
+                        currentCart.length > 0 ? 'bg-amber-500' : 'bg-paros-matcha'
+                      }`}
+                    />
+                    {currentCart.length > 0 ? 'Dine-In Occupied' : 'Table Available'}
                   </div>
                 </div>
               </div>
 
               {/* Cart List */}
               <div className="flex flex-col gap-2.5 max-h-[220px] overflow-y-auto pr-1">
-                {cart.length === 0 ? (
-                  <div className="py-8 text-center text-espresso/50 font-display text-xs font-bold uppercase">
-                    Cart is empty. Tap items on the left to add.
+                {currentCart.length === 0 ? (
+                  <div className="py-10 px-4 text-center bg-paros-cream/50 rounded-2xl border-2 border-dashed border-espresso/30 flex flex-col items-center justify-center gap-2">
+                    <span className="material-symbols-outlined text-espresso/40 text-[32px]">
+                      shopping_bag
+                    </span>
+                    <p className="font-display text-sm font-black text-espresso/70">
+                      Table {selectedTable} Cart is Empty
+                    </p>
+                    <p className="font-body text-xs text-espresso/50 max-w-xs">
+                      Tap any beverage or dish from the menu on the left to add items to this table.
+                    </p>
                   </div>
                 ) : (
-                  cart.map((item) => (
+                  currentCart.map((item) => (
                     <div
                       key={item.id}
                       className="p-2.5 rounded-xl bg-paros-cream border-2 border-espresso shadow-brutal-sm flex flex-col gap-1"
@@ -908,10 +1049,10 @@ export default function PosRegisterPage() {
                 </button>
               </div>
 
-              {/* Receipt Breakdown */}
+              {/* Receipt Breakdown for Selected Table */}
               <div className="bg-paros-cream p-3 rounded-xl border border-espresso font-mono text-xs flex flex-col gap-1">
                 <div className="flex justify-between text-espresso/70">
-                  <span>Subtotal ({cart.length} items)</span>
+                  <span>Table {selectedTable} Subtotal ({currentCart.length} items)</span>
                   <span className="tabular-nums">₹{subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-espresso/70">
@@ -927,44 +1068,56 @@ export default function PosRegisterPage() {
               </div>
 
               {/* Cash Tender Selector */}
-              <div className="flex flex-col gap-1">
-                <div className="flex items-center justify-between text-xs font-display">
-                  <span className="font-black uppercase text-espresso/70">Quick Cash Tender:</span>
-                  <span className="bg-paros-mint px-2 py-0.5 rounded border border-espresso font-mono font-bold text-[11px]">
-                    {changeDue >= 0
-                      ? `Tender ₹${tenderAmount} → Return ₹${changeDue}`
-                      : `Short by ₹${Math.abs(changeDue)}`}
-                  </span>
+              {grandTotal > 0 && (
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center justify-between text-xs font-display">
+                    <span className="font-black uppercase text-espresso/70">Quick Cash Tender:</span>
+                    <span className="bg-paros-mint px-2 py-0.5 rounded border border-espresso font-mono font-bold text-[11px]">
+                      {changeDue >= 0
+                        ? `Tender ₹${tenderAmount} → Return ₹${changeDue}`
+                        : `Short by ₹${Math.abs(changeDue)}`}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-4 gap-1.5 font-mono text-xs font-black">
+                    {[grandTotal, Math.ceil(grandTotal / 100) * 100, 500, 1000].map((amt, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setTenderAmount(amt)}
+                        className={`py-1.5 rounded-lg border border-espresso transition-all shadow-brutal-sm ${
+                          tenderAmount === amt
+                            ? 'bg-paros-yellow text-espresso ring-2 ring-espresso'
+                            : 'bg-white hover:bg-paros-cream'
+                        }`}
+                      >
+                        ₹{amt}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div className="grid grid-cols-4 gap-1.5 font-mono text-xs font-black">
-                  {[grandTotal, Math.ceil(grandTotal / 100) * 100, 1000, 2000].map((amt, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setTenderAmount(amt)}
-                      className={`py-1.5 rounded-lg border border-espresso transition-all shadow-brutal-sm ${
-                        tenderAmount === amt
-                          ? 'bg-paros-yellow text-espresso ring-2 ring-espresso'
-                          : 'bg-white hover:bg-paros-cream'
-                      }`}
-                    >
-                      ₹{amt}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              )}
 
               {/* PRIMARY SETTLEMENT BUTTONS (Triggers Modal) */}
               <div className="grid grid-cols-2 gap-2">
                 <button
                   onClick={() => handleSettle('CASH')}
-                  className="brutal-btn py-3.5 bg-espresso text-white font-display font-black text-xs sm:text-sm uppercase rounded-xl border-2 border-espresso shadow-brutal flex items-center justify-center gap-1.5"
+                  disabled={currentCart.length === 0}
+                  className={`brutal-btn py-3.5 font-display font-black text-xs sm:text-sm uppercase rounded-xl border-2 border-espresso shadow-brutal flex items-center justify-center gap-1.5 ${
+                    currentCart.length === 0
+                      ? 'bg-espresso/40 text-white/60 cursor-not-allowed'
+                      : 'bg-espresso text-white hover:bg-espresso/90'
+                  }`}
                 >
                   <span className="material-symbols-outlined text-[18px]">payments</span>
-                  <span>SETTLE CASH ₹{grandTotal}</span>
+                  <span>SETTLE CASH {grandTotal > 0 ? `₹${grandTotal}` : ''}</span>
                 </button>
                 <button
                   onClick={() => handleSettle('UPI')}
-                  className="brutal-btn py-3.5 bg-paros-matcha text-white font-display font-black text-xs sm:text-sm uppercase rounded-xl border-2 border-espresso shadow-brutal flex items-center justify-center gap-1.5"
+                  disabled={currentCart.length === 0}
+                  className={`brutal-btn py-3.5 font-display font-black text-xs sm:text-sm uppercase rounded-xl border-2 border-espresso shadow-brutal flex items-center justify-center gap-1.5 ${
+                    currentCart.length === 0
+                      ? 'bg-paros-matcha/40 text-white/60 cursor-not-allowed'
+                      : 'bg-paros-matcha text-white hover:bg-emerald-700'
+                  }`}
                 >
                   <span className="material-symbols-outlined text-[18px]">qr_code_scanner</span>
                   <span>CONFIRM UPI PAID</span>
@@ -975,12 +1128,16 @@ export default function PosRegisterPage() {
               <div className="grid grid-cols-2 gap-2">
                 <button
                   onClick={() => {
-                    const phoneClean = customerPhone.replace(/[^0-9]/g, '');
+                    const phoneClean = currentCustomer.phone.replace(/[^0-9]/g, '');
+                    if (!phoneClean) {
+                      showToast('⚠️ Enter guest phone number in tab header first!');
+                      return;
+                    }
                     window.open(
-                      `https://wa.me/${phoneClean}?text=Hello%20${customerName}!%20Here%20is%20your%20tax%20invoice%20for%20₹${grandTotal}%20at%20Artisan%20Roastery.%20Thank%20you%20for%20visiting!`,
+                      `https://wa.me/${phoneClean}?text=Hello%20${currentCustomer.name || 'Guest'}!%20Here%20is%20your%20bill%20for%20Table%20${selectedTable}%20(₹${grandTotal})%20at%20${cafeName}.%20Thank%20you%20for%20visiting!`,
                       '_blank'
                     );
-                    showToast(`📲 WhatsApp bill dispatched to ${customerPhone}!`);
+                    showToast(`📲 WhatsApp bill dispatched to ${currentCustomer.phone}!`);
                   }}
                   className="py-2 bg-white hover:bg-paros-cream border border-espresso rounded-xl font-display text-xs font-bold flex items-center justify-center gap-1.5 shadow-brutal-sm"
                 >
@@ -1084,20 +1241,22 @@ export default function PosRegisterPage() {
               <div className="flex gap-2">
                 <input
                   type="tel"
-                  value={customerPhone}
-                  onChange={(e) => setCustomerPhone(e.target.value)}
+                  value={settledBill.customerPhone}
+                  onChange={(e) =>
+                    setSettledBill((prev) => (prev ? { ...prev, customerPhone: e.target.value } : null))
+                  }
                   placeholder="+91 98450 XXXXX"
                   className="flex-1 px-3 py-2 bg-white border-2 border-espresso rounded-xl font-mono text-xs font-bold text-espresso outline-none"
                 />
                 <button
                   onClick={() => {
                     setWhatsappSentStatus(true);
-                    const clean = customerPhone.replace(/[^0-9]/g, '');
+                    const clean = settledBill.customerPhone.replace(/[^0-9]/g, '');
                     window.open(
-                      `https://wa.me/${clean}?text=Hello%20${customerName}!%20Here%20is%20your%20tax%20invoice%20${settledBill.billNumber}%20for%20₹${settledBill.total}%20at%20Artisan%20Roastery.%20Thank%20you%20for%20visiting!`,
+                      `https://wa.me/${clean}?text=Hello%20${settledBill.customerName}!%20Here%20is%20your%20tax%20invoice%20${settledBill.billNumber}%20for%20₹${settledBill.total}%20at%20${cafeName}.%20Thank%20you%20for%20visiting!`,
                       '_blank'
                     );
-                    showToast(`✓ Official GST receipt dispatched to ${customerPhone}!`);
+                    showToast(`✓ Official GST receipt dispatched to ${settledBill.customerPhone}!`);
                   }}
                   className="brutal-btn px-4 py-2 bg-paros-matcha text-white font-display text-xs font-black uppercase rounded-xl border-2 border-espresso shadow-brutal-sm"
                 >
@@ -1121,6 +1280,57 @@ export default function PosRegisterPage() {
                 className="brutal-btn flex-1 py-3.5 bg-espresso text-white font-display font-black text-sm uppercase rounded-xl border-2 border-espresso shadow-brutal flex items-center justify-center gap-2"
               >
                 <span>Done • Free Table {settledBill.tableNumber} ➔</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ════════════════════════════════════════════════════════════ */}
+      {/* ── MODAL: WIPE SYSTEM & REGISTER NEW CAFE OVERLAY ── */}
+      {/* ════════════════════════════════════════════════════════════ */}
+      {showResetModal && (
+        <div className="fixed inset-0 bg-espresso/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl border-3 border-espresso shadow-brutal-xl p-6 sm:p-8 w-full max-w-md flex flex-col gap-4 animate-in zoom-in-95">
+            <div className="flex items-center gap-3 pb-3 border-b-2 border-espresso">
+              <div className="w-10 h-10 rounded-xl bg-red-100 text-red-600 flex items-center justify-center font-black text-xl border-2 border-espresso shadow-brutal-sm">
+                <span className="material-symbols-outlined text-[24px]">delete_forever</span>
+              </div>
+              <div>
+                <h3 className="font-display text-lg font-black text-espresso">
+                  Reset Local DB & Register New Cafe?
+                </h3>
+                <p className="font-body text-xs text-espresso/70">
+                  Clean slate setup wizard
+                </p>
+              </div>
+            </div>
+
+            <p className="font-body text-sm text-espresso/80 leading-relaxed">
+              Ye action local SQLite database se saare test orders, previous tables, bills aur session cookies ko completely <strong>wipe clean</strong> kar dega, taaki aap apna <strong>naya cafe name, custom tables aur details</strong> Onboarding me fresh register kar sakein.
+            </p>
+
+            <div className="bg-paros-yellow/40 p-3 rounded-xl border border-espresso font-display text-xs font-bold text-espresso">
+              ⚡ Action hone ke baad aap seedha Onboarding Wizard step 1 par redirect ho jayenge!
+            </div>
+
+            <div className="flex items-center gap-3 mt-2">
+              <button
+                onClick={() => setShowResetModal(false)}
+                disabled={resetLoading}
+                className="flex-1 py-3 bg-white hover:bg-paros-cream border-2 border-espresso rounded-xl font-display text-xs font-black uppercase shadow-brutal-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleWipeDatabaseAndRegisterNew}
+                disabled={resetLoading}
+                className="brutal-btn flex-1 py-3 bg-red-600 text-white font-display text-xs font-black uppercase rounded-xl border-2 border-espresso shadow-brutal flex items-center justify-center gap-1.5"
+              >
+                <span className="material-symbols-outlined text-[16px]">
+                  {resetLoading ? 'sync' : 'delete'}
+                </span>
+                <span>{resetLoading ? 'Wiping DB...' : 'Wipe & Register New'}</span>
               </button>
             </div>
           </div>

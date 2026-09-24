@@ -162,7 +162,20 @@ export default function OnboardingPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={async () => {
+                if (confirm('Reset local database & cache to start fresh?')) {
+                  await fetch('/api/system/reset', { method: 'POST' });
+                  if (typeof window !== 'undefined') localStorage.clear();
+                  window.location.reload();
+                }
+              }}
+              className="text-xs font-display font-black text-red-600 bg-red-100 hover:bg-red-200 border border-espresso px-2.5 py-1 rounded-lg uppercase shadow-brutal-sm flex items-center gap-1"
+            >
+              <span className="material-symbols-outlined text-[14px]">cleaning_services</span>
+              <span>Reset Cache</span>
+            </button>
             <Link
               href="/"
               className="text-xs font-display font-bold text-espresso/70 hover:text-espresso"
