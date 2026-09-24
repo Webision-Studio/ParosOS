@@ -41,12 +41,12 @@ export function Navbar() {
           >
             Book 5-Min Tour
           </a>
-          <a
-            href="#"
+          <Link
+            href="/onboarding"
             className="brutal-btn inline-flex items-center justify-center font-display font-extrabold text-xs sm:text-sm uppercase tracking-wide bg-paros-orange text-white px-5 py-2.5 rounded-xl border-2 border-espresso shadow-brutal"
           >
             Start Free Trial →
-          </a>
+          </Link>
         </div>
       </div>
     </header>

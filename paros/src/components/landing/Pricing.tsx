@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 
 export function Pricing() {
   const [isAnnual, setIsAnnual] = useState(true);
@@ -69,10 +70,10 @@ export function Pricing() {
                 </div>
               ))}
             </div>
-            <a href="#" className="brutal-btn mt-6 h-14 w-full rounded-xl bg-espresso text-white font-display font-black text-base uppercase flex items-center justify-center gap-2 border-2 border-espresso shadow-brutal">
+            <Link href="/onboarding" className="brutal-btn mt-6 h-14 w-full rounded-xl bg-espresso text-white font-display font-black text-base uppercase flex items-center justify-center gap-2 border-2 border-espresso shadow-brutal">
               Start 14-Day Free Trial
               <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
-            </a>
+            </Link>
           </div>
 
           {/* Gold */}
@@ -99,10 +100,10 @@ export function Pricing() {
                 </div>
               ))}
             </div>
-            <a href="#" className="brutal-btn mt-6 h-14 w-full rounded-xl bg-paros-orange text-white font-display font-black text-base uppercase flex items-center justify-center gap-2 border-2 border-espresso shadow-brutal-lg">
+            <Link href="/onboarding" className="brutal-btn mt-6 h-14 w-full rounded-xl bg-paros-orange text-white font-display font-black text-base uppercase flex items-center justify-center gap-2 border-2 border-espresso shadow-brutal-lg">
               Start 14-Day Free Trial
               <span className="material-symbols-outlined text-[18px]">bolt</span>
-            </a>
+            </Link>
           </div>
         </div>
 

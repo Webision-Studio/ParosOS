@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 export function Hero() {
   return (
     <section className="relative w-full border-b-2 border-espresso bg-paros-cream pt-12 lg:pt-20 pb-16 overflow-hidden">
@@ -38,13 +40,13 @@ export function Hero() {
 
           {/* Dual CTA Buttons */}
           <div className="mt-8 flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto justify-center">
-            <a
-              href="#"
+            <Link
+              href="/onboarding"
               className="brutal-btn w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-paros-orange text-white font-display font-black text-base uppercase px-8 py-4 rounded-xl border-2 border-espresso shadow-brutal-lg"
             >
               <span>Launch Your Cafe in 3 Mins</span>
               <span className="material-symbols-outlined text-[22px]">bolt</span>
-            </a>
+            </Link>
             <a
               href="#interactive-demo"
               className="brutal-btn w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-paros-yellow text-espresso font-display font-black text-base uppercase px-8 py-4 rounded-xl border-2 border-espresso shadow-brutal-lg"

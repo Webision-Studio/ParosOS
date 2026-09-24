@@ -1,0 +1,206 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Tenant {
+  id              String      @id @default(cuid())
+  name            String
+  slug            String      @unique
+  address         String?
+  city            String?
+  phone           String?
+  email           String?
+  gstin           String?
+  plan            String      @default("SILVER") // SILVER, GOLD
+  qrMode          String      @default("MODE_A") // MODE_A (Universal QR)
+  upiId           String?
+  enableKds       Boolean     @default(true)
+  enableWhatsapp  Boolean     @default(true)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  users           User[]
+  zones           Zone[]
+  tables          Table[]
+  categories      Category[]
+  menuItems       MenuItem[]
+  orders          Order[]
+  bills           Bill[]
+  shifts          CashShift[]
+  expenses        Expense[]
+  customers       Customer[]
+}
+
+model User {
+  id          String      @id @default(cuid())
+  cafeId      String
+  cafe        Tenant      @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  name        String
+  phone       String?
+  email       String?
+  role        String      @default("OWNER") // OWNER, MANAGER, CASHIER, KITCHEN
+  firebaseUid String?     @unique
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  shifts      CashShift[]
+}
+
+model Zone {
+  id        String    @id @default(cuid())
+  cafeId    String
+  cafe      Tenant    @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  name      String    // e.g. "Main Indoor AC", "Patio & Garden"
+  sortOrder Int       @default(0)
+  tables    Table[]
+}
+
+model Table {
+  id            String    @id @default(cuid())
+  cafeId        String
+  cafe          Tenant    @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  zoneId        String?
+  zone          Zone?     @relation(fields: [zoneId], references: [id])
+  tableNumber   String    // e.g. "1", "2", "T4", "Takeaway"
+  capacity      Int       @default(4)
+  currentStatus String    @default("AVAILABLE") // AVAILABLE, OCCUPIED, BILLED
+  activeOrderId String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  orders        Order[]
+}
+
+model Category {
+  id        String      @id @default(cuid())
+  cafeId    String
+  cafe      Tenant      @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  name      String
+  icon      String?     // Material Symbol name
+  sortOrder Int         @default(0)
+  isActive  Boolean     @default(true)
+
+  menuItems MenuItem[]
+}
+
+model MenuItem {
+  id              String      @id @default(cuid())
+  cafeId          String
+  cafe            Tenant      @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  categoryId      String
+  category        Category    @relation(fields: [categoryId], references: [id])
+  name            String
+  description     String?
+  price           Float
+  isVeg           Boolean     @default(true)
+  inStock         Boolean     @default(true) // 86 Sold-out toggle
+  prepTimeMinutes Int         @default(8)
+
+  orderItems      OrderItem[]
+}
+
+model Order {
+  id                  String      @id @default(cuid())
+  cafeId              String
+  cafe                Tenant      @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  tableId             String?
+  table               Table?      @relation(fields: [tableId], references: [id])
+  orderNumber         String      // e.g. "#1042"
+  source              String      @default("POS") // POS, QR, SWIGGY, ZOMATO
+  status              String      @default("PLACED") // PLACED, PREPARING, READY, SERVED, CANCELLED
+  dynamicPrepMinutes  Int         @default(10)
+  prepStartedAt       DateTime?
+  readyAt             DateTime?
+  customerName        String?
+  customerPhone       String?
+  specialNotes        String?
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+
+  items               OrderItem[]
+  bills               Bill[]
+}
+
+model OrderItem {
+  id          String    @id @default(cuid())
+  orderId     String
+  order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItemId  String?
+  menuItem    MenuItem? @relation(fields: [menuItemId], references: [id])
+  name        String
+  price       Float
+  quantity    Int       @default(1)
+  status      String    @default("PENDING") // PENDING, READY
+  notes       String?   // e.g. "Oat Milk Sub (+40)"
+}
+
+model Bill {
+  id              String    @id @default(cuid())
+  cafeId          String
+  cafe            Tenant    @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  orderId         String
+  order           Order     @relation(fields: [orderId], references: [id])
+  billNumber      String    // e.g. "INV-1042"
+  subtotal        Float
+  cgst            Float     @default(0) // 2.5%
+  sgst            Float     @default(0) // 2.5%
+  discount        Float     @default(0)
+  total           Float
+  paymentMethod   String    @default("UPI") // CASH, UPI, CARD
+  paymentStatus   String    @default("PAID") // PENDING, PAID
+  customerPhone   String?
+  whatsappSent    Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+}
+
+model CashShift {
+  id            String    @id @default(cuid())
+  cafeId        String
+  cafe          Tenant    @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  userId        String?
+  user          User?     @relation(fields: [userId], references: [id])
+  status        String    @default("OPEN") // OPEN, CLOSED
+  openingCash   Float     @default(0)
+  cashSales     Float     @default(0)
+  pettyExpenses Float     @default(0)
+  expectedCash  Float     @default(0)
+  countedCash   Float?
+  discrepancy   Float?
+  openedAt      DateTime  @default(now())
+  closedAt      DateTime?
+  notes         String?
+
+  expenses      Expense[]
+}
+
+model Expense {
+  id          String      @id @default(cuid())
+  cafeId      String
+  cafe        Tenant      @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  shiftId     String?
+  shift       CashShift?  @relation(fields: [shiftId], references: [id])
+  title       String      // e.g. "Fresh Milk (15L)"
+  amount      Float
+  category    String      @default("INGREDIENTS") // INGREDIENTS, PACKAGING, UTILITIES, MISC
+  paidVia     String      @default("DRAWER_CASH") // DRAWER_CASH, UPI, OWNER_PERSONAL
+  receiptNote String?
+  createdAt   DateTime    @default(now())
+}
+
+model Customer {
+  id                  String    @id @default(cuid())
+  cafeId              String
+  cafe                Tenant    @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  phone               String
+  name                String?
+  visitCount          Int       @default(1)
+  totalSpend          Float     @default(0)
+  lastVisitAt         DateTime  @default(now())
+  isOptedInWhatsApp   Boolean   @default(true)
+  ratingScore         Int?
+}
