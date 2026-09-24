@@ -68,82 +68,11 @@ export default function PosRegisterPage() {
   const [currentTime, setCurrentTime] = useState('14:32:15');
   const [cafeName, setCafeName] = useState<string>('Artisan Roastery');
 
-  // Customer metadata per table
-  const [tableCustomers, setTableCustomers] = useState<Record<string, { name: string; phone: string }>>({
-    '1': { name: '', phone: '' },
-    '2': { name: 'Rohan Mehra', phone: '+91 98201 55432' },
-    '3': { name: '', phone: '' },
-    '4': { name: 'Aarav Sharma', phone: '+91 98450 44321' },
-    '5': { name: '', phone: '' },
-    '6': { name: 'Sneha Patel', phone: '+91 98765 43210' },
-    '7': { name: '', phone: '' },
-    '8': { name: '', phone: '' },
-    'Takeaway': { name: 'Counter Walk-in', phone: '+91 98450 00000' },
-  });
+  // Customer metadata per table (starts completely clean)
+  const [tableCustomers, setTableCustomers] = useState<Record<string, { name: string; phone: string }>>({});
 
-  // Isolated Carts per Table
-  const [tableCarts, setTableCarts] = useState<Record<string, CartItem[]>>({
-    '1': [],
-    '2': [
-      {
-        id: 't2-1',
-        name: 'Specialty Pour Over (Ratnagiri)',
-        price: 260,
-        quantity: 1,
-        notes: 'Hot Coffee • Single origin',
-        isVeg: true,
-      },
-      {
-        id: 't2-2',
-        name: 'French Butter Croissant',
-        price: 180,
-        quantity: 1,
-        notes: 'Warm from oven',
-        isVeg: true,
-      },
-    ],
-    '3': [],
-    '4': [
-      {
-        id: 't4-1',
-        name: 'Iced Oat Latte',
-        price: 250,
-        quantity: 1,
-        notes: 'Large (+₹40) • Oatly',
-        isVeg: true,
-      },
-      {
-        id: 't4-2',
-        name: 'Avocado & Danish Feta Toast',
-        price: 280,
-        quantity: 1,
-        notes: 'Extra feta & chili flakes',
-        isVeg: true,
-      },
-    ],
-    '5': [],
-    '6': [
-      {
-        id: 't6-1',
-        name: 'Cold Brew with Tonic & Orange',
-        price: 210,
-        quantity: 2,
-        notes: 'Botanical tonic',
-        isVeg: true,
-      },
-      {
-        id: 't6-2',
-        name: 'Wild Herb Sourdough Toast',
-        price: 160,
-        quantity: 1,
-        notes: 'Cultured butter',
-        isVeg: true,
-      },
-    ],
-    '7': [],
-    '8': [],
-    'Takeaway': [],
-  });
+  // Isolated Carts per Table (starts 100% clean)
+  const [tableCarts, setTableCarts] = useState<Record<string, CartItem[]>>({});
 
   // Settlement Bill Modal State
   const [settledBill, setSettledBill] = useState<SettlementBill | null>(null);
@@ -153,64 +82,22 @@ export default function PosRegisterPage() {
   const [showResetModal, setShowResetModal] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
 
-  // KDS Ready Notification Banner
+  // KDS Ready Notification Banner (null by default; only shows when a real kitchen ticket is ready)
   const [readyNotification, setReadyNotification] = useState<{
     table: string;
     orderNumber: string;
     items: string;
-  } | null>({
-    table: '4',
-    orderNumber: '#1042',
-    items: 'Iced Oat Latte + Avocado Toast',
-  });
+  } | null>(null);
 
   // Tender / Cash State
   const [tenderAmount, setTenderAmount] = useState<number>(500);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Live tables
-  const [tables, setTables] = useState<TableNode[]>([
-    { id: '1', tableNumber: '1', capacity: 2, currentStatus: 'AVAILABLE' },
-    { id: '2', tableNumber: '2', capacity: 4, currentStatus: 'OCCUPIED', orderNumber: '#1039' },
-    { id: '3', tableNumber: '3', capacity: 2, currentStatus: 'AVAILABLE' },
-    { id: '4', tableNumber: '4', capacity: 4, currentStatus: 'READY_TO_SERVE', orderNumber: '#1042' },
-    { id: '5', tableNumber: '5', capacity: 6, currentStatus: 'AVAILABLE' },
-    { id: '6', tableNumber: '6', capacity: 4, currentStatus: 'OCCUPIED', orderNumber: '#1043' },
-    { id: '7', tableNumber: '7', capacity: 4, currentStatus: 'AVAILABLE' },
-    { id: '8', tableNumber: '8', capacity: 4, currentStatus: 'AVAILABLE' },
-    { id: 'takeaway', tableNumber: 'Takeaway', capacity: 0, currentStatus: 'AVAILABLE' },
-  ]);
+  // Live tables (loaded dynamically from database)
+  const [tables, setTables] = useState<TableNode[]>([]);
 
-  // Live Orders in Expediter Queue
-  const [liveOrders, setLiveOrders] = useState<LiveOrderQueue[]>([
-    {
-      id: 'ord-1',
-      orderNumber: '#1042',
-      table: 'Table 4',
-      customerName: 'Aarav Sharma',
-      status: 'READY_AT_PASS',
-      itemsSummary: '1x Iced Oat Latte, 1x Avocado & Feta Toast',
-      elapsedTime: '7m ago',
-    },
-    {
-      id: 'ord-2',
-      orderNumber: '#1040',
-      table: 'Takeaway #108',
-      customerName: 'Priya M.',
-      status: 'IN_KITCHEN',
-      itemsSummary: '2x Iced Vanilla Latte, 1x Butter Croissant',
-      elapsedTime: '10m ago (Overdue)',
-    },
-    {
-      id: 'ord-3',
-      orderNumber: '#1043',
-      table: 'Table 6',
-      customerName: 'Sneha Patel',
-      status: 'IN_KITCHEN',
-      itemsSummary: '2x Cold Brew Tonic, 1x Herb Toast',
-      elapsedTime: '2m ago',
-    },
-  ]);
+  // Live Orders in Expediter Queue (starts clean, loaded from real orders)
+  const [liveOrders, setLiveOrders] = useState<LiveOrderQueue[]>([]);
 
   const [menuItems, setMenuItems] = useState<MenuItemData[]>([
     { id: 'm1', name: 'Specialty Pour Over (Ratnagiri)', description: 'Single-origin light roast brewed on Hario V60', price: 260, isVeg: true, category: { name: 'Hot Coffee' } },
@@ -237,14 +124,42 @@ export default function PosRegisterPage() {
         if (data?.cafe?.name) setCafeName(data.cafe.name);
         if (data?.menuItems?.length) setMenuItems(data.menuItems);
         if (data?.tables?.length) {
-          setTables(
-            data.tables.map((t: { id: string; tableNumber: string; capacity: number; currentStatus: string }) => ({
-              id: t.id,
-              tableNumber: t.tableNumber,
-              capacity: t.capacity || 4,
-              currentStatus: (t.currentStatus as 'AVAILABLE' | 'OCCUPIED' | 'READY_TO_SERVE') || 'AVAILABLE',
-            }))
-          );
+          const loadedTables = data.tables.map((t: { id: string; tableNumber: string; capacity: number; currentStatus: string }) => ({
+            id: t.id,
+            tableNumber: t.tableNumber,
+            capacity: t.capacity || 4,
+            currentStatus: (t.currentStatus as 'AVAILABLE' | 'OCCUPIED' | 'READY_TO_SERVE') || 'AVAILABLE',
+          }));
+          setTables(loadedTables);
+          if (loadedTables[0]?.tableNumber) {
+            setSelectedTable(loadedTables[0].tableNumber);
+          }
+        }
+        if (data?.recentOrders?.length) {
+          const mappedOrders = data.recentOrders.map((o: { id: string; orderNumber: string; customerName?: string; status: string; table?: { tableNumber: string }; items?: Array<{ name: string; quantity: number }> }) => ({
+            id: o.id,
+            orderNumber: o.orderNumber,
+            table: o.table?.tableNumber ? `Table ${o.table.tableNumber}` : 'Takeaway',
+            customerName: o.customerName || 'Guest',
+            status: o.status === 'READY' ? 'READY_AT_PASS' : 'IN_KITCHEN',
+            itemsSummary: (o.items || []).map((it) => `${it.quantity}x ${it.name}`).join(', '),
+            elapsedTime: 'Just now',
+          }));
+          setLiveOrders(mappedOrders);
+
+          const readyOrder = data.recentOrders.find((o: { status: string }) => o.status === 'READY');
+          if (readyOrder) {
+            setReadyNotification({
+              table: readyOrder.table?.tableNumber || 'Takeaway',
+              orderNumber: readyOrder.orderNumber,
+              items: (readyOrder.items || []).map((it: { name: string }) => it.name).join(' + '),
+            });
+          } else {
+            setReadyNotification(null);
+          }
+        } else {
+          setLiveOrders([]);
+          setReadyNotification(null);
         }
       })
       .catch(() => {});

@@ -19,17 +19,17 @@ export default function AdminFinancialDashboard() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Dynamic Cafe Metadata
-  const [outletName, setOutletName] = useState('Artisan Roastery');
+  const [outletName, setOutletName] = useState('My Cafe');
   const [kpis, setKpis] = useState({
-    grossSales: 34850,
-    upiSales: 28650,
-    cashSales: 6200,
-    totalExpenses: 4600,
-    netCashFlow: 30250,
-    currentDrawerCash: 5400,
+    grossSales: 0,
+    upiSales: 0,
+    cashSales: 0,
+    totalExpenses: 0,
+    netCashFlow: 0,
+    currentDrawerCash: 2000,
     openingFloat: 2000,
-    completedTickets: 78,
-    averageTicket: 447,
+    completedTickets: 0,
+    averageTicket: 0,
   });
 
   // Expense form
@@ -39,35 +39,10 @@ export default function AdminFinancialDashboard() {
   const [expensePaidVia, setExpensePaidVia] = useState('DRAWER_CASH');
 
   // Cash shift closure form
-  const [countedCash, setCountedCash] = useState('5400');
+  const [countedCash, setCountedCash] = useState('2000');
 
-  // Live Expenses State
-  const [expenses, setExpenses] = useState<ExpenseItem[]>([
-    {
-      id: 'e1',
-      title: 'Emergency Fresh Full-Cream Milk (10L)',
-      amount: 340,
-      category: 'Ingredients',
-      paidVia: 'Drawer Cash',
-      time: '09:42 AM',
-    },
-    {
-      id: 'e2',
-      title: 'Clear Ice Bags for Cold Brew (20kg)',
-      amount: 220,
-      category: 'Ingredients',
-      paidVia: 'Drawer Cash',
-      time: '11:15 AM',
-    },
-    {
-      id: 'e3',
-      title: 'Biodegradable Takeaway Coffee Cups (200 pcs)',
-      amount: 850,
-      category: 'Packaging',
-      paidVia: 'UPI VPA',
-      time: '01:30 PM',
-    },
-  ]);
+  // Live Expenses State (starts clean)
+  const [expenses, setExpenses] = useState<ExpenseItem[]>([]);
 
   // Load real financial and shift data from backend
   useEffect(() => {
