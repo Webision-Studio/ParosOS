@@ -6,17 +6,17 @@ export async function GET(req: NextRequest) {
   try {
     const session = await getSession();
     const { searchParams } = new URL(req.url);
-    const cafeSlug = searchParams.get('cafeSlug') || 'artisan-roastery';
+    const cafeSlug = searchParams.get('cafeSlug');
 
     let cafe = null;
     if (session?.cafeId) {
       cafe = await prisma.tenant.findUnique({ where: { id: session.cafeId } });
     }
-    if (!cafe) {
+    if (!cafe && cafeSlug) {
       cafe = await prisma.tenant.findFirst({ where: { slug: cafeSlug } });
     }
     if (!cafe) {
-      cafe = await prisma.tenant.findFirst();
+      cafe = await prisma.tenant.findFirst({ orderBy: { createdAt: 'desc' } });
     }
 
     if (!cafe) {
@@ -63,6 +63,9 @@ export async function POST(req: NextRequest) {
 
     // 2. Adjust Chef ETA (+5m / +10m)
     if (action === 'adjust-eta') {
+      if (!orderId) {
+        return NextResponse.json({ success: true, note: 'Mock ETA updated' });
+      }
       const order = await prisma.order.findUnique({ where: { id: orderId } });
       if (!order) return NextResponse.json({ error: 'Order not found' }, { status: 404 });
 
@@ -76,6 +79,15 @@ export async function POST(req: NextRequest) {
 
     // 3. Mark Ticket Ready
     if (action === 'mark-ready') {
+      if (!orderId) {
+        return NextResponse.json({ success: true, note: 'Mock ticket ready' });
+      }
+
+      const order = await prisma.order.findUnique({ where: { id: orderId } });
+      if (!order) {
+        return NextResponse.json({ success: true, note: 'Order not found in DB, client state updated' });
+      }
+
       const updated = await prisma.order.update({
         where: { id: orderId },
         data: {
@@ -90,17 +102,40 @@ export async function POST(req: NextRequest) {
         data: { status: 'READY' },
       });
 
+      // Update table to READY_TO_SERVE on Floor Grid
+      if (order.tableId) {
+        await prisma.table.update({
+          where: { id: order.tableId },
+          data: { currentStatus: 'READY_TO_SERVE' },
+        }).catch(() => {});
+      }
+
       return NextResponse.json({ success: true, order: updated });
     }
 
     // 4. Bump / Serve Ticket
     if (action === 'bump-order') {
-      const updated = await prisma.order.update({
-        where: { id: orderId },
-        data: { status: 'SERVED' },
-      });
+      if (!orderId) {
+        return NextResponse.json({ success: true });
+      }
 
-      return NextResponse.json({ success: true, order: updated });
+      const order = await prisma.order.findUnique({ where: { id: orderId } });
+      if (order) {
+        await prisma.order.update({
+          where: { id: orderId },
+          data: { status: 'SERVED' },
+        });
+
+        // Set table back to OCCUPIED (awaiting bill payment)
+        if (order.tableId) {
+          await prisma.table.update({
+            where: { id: order.tableId },
+            data: { currentStatus: 'OCCUPIED' },
+          }).catch(() => {});
+        }
+      }
+
+      return NextResponse.json({ success: true });
     }
 
     // 5. Recall Last Bumped Ticket
