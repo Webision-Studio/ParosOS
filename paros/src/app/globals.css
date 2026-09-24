@@ -1,0 +1,163 @@
+/* Google Fonts — must be before @import "tailwindcss" per CSS spec */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap');
+
+@import "tailwindcss";
+
+@theme inline {
+  /* Colors - Artisanal Daylight Palette */
+  --color-surface: #fff8f5;
+  --color-surface-dim: #e0d8d5;
+  --color-surface-bright: #fff8f5;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #faf2ee;
+  --color-surface-container: #f4ece8;
+  --color-surface-container-high: #eee7e3;
+  --color-surface-container-highest: #e9e1dd;
+  --color-on-surface: #1e1b19;
+  --color-on-surface-variant: #58413b;
+
+  --color-primary: #a63412;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #c84c28;
+  --color-on-primary-container: #fffbff;
+  --color-primary-fixed: #ffdbd1;
+  --color-primary-fixed-dim: #ffb5a0;
+
+  --color-secondary: #006d30;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #92f5a4;
+  --color-secondary-fixed: #95f8a7;
+  --color-secondary-fixed-dim: #79db8d;
+  --color-on-secondary-fixed: #00210a;
+  --color-on-secondary-container: #007233;
+
+  --color-tertiary: #8d4b00;
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-container: #b15f00;
+  --color-tertiary-fixed: #ffdcc3;
+  --color-tertiary-fixed-dim: #ffb77d;
+
+  --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #93000a;
+
+  --color-outline: #8c716a;
+  --color-outline-variant: #e0bfb7;
+  --color-inverse-surface: #33302d;
+  --color-inverse-on-surface: #f7efeb;
+  --color-inverse-primary: #ffb5a0;
+  --color-surface-tint: #aa3614;
+  --color-surface-variant: #e9e1dd;
+
+  /* Neo-brutalist extras */
+  --color-espresso: #1C1917;
+  --color-paros-orange: #E05D38;
+  --color-paros-yellow: #FEF08A;
+  --color-paros-mint: #A7F3D0;
+  --color-paros-matcha: #10B981;
+  --color-paros-cream: #FFFDF9;
+  --color-paros-peach: #FDBA74;
+
+  /* Typography */
+  --font-display: 'Space Grotesk', 'Plus Jakarta Sans', sans-serif;
+  --font-body: 'Plus Jakarta Sans', sans-serif;
+
+  /* Shadows - Neo Brutalist */
+  --shadow-brutal-sm: 2px 2px 0px #1C1917;
+  --shadow-brutal: 4px 4px 0px #1C1917;
+  --shadow-brutal-lg: 6px 6px 0px #1C1917;
+  --shadow-brutal-xl: 8px 8px 0px #1C1917;
+
+  /* Shadows - Artisanal Soft */
+  --shadow-soft-sm: 0 1px 2px rgba(28, 25, 23, 0.03), 0 4px 12px rgba(28, 25, 23, 0.04);
+  --shadow-soft: 0 4px 6px -1px rgba(28, 25, 23, 0.04), 0 12px 24px -4px rgba(28, 25, 23, 0.07);
+  --shadow-soft-lg: 0 20px 40px -12px rgba(28, 25, 23, 0.08), 0 1px 3px rgba(28, 25, 23, 0.04);
+}
+
+@layer base {
+  html, body {
+    margin: 0;
+    padding: 0;
+    background-color: #FFFDF9;
+    color: #1C1917;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    overflow-y: auto;
+    overscroll-behavior-y: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* Neo-Brutalist Button Interaction */
+.brutal-btn {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.brutal-btn:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px #1C1917;
+}
+.brutal-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0px #1C1917;
+}
+
+/* Sticker Badge Rotation */
+.sticker-badge {
+  transform: rotate(var(--rotation, 0deg));
+  transition: transform 0.2s ease;
+}
+.sticker-badge:hover {
+  transform: scale(1.05) rotate(0deg);
+}
+
+/* Marquee Animation */
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: marquee 30s linear infinite;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #FFFDF9;
+  border-left: 2px solid #1C1917;
+}
+::-webkit-scrollbar-thumb {
+  background: #1C1917;
+  border-radius: 0;
+}
+
+/* Tabular Figures for Pricing */
+.tabular-nums {
+  font-feature-settings: "tnum" 1, "lnum" 1;
+}
+
+/* Safe area padding for mobile */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* Hide scrollbar on mobile */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
