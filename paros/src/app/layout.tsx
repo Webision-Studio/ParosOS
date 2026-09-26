@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { DemoDock } from "@/components/common/DemoDock";
 
 export const metadata: Metadata = {
   title: "Paros — Table se Kitchen tak. Bas Paros.",
@@ -40,6 +41,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="bg-paros-cream text-espresso antialiased selection:bg-paros-yellow selection:text-espresso min-h-screen flex flex-col">
         {children}
+        <DemoDock />
       </body>
     </html>
   );

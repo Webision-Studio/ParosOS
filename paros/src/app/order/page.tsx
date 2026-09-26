@@ -60,6 +60,16 @@ export default function TableQrOrderPage() {
 
   // Fetch live menu and tables from backend
   useEffect(() => {
+    // Check if ?table=X was provided in URL (e.g. /order?table=3)
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tableParam = params.get('table');
+      if (tableParam) {
+        setSelectedTable(tableParam);
+        setStep(2); // Jump straight to Menu for this table!
+      }
+    }
+
     fetch('/api/order')
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
@@ -71,7 +81,13 @@ export default function TableQrOrderPage() {
             .filter((n: string) => n.toLowerCase() !== 'takeaway');
           if (numbers.length > 0) {
             setAvailableTables(numbers);
-            setSelectedTable(numbers[0]);
+            // Only set default if table not already specified in URL
+            if (typeof window !== 'undefined') {
+              const p = new URLSearchParams(window.location.search);
+              if (!p.get('table')) {
+                setSelectedTable(numbers[0]);
+              }
+            }
           }
         }
       })

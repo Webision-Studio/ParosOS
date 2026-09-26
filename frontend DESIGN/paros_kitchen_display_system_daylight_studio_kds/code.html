@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_standard" name="shell-type"/><title>Paros Kitchen Display</title><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"on-primary-fixed-variant":"#872000","surface-bright":"#fff8f5","secondary-fixed-dim":"#79db8d","on-primary-container":"#fffbff","surface-variant":"#e9e1dd","outline":"#8c716a","on-surface-variant":"#58413b","secondary-container":"#92f5a4","error-container":"#ffdad6","on-tertiary-container":"#fffbff","outline-variant":"#e0bfb7","error":"#ba1a1a","surface-container-highest":"#e9e1dd","inverse-on-surface":"#f7efeb","secondary-fixed":"#95f8a7","on-tertiary-fixed":"#2f1500","on-error-container":"#93000a","secondary":"#006d30","on-secondary-container":"#007233","on-tertiary-fixed-variant":"#6e3900","on-secondary-fixed":"#00210a","tertiary-container":"#b15f00","on-background":"#1e1b19","primary":"#a63412","surface-container-high":"#eee7e3","surface-container-lowest":"#ffffff","tertiary-fixed":"#ffdcc3","surface":"#fff8f5","surface-tint":"#aa3614","background":"#fff8f5","on-primary":"#ffffff","surface-container":"#f4ece8","tertiary-fixed-dim":"#ffb77d","surface-dim":"#e0d8d5","surface-container-low":"#faf2ee","on-primary-fixed":"#3b0900","primary-container":"#c84c28","primary-fixed-dim":"#ffb5a0","inverse-surface":"#33302d","tertiary":"#8d4b00","on-tertiary":"#ffffff","on-secondary-fixed-variant":"#005323","inverse-primary":"#ffb5a0","on-error":"#ffffff","primary-fixed":"#ffdbd1","on-surface":"#1e1b19","on-secondary":"#ffffff"},borderRadius:{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},spacing:{"space-xl":"2.5rem","space-md":"1rem","space-sm":"0.5rem","space-lg":"1.5rem","margin":"2rem","margin-mobile":"1.25rem","gutter-mobile":"1rem","space-xs":"0.25rem","gutter":"1.5rem"},fontFamily:{"label-md":["Plus Jakarta Sans"],"headline-lg":["Plus Jakarta Sans"],"body-sm":["Plus Jakarta Sans"],"display-hero-mobile":["Plus Jakarta Sans"],"body-md":["Plus Jakarta Sans"],"body-lg":["Plus Jakarta Sans"],"display-hero":["Plus Jakarta Sans"],"label-sm":["Plus Jakarta Sans"],"headline-sm":["Plus Jakarta Sans"],"headline-md":["Plus Jakarta Sans"],"metric-display":["Plus Jakarta Sans"],"headline-lg-mobile":["Plus Jakarta Sans"]},fontSize:{"label-md":["14px",{"lineHeight":"20px","letterSpacing":"0.01em","fontWeight":"600"}],"headline-lg":["44px",{"lineHeight":"52px","letterSpacing":"-0.02em","fontWeight":"700"}],"body-sm":["13px",{"lineHeight":"20px","fontWeight":"400"}],"display-hero-mobile":["40px",{"lineHeight":"48px","letterSpacing":"-0.025em","fontWeight":"800"}],"body-md":["15px",{"lineHeight":"24px","fontWeight":"400"}],"body-lg":["18px",{"lineHeight":"28px","letterSpacing":"-0.005em","fontWeight":"400"}],"display-hero":["64px",{"lineHeight":"72px","letterSpacing":"-0.03em","fontWeight":"800"}],"label-sm":["11px",{"lineHeight":"16px","letterSpacing":"0.04em","fontWeight":"700"}],"headline-sm":["20px",{"lineHeight":"28px","letterSpacing":"-0.01em","fontWeight":"600"}],"headline-md":["28px",{"lineHeight":"36px","letterSpacing":"-0.015em","fontWeight":"600"}],"metric-display":["36px",{"lineHeight":"44px","letterSpacing":"-0.02em","fontWeight":"700"}],"headline-lg-mobile":["32px",{"lineHeight":"40px","letterSpacing":"-0.015em","fontWeight":"700"}]}}}}</script></head><body class="bg-surface font-body-md text-body-md text-on-surface antialiased select-none"><header class="fixed top-0 left-0 right-0 w-full z-50 bg-surface-container-lowest shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-20 w-full px-gutter flex items-center justify-between gap-space-md"><div class="flex items-center gap-space-lg"><div class="flex items-center gap-space-sm"><div class="w-10 h-10 rounded-lg bg-primary-container flex items-center justify-center text-on-primary shadow-sm"><span class="material-symbols-outlined text-[24px]">skillet</span></div><div><div class="flex items-center gap-space-xs"><span class="font-headline-sm text-headline-sm text-on-surface tracking-tight">Paros</span><span class="font-label-sm text-label-sm uppercase bg-surface-container-high px-space-xs py-0.5 rounded text-on-surface-variant">KDS Studio</span></div><div class="flex items-center gap-space-xs mt-0.5"><span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-secondary"></span></span><span class="font-label-sm text-label-sm text-secondary font-bold">Online • 4 Active Tickets</span></div></div></div></div><nav class="flex items-center gap-space-xs bg-surface-container-low p-1.5 rounded-xl" data-active-classes="bg-primary-container text-on-primary-container font-label-md text-label-md rounded-lg shadow-sm"><a aria-current="page" class="px-space-md py-2 transition-colors bg-primary-container text-on-primary-container font-label-md text-label-md rounded-lg shadow-sm" data-path="live-tickets" href="#">All Stations (4)</a><a class="font-label-md text-label-md text-on-surface-variant px-space-md py-2 transition-colors" data-path="barista-station" href="#">Brew Bar (2)</a><a class="font-label-md text-label-md text-on-surface-variant px-space-md py-2 transition-colors" data-path="hot-kitchen" href="#">Hot Kitchen (2)</a><a class="font-label-md text-label-md text-on-surface-variant px-space-md py-2 transition-colors" data-path="expediter-view" href="#">Expediter Pass</a><a class="font-label-md text-label-md text-on-surface-variant px-space-md py-2 transition-colors" data-path="ticket-history" href="#">Recall &amp; Archive</a></nav><div class="flex items-center gap-space-sm"><button class="flex items-center gap-space-xs px-space-md py-2 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface transition-colors" type="button"><span class="material-symbols-outlined text-[20px] text-secondary">volume_up</span><span class="font-label-sm text-label-sm">Chime: ON</span></button><button class="flex items-center gap-space-xs px-space-md py-2 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface transition-colors" type="button"><span class="material-symbols-outlined text-[20px] text-tertiary">history</span><span class="font-label-sm text-label-sm">Recall [Space]</span></button><button class="w-10 h-10 flex items-center justify-center rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface transition-colors" type="button"><span class="material-symbols-outlined text-[20px]">fullscreen</span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="w-full pt-20 pb-16 bg-surface min-h-screen"><div class="flex flex-col w-full">
+<div class="w-full px-gutter py-space-md flex flex-col gap-space-lg">
+<!-- Top Action & Real-Time Production HUD -->
+<div class="w-full bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-wrap items-center justify-between gap-space-md">
+<div class="flex items-center gap-space-md flex-wrap">
+<div class="flex items-center gap-space-sm bg-surface-container-low px-space-md py-1.5 rounded-lg">
+<span class="w-3 h-3 rounded-full bg-secondary animate-pulse"></span>
+<span class="font-headline-sm text-headline-sm text-on-surface tracking-tight">Active Line Queue</span>
+<span class="bg-primary text-on-primary font-label-sm text-label-sm px-2 py-0.5 rounded-full ml-1 font-bold">4 LIVE</span>
+</div>
+<div class="hidden lg:flex items-center gap-space-sm pl-space-sm">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">Station Filter:</span>
+<div class="inline-flex rounded-lg bg-surface-container p-0.5">
+<button class="bg-surface-container-lowest text-on-surface font-label-md text-label-md px-3 py-1 rounded shadow-sm">All Lines (4)</button>
+<button class="text-on-surface-variant hover:text-on-surface font-label-md text-label-md px-3 py-1 transition-colors">Hot Kitchen (2)</button>
+<button class="text-on-surface-variant hover:text-on-surface font-label-md text-label-md px-3 py-1 transition-colors">Brew Bar (2)</button>
+</div>
+</div>
+</div>
+<!-- Quick HUD Controls for Cook/Expediter -->
+<div class="flex items-center gap-space-sm">
+<div class="flex items-center gap-2 bg-surface-container-low px-3 py-1.5 rounded-lg text-on-surface-variant">
+<span class="material-symbols-outlined text-primary text-[20px]">sync</span>
+<span class="font-label-sm text-label-sm uppercase">Auto-sync: 1s</span>
+</div>
+<button class="flex items-center gap-space-xs bg-secondary-container text-on-secondary-container hover:bg-secondary-fixed transition-colors px-3 py-1.5 rounded-lg font-label-md text-label-md" onclick="markAllReady()">
+<span class="material-symbols-outlined text-[18px]">done_all</span>
+<span>Bump Completed Items</span>
+</button>
+<button class="flex items-center gap-1.5 bg-surface-container hover:bg-surface-container-high text-on-surface px-3 py-1.5 rounded-lg font-label-md text-label-md transition-colors" id="chimeBtn" onclick="toggleAudioChime()">
+<span class="material-symbols-outlined text-[18px] text-secondary">notifications_active</span>
+<span>Chime Alert</span>
+</button>
+</div>
+</div>
+<!-- Active Tickets Stream (Kanban Row - 4 Distinct Visual Prioritizations) -->
+<div class="w-full grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-gutter items-start">
+<!-- TICKET 1: TABLE 4 (In Prep - Steady Pace) -->
+<div class="ticket-card relative bg-surface-container-lowest rounded-xl shadow-md transition-all duration-200 flex flex-col justify-between overflow-hidden" id="ticket-1">
+<!-- Top Status Indicator Rail -->
+<div class="w-full h-2 bg-tertiary-container"></div>
+<div class="p-space-md flex flex-col gap-space-md">
+<!-- Ticket Header -->
+<div class="flex items-start justify-between gap-space-sm">
+<div>
+<div class="flex items-baseline gap-space-xs">
+<span class="font-headline-md text-headline-md text-on-surface font-extrabold tracking-tight">TABLE 4</span>
+<span class="font-label-sm text-label-sm uppercase text-on-surface-variant bg-surface-container px-1.5 py-0.5 rounded">Dine In</span>
+</div>
+<div class="flex items-center gap-2 mt-1">
+<span class="font-label-sm text-label-sm text-on-surface-variant font-mono font-bold">#1042</span>
+<span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+<span class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">qr_code_2</span> Table QR
+                </span>
+</div>
+</div>
+<!-- Monospaced Timer Badge -->
+<div class="flex flex-col items-end">
+<div class="flex items-center gap-1 px-2.5 py-1 rounded bg-tertiary-fixed text-on-tertiary-fixed font-mono font-bold text-headline-sm">
+<span class="material-symbols-outlined text-[18px] text-tertiary">timer</span>
+<span id="timer-1">06:45</span>
+</div>
+<span class="font-label-sm text-label-sm text-tertiary font-bold mt-0.5">IN PREP</span>
+</div>
+</div>
+<!-- Items Checklist (Tap to Strike/Complete) -->
+<div class="flex flex-col gap-2.5 mt-space-xs">
+<!-- Row 1: Barista Done -->
+<div class="item-row group flex items-start gap-3 p-2.5 rounded-lg bg-surface-container-low transition-colors cursor-pointer select-none" onclick="toggleItem(this)">
+<input checked="" class="mt-1 w-5 h-5 accent-secondary cursor-pointer pointer-events-none rounded" type="checkbox"/>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between">
+<span class="font-body-lg text-body-lg font-bold line-through text-on-surface-variant">1x Double Espresso</span>
+<span class="font-label-sm text-label-sm bg-surface-container px-2 py-0.5 rounded text-on-surface-variant">Bar Ready</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant line-through">Signature House Blend • Double Ristretto</p>
+</div>
+</div>
+<!-- Row 2: Kitchen Active with Alert Note -->
+<div class="item-row group flex items-start gap-3 p-2.5 rounded-lg bg-surface-bright transition-colors cursor-pointer select-none" onclick="toggleItem(this)">
+<input class="mt-1 w-5 h-5 accent-secondary cursor-pointer pointer-events-none rounded" type="checkbox"/>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between">
+<span class="font-body-lg text-body-lg font-bold text-on-surface">1x Avocado Sourdough Toast</span>
+<span class="font-label-sm text-label-sm bg-tertiary-fixed text-on-tertiary-fixed px-2 py-0.5 rounded font-bold">Grill</span>
+</div>
+<!-- Custom Callout Container -->
+<div class="mt-1.5 p-2 rounded bg-error-container text-on-error-container flex items-center gap-1.5 font-label-md text-label-md">
+<span class="material-symbols-outlined text-[16px] text-error">priority_high</span>
+<span class="italic font-bold tracking-tight">Special Note: Extra crispy, no chili flakes</span>
+</div>
+</div>
+</div>
+<!-- Row 3: Cold Brew Active -->
+<div class="item-row group flex items-start gap-3 p-2.5 rounded-lg bg-surface-bright transition-colors cursor-pointer select-none" onclick="toggleItem(this)">
+<input class="mt-1 w-5 h-5 accent-secondary cursor-pointer pointer-events-none rounded" type="checkbox"/>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between">
+<span class="font-body-lg text-body-lg font-bold text-on-surface">1x Cold Brew Tonic</span>
+<span class="font-label-sm text-label-sm bg-surface-container px-2 py-0.5 rounded text-on-surface-variant">Bar Station</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Citrus slice, dehydrated orange wheel</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Ticket Footer & Tactile Action Bar -->
+<div class="p-space-md bg-surface-container-low flex flex-col gap-space-sm mt-space-sm">
+<div class="flex items-center justify-between gap-space-xs">
+<span class="font-label-sm text-label-sm uppercase text-on-surface-variant">Chef ETA Update:</span>
+<div class="flex items-center gap-1.5">
+<button class="px-2.5 py-1 rounded bg-surface-container hover:bg-surface-container-high text-on-surface font-label-sm text-label-sm transition-transform active:scale-95" onclick="pushEta(1, 5)">+5m</button>
+<button class="px-2.5 py-1 rounded bg-surface-container hover:bg-surface-container-high text-on-surface font-label-sm text-label-sm transition-transform active:scale-95" onclick="pushEta(1, 10)">+10m</button>
+</div>
+</div>
+<button class="w-full h-14 bg-secondary text-on-secondary hover:bg-on-secondary-container transition-all active:scale-[0.98] rounded-xl font-label-md text-label-md flex items-center justify-center gap-2 shadow-sm font-bold text-center" onclick="markReady('ticket-1')">
+<span class="material-symbols-outlined text-[24px]">notifications</span>
+<span>MARK READY 🛎️</span>
+</button>
+</div>
+</div>
+<!-- TICKET 2: TAKEAWAY #108 (OVERDUE ALERT - Cayenne High Priority) -->
+<div class="ticket-card relative bg-surface-container-lowest rounded-xl shadow-lg transition-all duration-200 flex flex-col justify-between overflow-hidden" id="ticket-2">
+<!-- High Contrast Red Banner Rail -->
+<div class="w-full h-2.5 bg-error animate-pulse"></div>
+<div class="p-space-md flex flex-col gap-space-md">
+<!-- Ticket Header -->
+<div class="flex items-start justify-between gap-space-sm">
+<div>
+<div class="flex items-baseline gap-space-xs">
+<span class="font-headline-md text-headline-md text-error font-extrabold tracking-tight">TAKEAWAY #108</span>
+</div>
+<div class="flex items-center gap-2 mt-1">
+<span class="font-body-md text-body-md font-bold text-on-surface">Rahul S.</span>
+<span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+<span class="font-label-sm text-label-sm bg-error-container text-on-error-container px-2 py-0.5 rounded font-bold uppercase">Pickup Counter</span>
+</div>
+</div>
+<!-- Overdue Pulsing Badge -->
+<div class="flex flex-col items-end">
+<div class="flex items-center gap-1 px-2.5 py-1 rounded bg-error text-on-error font-mono font-bold text-headline-sm shadow-sm animate-bounce">
+<span class="material-symbols-outlined text-[20px]">warning</span>
+<span id="timer-2">16:20</span>
+</div>
+<span class="font-label-sm text-label-sm text-error font-extrabold uppercase mt-1 tracking-wider">OVERDUE (+1m)</span>
+</div>
+</div>
+<!-- Items Checklist -->
+<div class="flex flex-col gap-2.5 mt-space-xs">
+<div class="item-row group flex items-start gap-3 p-2.5 rounded-lg bg-surface-bright transition-colors cursor-pointer select-none" onclick="toggleItem(this)">
+<input class="mt-1 w-5 h-5 accent-secondary cursor-pointer pointer-events-none rounded" type="checkbox"/>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between">
+<span class="font-body-lg text-body-lg font-bold text-on-surface">2x Almond Croissant</span>
+<span class="font-label-sm text-label-sm bg-tertiary-fixed text-on-tertiary-fixed px-2 py-0.5 rounded font-semibold">Hearth Oven</span>
+</div>
+<div class="mt-1 flex items-center gap-1.5 text-tertiary font-label-md text-label-md">
+<span class="material-symbols-outlined text-[16px]">local_fire_department</span>
+<span>Warmed in Hearth • Golden flaky</span>
+</div>
+</div>
+</div>
+<div class="item-row group flex items-start gap-3 p-2.5 rounded-lg bg-surface-bright transition-colors cursor-pointer select-none" onclick="toggleItem(this)">
+<input class="mt-1 w-5 h-5 accent-secondary cursor-pointer pointer-events-none rounded" type="checkbox"/>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between">
+<span class="font-body-lg text-body-lg font-bold text-on-surface">1x Flat White</span>
+<span class="font-label-sm text-label-sm bg-primary-fixed text-on-primary-fixed px-2 py-0.5 rounded font-semibold">Espresso Bar</span>
+</div>
+<div class="mt-1 flex items-center gap-1 text-on-surface-variant font-label-md text-label-md font-medium">
+<span class="material-symbols-outlined text-[16px] text-primary">eco</span>
+<span>Oat Milk • Strict 60°C temp target</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Overdue Action Block -->
+<div class="p-space-md bg-error-container/30 flex flex-col gap-space-sm mt-space-sm">
+<div class="flex items-center gap-2">
+<button class="flex-1 h-12 bg-surface-container-lowest text-error hover:bg-surface-container font-label-md text-label-md rounded-xl transition-all font-bold flex items-center justify-center gap-1 shadow-sm" onclick="alertRunner(108)">
+<span class="material-symbols-outlined text-[20px]">campaign</span>
+<span>ALERT RUNNER</span>
+</button>
+<button class="h-12 px-3 bg-surface-container-lowest text-on-surface hover:bg-surface-container font-label-md text-label-md rounded-xl font-bold transition-all shadow-sm" onclick="pushEta(2, 2)">
+              +2m
+            </button>
+</div>
+<button class="w-full h-14 bg-error text-on-error hover:bg-on-error-container transition-all active:scale-[0.98] rounded-xl font-label-md text-label-md flex items-center justify-center gap-2 shadow-md font-bold text-center" onclick="markReady('ticket-2')">
+<span class="material-symbols-outlined text-[24px]">notifications_active</span>
+<span>EXPEDITE &amp; MARK READY 🛎️</span>
+</button>
+</div>
+</div>
+<!-- TICKET 3: TABLE 9 (JUST ARRIVED - Amber Flashing Pulse) -->
+<div class="ticket-card relative bg-surface-container-lowest rounded-xl shadow-md transition-all duration-200 flex flex-col justify-between overflow-hidden" id="ticket-3">
+<!-- Amber Status Rail -->
+<div class="w-full h-2 bg-tertiary-container animate-pulse"></div>
+<div class="p-space-md flex flex-col gap-space-md">
+<!-- Ticket Header -->
+<div class="flex items-start justify-between gap-space-sm">
+<div>
+<div class="flex items-baseline gap-space-xs">
+<span class="font-headline-md text-headline-md text-on-surface font-extrabold tracking-tight">TABLE 9</span>
+<span class="font-label-sm text-label-sm uppercase bg-tertiary-fixed text-on-tertiary-fixed px-1.5 py-0.5 rounded font-bold">2 Guests</span>
+</div>
+<div class="flex items-center gap-2 mt-1">
+<span class="font-label-sm text-label-sm text-on-surface-variant font-mono font-bold">#1045</span>
+<span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Server: Chloe M.</span>
+</div>
+</div>
+<!-- Pulsing New Arrival Badge -->
+<div class="flex flex-col items-end">
+<div class="flex items-center gap-1.5 px-2.5 py-1 rounded bg-tertiary-container text-on-tertiary-container font-mono font-bold text-headline-sm">
+<span class="relative flex h-2.5 w-2.5">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-surface-lowest opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-tertiary-fixed"></span>
+</span>
+<span id="timer-3">00:32</span>
+</div>
+<span class="font-label-sm text-label-sm text-tertiary-container font-extrabold uppercase mt-1 tracking-wider">JUST ARRIVED</span>
+</div>
+</div>
+<!-- Items Checklist -->
+<div class="flex flex-col gap-2.5 mt-space-xs">
+<div class="item-row group flex items-start gap-3 p-2.5 rounded-lg bg-surface-bright transition-colors cursor-pointer select-none" onclick="toggleItem(this)">
+<input class="mt-1 w-5 h-5 accent-secondary cursor-pointer pointer-events-none rounded" type="checkbox"/>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between">
+<span class="font-body-lg text-body-lg font-bold text-on-surface">1x Truffle Fries</span>
+<span class="font-label-sm text-label-sm bg-surface-container px-2 py-0.5 rounded text-on-surface-variant">Fryer</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Parmigiano Reggiano, rosemary salt, truffle aioli</p>
+</div>
+</div>
+<div class="item-row group flex items-start gap-3 p-2.5 rounded-lg bg-surface-bright transition-colors cursor-pointer select-none" onclick="toggleItem(this)">
+<input class="mt-1 w-5 h-5 accent-secondary cursor-pointer pointer-events-none rounded" type="checkbox"/>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between">
+<span class="font-body-lg text-body-lg font-bold text-on-surface">1x Classic Club Sandwich</span>
+<span class="font-label-sm text-label-sm bg-tertiary-fixed text-on-tertiary-fixed px-2 py-0.5 rounded font-semibold">Pantry Line</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Smoked turkey breast, herb mayo, sliced avocado</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Action Bar for Fresh Arrival -->
+<div class="p-space-md bg-surface-container-low flex flex-col gap-space-sm mt-space-sm">
+<div class="flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm">
+<span>Awaiting kitchen claim</span>
+<span class="font-bold text-tertiary">Immediate Action</span>
+</div>
+<button class="w-full h-14 bg-primary text-on-primary hover:bg-primary-container transition-all active:scale-[0.98] rounded-xl font-label-md text-label-md flex items-center justify-center gap-2 shadow-sm font-bold text-center" onclick="startCooking('ticket-3')">
+<span class="material-symbols-outlined text-[24px]">soup_kitchen</span>
+<span>START COOKING 👨‍🍳</span>
+</button>
+</div>
+</div>
+<!-- TICKET 4: TABLE 2 (In Prep - Coffee & Bakery) -->
+<div class="ticket-card relative bg-surface-container-lowest rounded-xl shadow-md transition-all duration-200 flex flex-col justify-between overflow-hidden" id="ticket-4">
+<!-- Slate/Indigo Status Rail -->
+<div class="w-full h-2 bg-primary"></div>
+<div class="p-space-md flex flex-col gap-space-md">
+<!-- Ticket Header -->
+<div class="flex items-start justify-between gap-space-sm">
+<div>
+<div class="flex items-baseline gap-space-xs">
+<span class="font-headline-md text-headline-md text-on-surface font-extrabold tracking-tight">TABLE 2</span>
+<span class="font-label-sm text-label-sm uppercase bg-surface-container px-1.5 py-0.5 rounded font-bold text-on-surface-variant">Dine In</span>
+</div>
+<div class="flex items-center gap-2 mt-1">
+<span class="font-label-sm text-label-sm text-on-surface-variant font-mono font-bold">#1041</span>
+<span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Brew Bar Pass</span>
+</div>
+</div>
+<!-- Monospaced Timer Badge -->
+<div class="flex flex-col items-end">
+<div class="flex items-center gap-1 px-2.5 py-1 rounded bg-surface-container-high text-on-surface font-mono font-bold text-headline-sm">
+<span class="material-symbols-outlined text-[18px] text-primary">timer</span>
+<span id="timer-4">08:15</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-bold mt-0.5">POUR OVER</span>
+</div>
+</div>
+<!-- Items Checklist -->
+<div class="flex flex-col gap-2.5 mt-space-xs">
+<div class="item-row group flex items-start gap-3 p-2.5 rounded-lg bg-surface-bright transition-colors cursor-pointer select-none" onclick="toggleItem(this)">
+<input class="mt-1 w-5 h-5 accent-secondary cursor-pointer pointer-events-none rounded" type="checkbox"/>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between">
+<span class="font-body-lg text-body-lg font-bold text-on-surface">1x Single Origin Pour Over</span>
+<span class="font-label-sm text-label-sm bg-primary-fixed text-on-primary-fixed px-2 py-0.5 rounded font-bold">Manual Bar</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Chikmagalur Estate • V60 93°C • 3m 15s draw</p>
+</div>
+</div>
+<div class="item-row group flex items-start gap-3 p-2.5 rounded-lg bg-surface-bright transition-colors cursor-pointer select-none" onclick="toggleItem(this)">
+<input class="mt-1 w-5 h-5 accent-secondary cursor-pointer pointer-events-none rounded" type="checkbox"/>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between">
+<span class="font-body-lg text-body-lg font-bold text-on-surface">1x French Butter Croissant</span>
+<span class="font-label-sm text-label-sm bg-surface-container px-2 py-0.5 rounded text-on-surface-variant">Bakery Case</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Room temperature • Salted artisanal butter pat</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Ticket Footer & Action Bar -->
+<div class="p-space-md bg-surface-container-low flex flex-col gap-space-sm mt-space-sm">
+<div class="flex items-center justify-between gap-space-xs">
+<span class="font-label-sm text-label-sm uppercase text-on-surface-variant">Station Broadcast:</span>
+<div class="flex items-center gap-1.5">
+<button class="px-2.5 py-1 rounded bg-surface-container hover:bg-surface-container-high text-on-surface font-label-sm text-label-sm transition-transform active:scale-95" onclick="pushEta(4, 3)">+3m</button>
+<button class="px-2.5 py-1 rounded bg-surface-container hover:bg-surface-container-high text-on-surface font-label-sm text-label-sm transition-transform active:scale-95" onclick="pushEta(4, 5)">+5m</button>
+</div>
+</div>
+<button class="w-full h-14 bg-secondary text-on-secondary hover:bg-on-secondary-container transition-all active:scale-[0.98] rounded-xl font-label-md text-label-md flex items-center justify-center gap-2 shadow-sm font-bold text-center" onclick="markReady('ticket-4')">
+<span class="material-symbols-outlined text-[24px]">notifications</span>
+<span>MARK READY 🛎️</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Active Expediter Notification Toast Banner (Hidden by default, triggered dynamically) -->
+<div class="hidden transition-all duration-300 fixed bottom-20 right-8 z-50 bg-inverse-surface text-inverse-on-surface px-space-md py-space-sm rounded-xl shadow-2xl flex items-center gap-space-sm" id="toastNotification">
+<span class="material-symbols-outlined text-secondary-fixed text-[24px]">check_circle</span>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-bold" id="toastTitle">Ticket Bumped</span>
+<span class="font-body-sm text-body-sm opacity-90" id="toastSubtitle">Dispatching notify signal to floor staff.</span>
+</div>
+<button class="ml-space-sm text-inverse-on-surface/70 hover:text-inverse-on-surface" onclick="hideToast()">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+</div>
+</div>
+<script>
+  // Elapsed timer incrementer simulation
+  let secondsElapsed = {
+    1: 405, // 06:45
+    2: 980, // 16:20 (Overdue)
+    3: 32,  // 00:32 (New)
+    4: 495  // 08:15
+  };
+
+  function formatTime(totalSeconds) {
+    const m = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
+    const s = (totalSeconds % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  }
+
+  setInterval(() => {
+    for (let id in secondsElapsed) {
+      secondsElapsed[id]++;
+      const el = document.getElementById(`timer-${id}`);
+      if (el) {
+        el.textContent = formatTime(secondsElapsed[id]);
+      }
+    }
+  }, 1000);
+
+  // Toggle item completion strike
+  function toggleItem(rowElement) {
+    const checkbox = rowElement.querySelector('input[type="checkbox"]');
+    const textSpan = rowElement.querySelector('.font-body-lg');
+    const subText = rowElement.querySelector('p');
+    
+    checkbox.checked = !checkbox.checked;
+    
+    if (checkbox.checked) {
+      textSpan.classList.add('line-through', 'text-on-surface-variant');
+      textSpan.classList.remove('text-on-surface');
+      if (subText) subText.classList.add('line-through', 'text-on-surface-variant');
+      rowElement.classList.add('bg-surface-container-low');
+      rowElement.classList.remove('bg-surface-bright');
+    } else {
+      textSpan.classList.remove('line-through', 'text-on-surface-variant');
+      textSpan.classList.add('text-on-surface');
+      if (subText) subText.classList.remove('line-through');
+      rowElement.classList.remove('bg-surface-container-low');
+      rowElement.classList.add('bg-surface-bright');
+    }
+  }
+
+  // Push ETA update broadcast simulation
+  function pushEta(ticketNum, mins) {
+    showToast(`Order Updated: +${mins}m`, `Table/Ticket #${ticketNum} received chef delay notice.`);
+  }
+
+  // Alert Runner
+  function alertRunner(orderNum) {
+    showToast(`Runner Alerted 🏃`, `Expediter assigned for Takeaway #${orderNum}`);
+  }
+
+  // Start Cooking (Transition from New to Active)
+  function startCooking(cardId) {
+    const card = document.getElementById(cardId);
+    if (!card) return;
+    const btn = card.querySelector('button[onclick*="startCooking"]');
+    if (btn) {
+      btn.className = "w-full h-14 bg-secondary text-on-secondary hover:bg-on-secondary-container transition-all active:scale-[0.98] rounded-xl font-label-md text-label-md flex items-center justify-center gap-2 shadow-sm font-bold text-center";
+      btn.innerHTML = `<span class="material-symbols-outlined text-[24px]">notifications</span><span>MARK READY 🛎️</span>`;
+      btn.setAttribute('onclick', `markReady('${cardId}')`);
+    }
+    showToast('Cooking Started', 'Table 9 order moved to Active Line.');
+  }
+
+  // Mark ticket as ready / Bump
+  function markReady(cardId) {
+    const card = document.getElementById(cardId);
+    if (!card) return;
+    
+    card.classList.add('opacity-40', 'scale-[0.96]');
+    showToast('Ticket Dispatched 🛎️', 'Notified waitstaff and counter display.');
+    
+    setTimeout(() => {
+      card.remove();
+    }, 400);
+  }
+
+  // Mark all completed
+  function markAllReady() {
+    showToast('Batch Action', 'Checking all finished station items...');
+    document.querySelectorAll('.ticket-card').forEach((card, index) => {
+      const allCheckboxes = card.querySelectorAll('input[type="checkbox"]');
+      let allDone = true;
+      allCheckboxes.forEach(cb => {
+        if (!cb.checked) allDone = false;
+      });
+      if (allDone) {
+        card.classList.add('opacity-40', 'scale-[0.96]');
+        setTimeout(() => card.remove(), 300);
+      }
+    });
+  }
+
+  // Notification Toast handling
+  let toastTimer;
+  function showToast(title, subtitle) {
+    const toast = document.getElementById('toastNotification');
+    const tTitle = document.getElementById('toastTitle');
+    const tSubtitle = document.getElementById('toastSubtitle');
+    if (!toast) return;
+
+    tTitle.textContent = title;
+    tSubtitle.textContent = subtitle;
+    toast.classList.remove('hidden');
+
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+      hideToast();
+    }, 3500);
+  }
+
+  function hideToast() {
+    const toast = document.getElementById('toastNotification');
+    if (toast) toast.classList.add('hidden');
+  }
+
+  // Chime toggle
+  let chimeActive = true;
+  function toggleAudioChime() {
+    chimeActive = !chimeActive;
+    const btn = document.getElementById('chimeBtn');
+    if (chimeActive) {
+      btn.innerHTML = `<span class="material-symbols-outlined text-[18px] text-secondary">notifications_active</span><span>Chime: Active</span>`;
+      showToast('Sound Enabled', 'Kitchen bells and alerts will chime.');
+    } else {
+      btn.innerHTML = `<span class="material-symbols-outlined text-[18px] text-on-surface-variant">notifications_off</span><span>Chime: Muted</span>`;
+      showToast('Sound Muted', 'Silent visual cues only.');
+    }
+  }
+
+  // Keyboard shortcut listener (matching bump bar dock instructions)
+  window.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') {
+      e.preventDefault();
+      const firstTicket = document.querySelector('.ticket-card');
+      if (firstTicket) {
+        markReady(firstTicket.id);
+      }
+    } else if (['Digit1', 'Digit2', 'Digit3', 'Digit4'].includes(e.code)) {
+      const idx = parseInt(e.key);
+      const target = document.getElementById(`ticket-${idx}`);
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        target.classList.add('ring-4', 'ring-primary');
+        setTimeout(() => target.classList.remove('ring-4', 'ring-primary'), 1000);
+      }
+    } else if (e.key.toLowerCase() === 'm') {
+      toggleAudioChime();
+    }
+  });
+</script></main><footer class="fixed bottom-0 left-0 right-0 w-full z-40 bg-surface-container-lowest shadow-[0_-1px_8px_rgba(0,0,0,0.04)]"><div class="h-14 w-full px-gutter flex items-center justify-between"><div class="flex items-center gap-space-lg"><div class="flex items-center gap-space-xs"><span class="material-symbols-outlined text-[18px] text-primary">timer</span><span class="font-label-sm text-label-sm uppercase text-on-surface-variant">Avg Prep Today:</span><span class="font-label-md text-label-md text-on-surface">8m 40s</span></div><div class="flex items-center gap-space-xs"><span class="material-symbols-outlined text-[18px] text-secondary">check_circle</span><span class="font-label-sm text-label-sm uppercase text-on-surface-variant">Completed Tickets:</span><span class="font-label-md text-label-md text-on-surface">42</span></div><div class="flex items-center gap-space-xs"><span class="material-symbols-outlined text-[18px] text-tertiary-container">speed</span><span class="font-label-sm text-label-sm uppercase text-on-surface-variant">Kitchen Load:</span><span class="font-label-md text-label-md text-on-surface">45% (Nominal)</span></div></div><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs"><span class="px-2 py-0.5 rounded bg-surface-container text-on-surface-variant font-label-sm text-label-sm">[1 - 4] Select</span><span class="px-2 py-0.5 rounded bg-surface-container text-on-surface-variant font-label-sm text-label-sm">[Enter] Bump</span><span class="px-2 py-0.5 rounded bg-surface-container text-on-surface-variant font-label-sm text-label-sm">[Space] Recall</span><span class="px-2 py-0.5 rounded bg-surface-container text-on-surface-variant font-label-sm text-label-sm">[F] Fullscreen</span></div><span class="font-label-sm text-label-sm text-on-surface-variant">Station: Master Terminal #01</span></div></div></footer></body></html>

@@ -430,34 +430,36 @@ export default function PosRegisterPage() {
           </div>
 
           {/* Quick Route Switches */}
-          <div className="hidden md:flex items-center gap-2">
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
             <Link
               href="/pos"
-              className="px-3 py-1.5 rounded-xl font-display text-xs font-black uppercase bg-paros-orange text-white border-2 border-espresso shadow-brutal-sm flex items-center gap-1.5"
+              className="px-2.5 sm:px-3 py-1.5 rounded-xl font-display text-[11px] sm:text-xs font-black uppercase bg-paros-orange text-white border-2 border-espresso shadow-brutal-sm flex items-center gap-1 shrink-0"
             >
-              <span className="material-symbols-outlined text-[16px]">point_of_sale</span>
-              Counter POS
-            </Link>
-            <Link
-              href="/kds"
-              className="px-3 py-1.5 rounded-xl font-display text-xs font-black uppercase bg-white hover:bg-paros-yellow text-espresso border-2 border-espresso shadow-brutal-sm flex items-center gap-1.5"
-            >
-              <span className="material-symbols-outlined text-[16px]">soup_kitchen</span>
-              Kitchen KDS
+              <span className="material-symbols-outlined text-[15px]">point_of_sale</span>
+              <span>POS</span>
             </Link>
             <Link
               href="/order"
-              className="px-3 py-1.5 rounded-xl font-display text-xs font-black uppercase bg-white hover:bg-paros-yellow text-espresso border-2 border-espresso shadow-brutal-sm flex items-center gap-1.5"
+              target="_blank"
+              className="px-2.5 sm:px-3 py-1.5 rounded-xl font-display text-[11px] sm:text-xs font-black uppercase bg-paros-mint hover:bg-paros-yellow text-espresso border-2 border-espresso shadow-brutal-sm flex items-center gap-1 shrink-0"
+              title="Open Customer QR Dine-in View in new tab"
             >
-              <span className="material-symbols-outlined text-[16px]">qr_code_scanner</span>
-              Table QR Dine-in
+              <span className="material-symbols-outlined text-[15px]">smartphone</span>
+              <span>Customer QR ↗</span>
+            </Link>
+            <Link
+              href="/kds"
+              className="px-2.5 sm:px-3 py-1.5 rounded-xl font-display text-[11px] sm:text-xs font-black uppercase bg-white hover:bg-paros-yellow text-espresso border-2 border-espresso shadow-brutal-sm flex items-center gap-1 shrink-0"
+            >
+              <span className="material-symbols-outlined text-[15px]">soup_kitchen</span>
+              <span className="hidden sm:inline">Kitchen</span> KDS
             </Link>
             <Link
               href="/admin"
-              className="px-3 py-1.5 rounded-xl font-display text-xs font-black uppercase bg-white hover:bg-paros-yellow text-espresso border-2 border-espresso shadow-brutal-sm flex items-center gap-1.5"
+              className="px-2.5 sm:px-3 py-1.5 rounded-xl font-display text-[11px] sm:text-xs font-black uppercase bg-white hover:bg-paros-yellow text-espresso border-2 border-espresso shadow-brutal-sm flex items-center gap-1 shrink-0"
             >
-              <span className="material-symbols-outlined text-[16px]">analytics</span>
-              Z-Report
+              <span className="material-symbols-outlined text-[15px]">analytics</span>
+              <span className="hidden sm:inline">Z-Report</span>
             </Link>
           </div>
 
@@ -848,6 +850,19 @@ export default function PosRegisterPage() {
                       }
                       className="px-2 py-0.5 bg-paros-cream border border-espresso rounded font-mono text-xs font-semibold text-espresso outline-none w-36"
                     />
+                  </div>
+                  {/* Quick Customer Simulator Link for This Table */}
+                  <div className="mt-2 flex items-center gap-2">
+                    <a
+                      href={`/order?table=${selectedTable}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="brutal-btn inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-paros-mint hover:bg-paros-yellow text-espresso border border-espresso font-display text-[10px] font-black uppercase shadow-sm transition-all"
+                      title={`Open Customer Self-Order page for Table ${selectedTable} in new tab`}
+                    >
+                      <span className="material-symbols-outlined text-[13px]">smartphone</span>
+                      <span>Test Guest QR (T-{selectedTable}) ↗</span>
+                    </a>
                   </div>
                 </div>
                 <div className="text-right">

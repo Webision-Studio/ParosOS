@@ -1,0 +1,1328 @@
+<!DOCTYPE html>
+
+<html class="scroll-smooth" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_standard" name="shell-type"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&amp;family=Space+Grotesk:wght@500;700;800&amp;family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        "espresso": "#1C1917",
+        "paros-orange": "#E05D38",
+        "paros-yellow": "#FEF08A",
+        "paros-mint": "#A7F3D0",
+        "paros-matcha": "#10B981",
+        "paros-cream": "#FFFDF9",
+        "paros-peach": "#FDBA74",
+        "primary": "#E05D38",
+        "primary-container": "#C84C28",
+        "surface": "#FFFDF9",
+        "surface-container": "#F5EFE6",
+        "surface-container-low": "#FAF6EE",
+        "surface-container-lowest": "#FFFFFF",
+        "secondary": "#059669",
+        "tertiary": "#D97706"
+      },
+      fontFamily: {
+        "display": ["Space Grotesk", "Plus Jakarta Sans", "sans-serif"],
+        "body": ["Plus Jakarta Sans", "sans-serif"]
+      },
+      boxShadow: {
+        "brutal-sm": "2px 2px 0px #1C1917",
+        "brutal": "4px 4px 0px #1C1917",
+        "brutal-lg": "6px 6px 0px #1C1917",
+        "brutal-xl": "8px 8px 0px #1C1917",
+        "brutal-reverse": "-4px 4px 0px #1C1917"
+      }
+    }
+  }
+}
+</script>
+<style>
+  @layer base {
+    html, body {
+      margin: 0;
+      padding: 0;
+      background-color: #FFFDF9;
+      color: #1C1917;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    body {
+      overflow-y: auto;
+    }
+  }
+  .brutal-btn {
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .brutal-btn:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0px #1C1917;
+  }
+  .brutal-btn:active {
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0px #1C1917;
+  }
+  .sticker-badge {
+    transform: rotate(var(--rotation, 0deg));
+    transition: transform 0.2s ease;
+  }
+  .sticker-badge:hover {
+    transform: scale(1.05) rotate(0deg);
+  }
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #FFFDF9;
+    border-left: 2px solid #1C1917;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #1C1917;
+    border-radius: 0;
+  }
+</style>
+</head>
+<body class="bg-paros-cream text-espresso selection:bg-paros-yellow selection:text-espresso antialiased">
+<!-- NEO-BRUTALIST TICKER BANNER -->
+<div class="w-full bg-paros-yellow border-b-2 border-espresso overflow-hidden py-2 font-display text-xs sm:text-sm font-bold tracking-wider uppercase text-espresso select-none">
+<div class="flex items-center gap-8 whitespace-nowrap animate-marquee">
+<div class="flex items-center gap-8">
+<span>⚡ ZERO HARDWARE MANDATE</span>
+<span>•</span>
+<span>🔥 WHATSAPP GST BILLING IN &lt; 1 SEC</span>
+<span>•</span>
+<span>☕ 0% UPI TRANSACTION TAX</span>
+<span>•</span>
+<span>💸 PETPOOJA KILLER: RUN FOR ₹499/MO</span>
+<span>•</span>
+<span>📦 WORKS ON ANY PHONE, TABLET OR LAPTOP</span>
+<span>•</span>
+<span>⚡ 100% OFFLINE CACHED PWA</span>
+<span>•</span>
+<span>🚀 3-MINUTE ONBOARDING</span>
+</div>
+</div>
+</div>
+<!-- FIXED NAVIGATION CHROME -->
+<header class="sticky top-0 w-full z-50 bg-paros-cream/95 backdrop-blur-md border-b-2 border-espresso">
+<div class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
+<!-- Brand -->
+<div class="flex items-center gap-3 shrink-0">
+<div class="w-10 h-10 rounded-xl bg-paros-orange border-2 border-espresso shadow-brutal-sm flex items-center justify-center font-display font-black text-xl text-white">
+        P
+      </div>
+<a class="font-display text-2xl font-black text-espresso tracking-tight flex items-center gap-1.5" data-path="landing" href="#">
+        PAROS
+        <span class="text-paros-orange font-mono text-base font-extrabold">.</span>
+</a>
+<span class="hidden md:inline-flex items-center gap-1 bg-paros-mint text-espresso border-2 border-espresso px-2.5 py-0.5 rounded-full text-xs font-black uppercase shadow-brutal-sm">
+<span class="w-2 h-2 rounded-full bg-paros-matcha animate-pulse"></span> INDIE OS
+      </span>
+</div>
+<!-- Desktop Nav Links -->
+<nav class="hidden lg:flex items-center gap-6 font-display font-bold text-sm">
+<a class="hover:text-paros-orange hover:underline decoration-2 underline-offset-4 transition-all" data-path="features" href="#features">FEATURES</a>
+<a class="hover:text-paros-orange hover:underline decoration-2 underline-offset-4 transition-all" data-path="interactive-demo" href="#interactive-demo">LIVE SIMULATOR</a>
+<a class="hover:text-paros-orange hover:underline decoration-2 underline-offset-4 transition-all" data-path="savings-calculator" href="#savings-calculator">SAVINGS MATH</a>
+<a class="hover:text-paros-orange hover:underline decoration-2 underline-offset-4 transition-all" data-path="pricing" href="#pricing">PRICING</a>
+<a class="hover:text-paros-orange hover:underline decoration-2 underline-offset-4 transition-all" data-path="why-paros" href="#testimonials">WALL OF LOVE</a>
+</nav>
+<!-- Nav Actions -->
+<div class="flex items-center gap-3 shrink-0">
+<a class="hidden sm:inline-flex items-center justify-center font-display font-bold text-xs uppercase px-4 py-2.5 rounded-xl border-2 border-espresso bg-surface-container hover:bg-paros-yellow transition-all shadow-brutal-sm" data-path="book-demo" href="#">
+        Book 5-Min Tour
+      </a>
+<a class="brutal-btn inline-flex items-center justify-center font-display font-extrabold text-xs sm:text-sm uppercase tracking-wide bg-paros-orange text-white px-5 py-2.5 rounded-xl border-2 border-espresso shadow-brutal" data-path="trial-onboarding" href="#">
+        Start Free Trial →
+      </a>
+</div>
+</div>
+</header>
+<main class="w-full">
+<!-- HERO SECTION -->
+<section class="relative w-full border-b-2 border-espresso bg-paros-cream pt-12 lg:pt-20 pb-16 overflow-hidden">
+<!-- Subtle Grid Dots Graphic -->
+<div class="absolute inset-0 bg-[radial-gradient(#1C1917_1px,transparent_1px)] [background-size:24px_24px] opacity-10 pointer-events-none"></div>
+<div class="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+<div class="flex flex-col items-center text-center max-w-4xl mx-auto">
+<!-- Tactile Sticker Badges Cluster -->
+<div class="flex flex-wrap items-center justify-center gap-2 mb-6">
+<span class="sticker-badge bg-paros-yellow text-espresso border-2 border-espresso px-3.5 py-1 rounded-full font-display text-xs sm:text-sm font-black uppercase shadow-brutal-sm" style="--rotation: -2deg;">
+          ☕ MADE FOR INDIAN CAFE HUSTLERS
+        </span>
+<span class="sticker-badge bg-paros-mint text-espresso border-2 border-espresso px-3.5 py-1 rounded-full font-display text-xs sm:text-sm font-black uppercase shadow-brutal-sm" style="--rotation: 2deg;">
+          🔥 ZERO HARDWARE LOCK-IN
+        </span>
+<span class="sticker-badge bg-paros-peach text-espresso border-2 border-espresso px-3.5 py-1 rounded-full font-display text-xs sm:text-sm font-black uppercase shadow-brutal-sm" style="--rotation: -1deg;">
+          🧾 100% PAPERLESS WHATSAPP BILLS
+        </span>
+</div>
+<!-- Main Catchphrase Headline -->
+<h1 class="font-display text-4xl sm:text-6xl lg:text-7xl font-black text-espresso tracking-tight leading-[1.08] text-balance">
+        Stop paying ₹40,000/yr to bulky old-school POS. <br class="hidden sm:inline"/>
+<span class="inline-block relative mt-2 bg-paros-orange text-white px-3 sm:px-6 py-1 border-2 border-espresso shadow-brutal transform -rotate-1">
+          Run your entire cafe for ₹499/mo.
+        </span>
+</h1>
+<!-- Subheadline -->
+<p class="mt-6 font-body text-lg sm:text-xl font-medium text-espresso/80 max-w-2xl text-balance">
+        Throw away clunky Windows desktop towers, loud thermal paper printers, and missing paper KOTs. Turn any phone, iPad, or laptop into a blisteringly fast billing counter, digital barista KDS, and table QR dine-in system.
+      </p>
+<!-- Dual Chunky CTA Buttons -->
+<div class="mt-8 flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto justify-center">
+<a class="brutal-btn w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-paros-orange text-white font-display font-black text-base uppercase px-8 py-4 rounded-xl border-2 border-espresso shadow-brutal-lg" data-path="trial-onboarding" href="#">
+<span>Launch Your Cafe in 3 Mins</span>
+<span class="material-symbols-outlined text-[22px]">bolt</span>
+</a>
+<a class="brutal-btn w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-paros-yellow text-espresso font-display font-black text-base uppercase px-8 py-4 rounded-xl border-2 border-espresso shadow-brutal-lg" href="#interactive-demo">
+<span class="material-symbols-outlined text-espresso text-[22px]">play_circle</span>
+<span>Test Live Simulator</span>
+</a>
+</div>
+<!-- Trust Reassurance Badges -->
+<div class="mt-8 flex flex-wrap items-center justify-center gap-4 sm:gap-8 font-display font-bold text-xs sm:text-sm uppercase text-espresso">
+<span class="inline-flex items-center gap-1.5"><span class="material-symbols-outlined text-paros-matcha font-bold text-[20px]">check_circle</span> No credit card required</span>
+<span class="inline-flex items-center gap-1.5"><span class="material-symbols-outlined text-paros-matcha font-bold text-[20px]">check_circle</span> 14-day zero-risk trial</span>
+<span class="inline-flex items-center gap-1.5"><span class="material-symbols-outlined text-paros-matcha font-bold text-[20px]">check_circle</span> Instant setup in 180s</span>
+</div>
+<!-- Metric Highlight Strip - Neo-Brutalist Blocks -->
+<div class="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4 w-full">
+<div class="p-4 bg-white rounded-2xl border-2 border-espresso shadow-brutal text-center transform hover:-translate-y-1 transition-transform">
+<p class="font-display text-4xl sm:text-5xl font-black text-paros-orange">₹0</p>
+<p class="font-display font-bold text-xs uppercase tracking-wider text-espresso mt-1">Hardware Required</p>
+</div>
+<div class="p-4 bg-paros-mint rounded-2xl border-2 border-espresso shadow-brutal text-center transform hover:-translate-y-1 transition-transform">
+<p class="font-display text-4xl sm:text-5xl font-black text-espresso">&lt; 1s</p>
+<p class="font-display font-bold text-xs uppercase tracking-wider text-espresso mt-1">WhatsApp Bill Dispatch</p>
+</div>
+<div class="p-4 bg-paros-yellow rounded-2xl border-2 border-espresso shadow-brutal text-center transform hover:-translate-y-1 transition-transform">
+<p class="font-display text-4xl sm:text-5xl font-black text-espresso">0%</p>
+<p class="font-display font-bold text-xs uppercase tracking-wider text-espresso mt-1">UPI Surcharge / MDR</p>
+</div>
+<div class="p-4 bg-paros-peach rounded-2xl border-2 border-espresso shadow-brutal text-center transform hover:-translate-y-1 transition-transform">
+<p class="font-display text-4xl sm:text-5xl font-black text-espresso">100%</p>
+<p class="font-display font-bold text-xs uppercase tracking-wider text-espresso mt-1">Offline Local Support</p>
+</div>
+</div>
+</div>
+<!-- Social Proof Bar - Indie Roasters Stamp -->
+<div class="mt-14 pt-8 border-t-2 border-dashed border-espresso text-center">
+<p class="font-display text-xs font-black uppercase tracking-widest text-espresso/70 mb-4">
+        Trusted by 150+ Indie Cafes, Artisan Bakeries &amp; Micro-Roasters Across India
+      </p>
+<div class="flex flex-wrap items-center justify-center gap-4 sm:gap-8 font-display font-black text-lg text-espresso">
+<div class="px-4 py-2 bg-white rounded-xl border-2 border-espresso shadow-brutal-sm flex items-center gap-2">
+<span class="material-symbols-outlined text-paros-orange">local_cafe</span>RoastCraft <span class="text-xs bg-paros-yellow px-2 py-0.5 rounded border border-espresso font-bold">Indiranagar</span>
+</div>
+<div class="px-4 py-2 bg-white rounded-xl border-2 border-espresso shadow-brutal-sm flex items-center gap-2">
+<span class="material-symbols-outlined text-tertiary">bakery_dining</span>Sourdough Co. <span class="text-xs bg-paros-mint px-2 py-0.5 rounded border border-espresso font-bold">Bandra West</span>
+</div>
+<div class="px-4 py-2 bg-white rounded-xl border-2 border-espresso shadow-brutal-sm flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary">eco</span>Blue Palm Brew <span class="text-xs bg-paros-peach px-2 py-0.5 rounded border border-espresso font-bold">Anjuna, Goa</span>
+</div>
+<div class="px-4 py-2 bg-white rounded-xl border-2 border-espresso shadow-brutal-sm flex items-center gap-2">
+<span class="material-symbols-outlined text-paros-orange">coffee_maker</span>Third Wave Lab <span class="text-xs bg-paros-yellow px-2 py-0.5 rounded border border-espresso font-bold">Hauz Khas</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- LIVE INTERACTIVE TABBED DEMO PREVIEW -->
+<section class="w-full bg-paros-mint/30 border-b-2 border-espresso py-16" id="interactive-demo">
+<div class="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8">
+<div class="text-center max-w-3xl mx-auto mb-10">
+<span class="sticker-badge inline-block bg-paros-yellow text-espresso border-2 border-espresso px-4 py-1 rounded-full font-display text-xs font-black uppercase tracking-wider mb-2 shadow-brutal-sm" style="--rotation: -1deg;">
+        ⚡ LIVE INTERACTIVE SIMULATOR
+      </span>
+<h2 class="font-display text-3xl sm:text-5xl font-black text-espresso tracking-tight">
+        One Operating System. Three Live Perspectives.
+      </h2>
+<p class="mt-2 font-body text-base font-medium text-espresso/80">
+        Click items below to see real-time sync across your counter register, barista KDS, and table QR dine-in.
+      </p>
+<!-- Mockup Tab Switcher (Chunky Buttons) -->
+<div class="mt-6 inline-flex flex-wrap justify-center p-1.5 bg-white border-2 border-espresso rounded-2xl shadow-brutal gap-1">
+<button class="px-4 py-2.5 rounded-xl font-display font-black text-xs sm:text-sm uppercase tracking-wide transition-all flex items-center gap-1.5 bg-paros-orange text-white border-2 border-espresso shadow-brutal-sm" id="tab-btn-counter" onclick="switchDemoTab('counter')">
+<span class="material-symbols-outlined text-[18px]">tablet_mac</span> 1. Counter POS (Tablet)
+        </button>
+<button class="px-4 py-2.5 rounded-xl font-display font-black text-xs sm:text-sm uppercase tracking-wide transition-all flex items-center gap-1.5 text-espresso hover:bg-paros-yellow border-2 border-transparent" id="tab-btn-kds" onclick="switchDemoTab('kds')">
+<span class="material-symbols-outlined text-[18px]">soup_kitchen</span> 2. Kitchen KDS (Screen)
+        </button>
+<button class="px-4 py-2.5 rounded-xl font-display font-black text-xs sm:text-sm uppercase tracking-wide transition-all flex items-center gap-1.5 text-espresso hover:bg-paros-yellow border-2 border-transparent" id="tab-btn-qr" onclick="switchDemoTab('qr')">
+<span class="material-symbols-outlined text-[18px]">qr_code_scanner</span> 3. Customer QR Menu (Phone)
+        </button>
+</div>
+</div>
+<!-- Outer Device Enclosure Shell -->
+<div class="bg-white rounded-3xl border-3 border-espresso shadow-brutal-xl overflow-hidden min-h-[580px] flex flex-col">
+<!-- Device Top Retro Bar -->
+<div class="bg-espresso text-white px-6 py-3 flex items-center justify-between font-display text-xs font-bold uppercase tracking-wider">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-red-500 border border-espresso"></span>
+<span class="w-3 h-3 rounded-full bg-yellow-400 border border-espresso"></span>
+<span class="w-3 h-3 rounded-full bg-green-500 border border-espresso"></span>
+<span class="ml-2 font-mono text-paros-yellow">PAROS TERMINAL v3.2.0 • LIVE DEMO MODE</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="bg-paros-matcha text-white px-2 py-0.5 rounded text-[10px] font-black">CLOUD SYNCED (0ms LAG)</span>
+</div>
+</div>
+<!-- Tab 1: Counter POS (Tablet Interface) -->
+<div class="flex-1 flex flex-col lg:flex-row" id="demo-pane-counter">
+<!-- Left Menu Section -->
+<div class="flex-1 p-6 bg-paros-cream border-r-2 lg:border-r-2 border-b-2 lg:border-b-0 border-espresso">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 mb-4 border-b-2 border-espresso gap-3">
+<div>
+<h3 class="font-display text-xl font-black text-espresso">Morning Brew Station #01</h3>
+<p class="font-mono text-xs text-espresso/70">Register Operator: Chef Kabir • Shift Active</p>
+</div>
+<!-- Table Selector Chips -->
+<div class="flex items-center gap-1.5 flex-wrap">
+<span class="font-display text-xs font-black text-espresso mr-1">TABLE:</span>
+<button class="tbl-btn px-3 py-1 text-xs font-display font-black rounded-lg border-2 border-espresso bg-white shadow-brutal-sm hover:bg-paros-yellow" id="tbl-T1" onclick="selectDemoTable('T1')">T1</button>
+<button class="tbl-btn px-3 py-1 text-xs font-display font-black rounded-lg border-2 border-espresso bg-white shadow-brutal-sm hover:bg-paros-yellow" id="tbl-T2" onclick="selectDemoTable('T2')">T2</button>
+<button class="tbl-btn px-3 py-1 text-xs font-display font-black rounded-lg border-2 border-espresso bg-white shadow-brutal-sm hover:bg-paros-yellow" id="tbl-T3" onclick="selectDemoTable('T3')">T3</button>
+<button class="tbl-btn px-3 py-1 text-xs font-display font-black rounded-lg border-2 border-espresso bg-paros-orange text-white shadow-brutal-sm" id="tbl-T4" onclick="selectDemoTable('T4')">T4 (Active)</button>
+</div>
+</div>
+<!-- Category Pills -->
+<div class="flex items-center gap-2 pb-4 overflow-x-auto">
+<span class="px-3 py-1 bg-espresso text-white rounded-xl border-2 border-espresso font-display text-xs font-black">All Items</span>
+<span class="px-3 py-1 bg-white text-espresso hover:bg-paros-yellow rounded-xl border-2 border-espresso font-display text-xs font-black cursor-pointer">Espresso Bar</span>
+<span class="px-3 py-1 bg-white text-espresso hover:bg-paros-yellow rounded-xl border-2 border-espresso font-display text-xs font-black cursor-pointer">Artisan Bakery</span>
+<span class="px-3 py-1 bg-white text-espresso hover:bg-paros-yellow rounded-xl border-2 border-espresso font-display text-xs font-black cursor-pointer">Breakfast Toasties</span>
+</div>
+<!-- Tap to Add Menu Grid -->
+<div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+<button class="brutal-btn text-left p-3.5 bg-white rounded-2xl border-2 border-espresso shadow-brutal flex flex-col justify-between group" onclick="addPosItem('Flat White', 220)">
+<div class="flex justify-between items-start w-full">
+<span class="material-symbols-outlined text-paros-orange text-[22px]">coffee</span>
+<span class="font-display text-[10px] font-black bg-paros-yellow text-espresso px-2 py-0.5 rounded border border-espresso">+ ADD</span>
+</div>
+<div class="mt-3">
+<p class="font-display font-bold text-espresso text-base leading-tight">Flat White</p>
+<p class="font-body text-xs text-espresso/70">Double ristretto, velvety</p>
+<p class="font-display font-black text-espresso text-base mt-1">₹220</p>
+</div>
+</button>
+<button class="brutal-btn text-left p-3.5 bg-white rounded-2xl border-2 border-espresso shadow-brutal flex flex-col justify-between group" onclick="addPosItem('Manual Pour Over', 260)">
+<div class="flex justify-between items-start w-full">
+<span class="material-symbols-outlined text-tertiary text-[22px]">local_cafe</span>
+<span class="font-display text-[10px] font-black bg-paros-yellow text-espresso px-2 py-0.5 rounded border border-espresso">+ ADD</span>
+</div>
+<div class="mt-3">
+<p class="font-display font-bold text-espresso text-base leading-tight">Pour Over</p>
+<p class="font-body text-xs text-espresso/70">Washed Chikmagalur</p>
+<p class="font-display font-black text-espresso text-base mt-1">₹260</p>
+</div>
+</button>
+<button class="brutal-btn text-left p-3.5 bg-white rounded-2xl border-2 border-espresso shadow-brutal flex flex-col justify-between group" onclick="addPosItem('Butter Croissant', 180)">
+<div class="flex justify-between items-start w-full">
+<span class="material-symbols-outlined text-paros-orange text-[22px]">bakery_dining</span>
+<span class="font-display text-[10px] font-black bg-paros-yellow text-espresso px-2 py-0.5 rounded border border-espresso">+ ADD</span>
+</div>
+<div class="mt-3">
+<p class="font-display font-bold text-espresso text-base leading-tight">Butter Croissant</p>
+<p class="font-body text-xs text-espresso/70">27-layer laminations</p>
+<p class="font-display font-black text-espresso text-base mt-1">₹180</p>
+</div>
+</button>
+<button class="brutal-btn text-left p-3.5 bg-white rounded-2xl border-2 border-espresso shadow-brutal flex flex-col justify-between group" onclick="addPosItem('Sourdough Toast', 160)">
+<div class="flex justify-between items-start w-full">
+<span class="material-symbols-outlined text-secondary text-[22px]">breakfast_dining</span>
+<span class="font-display text-[10px] font-black bg-paros-yellow text-espresso px-2 py-0.5 rounded border border-espresso">+ ADD</span>
+</div>
+<div class="mt-3">
+<p class="font-display font-bold text-espresso text-base leading-tight">Sourdough Toast</p>
+<p class="font-body text-xs text-espresso/70">Herb whipped butter</p>
+<p class="font-display font-black text-espresso text-base mt-1">₹160</p>
+</div>
+</button>
+<button class="brutal-btn text-left p-3.5 bg-white rounded-2xl border-2 border-espresso shadow-brutal flex flex-col justify-between group" onclick="addPosItem('Iced Oat Latte', 250)">
+<div class="flex justify-between items-start w-full">
+<span class="material-symbols-outlined text-paros-orange text-[22px]">icecream</span>
+<span class="font-display text-[10px] font-black bg-paros-yellow text-espresso px-2 py-0.5 rounded border border-espresso">+ ADD</span>
+</div>
+<div class="mt-3">
+<p class="font-display font-bold text-espresso text-base leading-tight">Iced Oat Latte</p>
+<p class="font-body text-xs text-espresso/70">Minor Figures oat milk</p>
+<p class="font-display font-black text-espresso text-base mt-1">₹250</p>
+</div>
+</button>
+<button class="brutal-btn text-left p-3.5 bg-white rounded-2xl border-2 border-espresso shadow-brutal flex flex-col justify-between group" onclick="addPosItem('Almond Tart', 210)">
+<div class="flex justify-between items-start w-full">
+<span class="material-symbols-outlined text-tertiary text-[22px]">cake</span>
+<span class="font-display text-[10px] font-black bg-paros-yellow text-espresso px-2 py-0.5 rounded border border-espresso">+ ADD</span>
+</div>
+<div class="mt-3">
+<p class="font-display font-bold text-espresso text-base leading-tight">Almond Tart</p>
+<p class="font-body text-xs text-espresso/70">Toasted flaked frangipane</p>
+<p class="font-display font-black text-espresso text-base mt-1">₹210</p>
+</div>
+</button>
+</div>
+</div>
+<!-- Right Cart Section (Digital Bill Terminal) -->
+<div class="w-full lg:w-[400px] bg-paros-yellow/40 p-6 flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between pb-3 mb-4 border-b-2 border-espresso">
+<div>
+<span class="font-display text-lg font-black text-espresso" id="current-table-label">Table 04 — Dine In</span>
+<p class="font-mono text-xs text-espresso/70">KOT #1842 • Rahul S.</p>
+</div>
+<span class="px-2.5 py-1 rounded-md text-xs font-display font-black bg-paros-peach border border-espresso text-espresso uppercase">UNBILLED</span>
+</div>
+<!-- Cart Items List -->
+<div class="flex flex-col gap-2.5 max-h-[250px] overflow-y-auto pr-1" id="pos-cart-items">
+<div class="flex items-center justify-between p-3 bg-white rounded-xl border-2 border-espresso shadow-brutal-sm">
+<div>
+<p class="font-display font-bold text-espresso text-sm">1× Flat White</p>
+<p class="font-body text-xs text-espresso/70">Oat Milk Sub (+₹40)</p>
+</div>
+<span class="font-display font-black text-espresso text-base">₹260</span>
+</div>
+<div class="flex items-center justify-between p-3 bg-white rounded-xl border-2 border-espresso shadow-brutal-sm">
+<div>
+<p class="font-display font-bold text-espresso text-sm">1× Pour Over</p>
+<p class="font-body text-xs text-espresso/70">V60 Chikmagalur Washed</p>
+</div>
+<span class="font-display font-black text-espresso text-base">₹260</span>
+</div>
+<div class="flex items-center justify-between p-3 bg-white rounded-xl border-2 border-espresso shadow-brutal-sm">
+<div>
+<p class="font-display font-bold text-espresso text-sm">1× Butter Croissant</p>
+<p class="font-body text-xs text-espresso/70">Warm from oven</p>
+</div>
+<span class="font-display font-black text-espresso text-base">₹180</span>
+</div>
+</div>
+</div>
+<!-- Bill Calculations & WhatsApp Action -->
+<div class="pt-4 border-t-2 border-espresso mt-4 bg-white p-4 rounded-2xl border-2 border-espresso shadow-brutal">
+<div class="flex justify-between font-mono text-xs text-espresso/80 mb-1">
+<span>Subtotal</span>
+<span class="font-bold" id="pos-subtotal">₹700.00</span>
+</div>
+<div class="flex justify-between font-mono text-xs text-espresso/80 mb-2">
+<span>CGST (2.5%) + SGST (2.5%)</span>
+<span id="pos-tax">₹35.00</span>
+</div>
+<div class="flex justify-between font-display text-xl font-black text-espresso pt-2 border-t-2 border-dashed border-espresso mb-3">
+<span>Grand Total</span>
+<span class="text-paros-orange" id="pos-grand-total">₹735.00</span>
+</div>
+<button class="brutal-btn w-full py-3.5 px-4 rounded-xl bg-paros-matcha text-white font-display font-black text-sm uppercase tracking-wide flex items-center justify-center gap-2 border-2 border-espresso shadow-brutal" onclick="triggerWhatsAppToast()">
+<span class="material-symbols-outlined text-[20px]">send</span>
+<span>Send WhatsApp GST Bill</span>
+</button>
+<!-- Micro Toast Confirmation -->
+<div class="hidden mt-2 p-2.5 bg-paros-yellow text-espresso border-2 border-espresso rounded-xl font-display text-xs font-bold text-center flex items-center justify-center gap-1.5 shadow-brutal-sm" id="whatsapp-toast">
+<span class="material-symbols-outlined text-[18px] text-paros-orange font-black">mark_email_read</span> Instant WhatsApp receipt dispatched to +91 98450 XXXXX!
+            </div>
+</div>
+</div>
+</div>
+<!-- Tab 2: Kitchen KDS (Screen View) -->
+<div class="hidden flex-1 p-6 bg-paros-cream" id="demo-pane-kds">
+<div class="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 mb-6 border-b-2 border-espresso gap-3">
+<div>
+<h3 class="font-display text-2xl font-black text-espresso">Barista &amp; Kitchen Display System (KDS)</h3>
+<p class="font-body text-xs text-espresso/80 font-medium">Live Kitchen queue • Zero lost paper tickets • Direct chef ETA sync</p>
+</div>
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 bg-paros-yellow border-2 border-espresso rounded-full font-display text-xs font-black text-espresso shadow-brutal-sm">
+<span class="w-2.5 h-2.5 rounded-full bg-paros-orange animate-ping"></span> 3 ACTIVE KOTS
+            </span>
+</div>
+</div>
+<!-- KDS Ticket Grid -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+<!-- Ticket 1 (In Progress) -->
+<div class="bg-white rounded-2xl p-5 border-2 border-espresso shadow-brutal flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between pb-2 mb-3 border-b-2 border-espresso">
+<div class="flex items-center gap-2">
+<span class="font-display text-xl font-black text-espresso">Table 04</span>
+<span class="font-display text-xs bg-paros-peach border border-espresso px-2 py-0.5 rounded font-black">KOT #142</span>
+</div>
+<span class="font-mono text-xs bg-paros-yellow border border-espresso px-2 py-1 rounded font-black text-espresso" id="kds-timer-1">4m 20s left</span>
+</div>
+<div class="space-y-2.5 my-3">
+<div class="flex items-center justify-between font-display text-sm font-bold">
+<span>1× Flat White (Oat Milk)</span>
+<span class="material-symbols-outlined text-secondary text-[20px]">check_box</span>
+</div>
+<div class="flex items-center justify-between font-display text-sm font-bold">
+<span>1× Pour Over (Medium)</span>
+<span class="text-xs font-mono font-black text-paros-orange bg-paros-orange/10 px-2 py-0.5 rounded border border-paros-orange">Brewing</span>
+</div>
+<div class="flex items-center justify-between font-display text-sm font-bold">
+<span>1× Butter Croissant</span>
+<span class="material-symbols-outlined text-secondary text-[20px]">check_box</span>
+</div>
+</div>
+</div>
+<div class="pt-4 border-t-2 border-espresso mt-3">
+<p class="font-display text-[10px] uppercase font-black text-espresso/70 mb-2">Chef 1-Tap ETA Modifier:</p>
+<div class="flex items-center gap-2">
+<button class="px-2.5 py-1 text-xs font-display font-black bg-paros-cream hover:bg-paros-yellow border-2 border-espresso rounded-lg shadow-brutal-sm" onclick="adjustKdsTime('kds-timer-1', 5)">+5m</button>
+<button class="px-2.5 py-1 text-xs font-display font-black bg-paros-cream hover:bg-paros-yellow border-2 border-espresso rounded-lg shadow-brutal-sm" onclick="adjustKdsTime('kds-timer-1', 10)">+10m</button>
+<button class="brutal-btn flex-1 py-1.5 px-3 text-xs font-display font-black bg-paros-matcha text-white border-2 border-espresso rounded-lg shadow-brutal-sm" onclick="markKdsReady(this)">Mark Ready</button>
+</div>
+</div>
+</div>
+<!-- Ticket 2 (Ready for Pickup) -->
+<div class="bg-paros-mint/20 rounded-2xl p-5 border-2 border-espresso shadow-brutal flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between pb-2 mb-3 border-b-2 border-espresso">
+<div class="flex items-center gap-2">
+<span class="font-display text-xl font-black text-espresso">Takeaway</span>
+<span class="font-display text-xs bg-paros-mint border border-espresso px-2 py-0.5 rounded font-black">KOT #141</span>
+</div>
+<span class="font-display text-xs bg-paros-mint border border-espresso px-2 py-1 rounded font-black text-espresso">READY</span>
+</div>
+<div class="space-y-2.5 my-3 text-espresso/50 line-through font-display text-sm font-bold">
+<div class="flex items-center justify-between">
+<span>1× Iced Oat Latte</span>
+<span class="material-symbols-outlined text-secondary text-[20px]">done_all</span>
+</div>
+<div class="flex items-center justify-between">
+<span>1× Almond Tart</span>
+<span class="material-symbols-outlined text-secondary text-[20px]">done_all</span>
+</div>
+</div>
+</div>
+<div class="pt-4 border-t-2 border-espresso mt-3">
+<button class="w-full py-2 px-3 text-xs font-display font-black bg-white border-2 border-espresso text-espresso/60 rounded-xl" disabled="">Served to Guest</button>
+</div>
+</div>
+<!-- Ticket 3 (Incoming QR Order) -->
+<div class="bg-paros-yellow/40 rounded-2xl p-5 border-2 border-espresso shadow-brutal flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between pb-2 mb-3 border-b-2 border-espresso">
+<div class="flex items-center gap-2">
+<span class="font-display text-xl font-black text-espresso">Table 02</span>
+<span class="font-display text-xs bg-white border border-espresso px-2 py-0.5 rounded font-black">Dine-In QR</span>
+</div>
+<span class="font-mono text-xs bg-paros-orange text-white px-2 py-1 rounded font-black animate-pulse border border-espresso">NEW 0:42s</span>
+</div>
+<div class="space-y-2.5 my-3 font-display text-sm font-bold">
+<div class="flex items-center justify-between">
+<span>2× Cold Brew with Tonic</span>
+<span class="text-xs font-mono font-bold text-paros-orange">Pending</span>
+</div>
+<div class="flex items-center justify-between">
+<span>1× Sourdough Toast</span>
+<span class="text-xs font-mono font-bold text-paros-orange">Pending</span>
+</div>
+</div>
+</div>
+<div class="pt-4 border-t-2 border-espresso mt-3">
+<button class="brutal-btn w-full py-2.5 px-3 text-xs font-display font-black bg-paros-orange text-white rounded-xl border-2 border-espresso shadow-brutal-sm" onclick="markKdsReady(this)">Accept Order (ETA: 8m)</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Tab 3: Customer QR Menu (Phone View) -->
+<div class="hidden flex-1 p-8 bg-paros-cream flex items-center justify-center" id="demo-pane-qr">
+<div class="w-full max-w-sm bg-white rounded-3xl border-3 border-espresso shadow-brutal-xl overflow-hidden p-6">
+<div class="flex items-center justify-between pb-3 mb-4 border-b-2 border-espresso">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-lg bg-paros-orange text-white flex items-center justify-center font-display font-black text-sm border border-espresso">P</div>
+<div>
+<h4 class="font-display text-sm font-black text-espresso leading-tight">Artisan Roastery</h4>
+<p class="font-mono text-[10px] text-paros-matcha font-bold">● Dine-In Active</p>
+</div>
+</div>
+<span class="px-2.5 py-1 bg-paros-yellow border border-espresso rounded-lg font-display text-xs font-black text-espresso">Table 04</span>
+</div>
+<!-- Single Universal QR Advantage Callout -->
+<div class="bg-paros-mint/40 border-2 border-espresso p-3 rounded-xl mb-4 text-espresso">
+<p class="font-display text-xs font-bold leading-snug">
+<span class="bg-paros-mint px-1.5 py-0.5 rounded border border-espresso mr-1">Universal QR</span> 
+              Guest scanned 1 single cafe QR &amp; picked Table 04. Zero app download!
+            </p>
+</div>
+<!-- Item Card -->
+<div class="p-3.5 bg-paros-cream border-2 border-espresso rounded-2xl mb-3 flex items-center justify-between">
+<div>
+<p class="font-display font-bold text-sm text-espresso">Flat White</p>
+<p class="font-body text-xs text-espresso/70">Velvety micro-foam espresso</p>
+<p class="font-display font-black text-espresso text-sm mt-1">₹220</p>
+</div>
+<button class="brutal-btn px-3 py-1.5 bg-paros-orange text-white rounded-xl font-display text-xs font-black border-2 border-espresso shadow-brutal-sm" onclick="toggleQrCustomizer()">
+              + Customize
+            </button>
+</div>
+<!-- Customizer Accordion -->
+<div class="p-3.5 bg-paros-yellow/30 border-2 border-espresso rounded-2xl mb-4 space-y-2" id="qr-modifier-box">
+<span class="font-display text-xs font-black uppercase text-espresso">Choose Milk Base:</span>
+<div class="flex items-center justify-between font-display text-xs font-bold">
+<label class="flex items-center gap-2 cursor-pointer">
+<input checked="" class="accent-paros-orange" name="milk" type="radio"/> Whole Milk
+              </label>
+<span>+₹0</span>
+</div>
+<div class="flex items-center justify-between font-display text-xs font-bold">
+<label class="flex items-center gap-2 cursor-pointer">
+<input class="accent-paros-orange" name="milk" type="radio"/> Minor Figures Oat Milk
+              </label>
+<span class="text-paros-orange font-black">+₹40</span>
+</div>
+</div>
+<!-- Direct Guest Pay Button -->
+<button class="brutal-btn w-full py-3.5 bg-espresso text-white font-display font-black text-sm uppercase rounded-xl border-2 border-espresso shadow-brutal" onclick="alert('Order successfully placed via QR! KDS and Barista display updated instantly.')">
+            Pay via UPI • Place Order (₹260)
+          </button>
+<p class="text-center font-mono text-[10px] text-espresso/70 mt-2">Direct to Merchant UPI VPA • 0% Transaction Fee</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- HARDWARE MATH / SAVINGS CALCULATOR (Neo-Brutalist Battle Card) -->
+<section class="w-full bg-paros-cream border-b-2 border-espresso py-16" id="savings-calculator">
+<div class="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8">
+<div class="text-center max-w-3xl mx-auto mb-10">
+<span class="sticker-badge inline-block bg-paros-peach text-espresso border-2 border-espresso px-4 py-1 rounded-full font-display text-xs font-black uppercase tracking-wider mb-2 shadow-brutal-sm" style="--rotation: 1.5deg;">
+        💸 HARDWARE ELIMINATION MATH
+      </span>
+<h2 class="font-display text-3xl sm:text-5xl font-black text-espresso tracking-tight">
+        The Legacy Windows POS Tax vs. Paros
+      </h2>
+<p class="mt-2 font-body text-base font-medium text-espresso/80">
+        Slide to your daily volume and see how much hard cash you lose to thermal paper rolls, bulky desktop towers, and hidden gateway fees.
+      </p>
+<!-- Slider Input Container -->
+<div class="mt-8 bg-white border-3 border-espresso p-6 rounded-3xl max-w-xl mx-auto shadow-brutal-lg">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between mb-3 gap-2">
+<label class="font-display text-sm font-black uppercase text-espresso" for="orders-slider">Daily Orders Volume:</label>
+<span class="font-display text-lg font-black bg-paros-yellow px-3 py-1 rounded-xl border-2 border-espresso text-espresso shadow-brutal-sm" id="orders-display">80 orders / day (12 tables)</span>
+</div>
+<input class="w-full accent-paros-orange h-3 bg-paros-cream border-2 border-espresso rounded-lg cursor-pointer my-2" id="orders-slider" max="300" min="10" oninput="calculateSavings(this.value)" step="5" type="range" value="80"/>
+<div class="flex justify-between font-mono text-xs text-espresso/70 mt-1 font-bold">
+<span>10 (Kiosk)</span>
+<span>150 (Cafe)</span>
+<span>300+ (High Volume)</span>
+</div>
+</div>
+</div>
+<!-- Side-by-Side VS Battle Grid -->
+<div class="relative grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch mt-8">
+<!-- Comic "VS" Stamp in the middle -->
+<div class="hidden lg:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 w-16 h-16 rounded-full bg-paros-yellow border-3 border-espresso shadow-brutal items-center justify-center font-display font-black text-2xl text-espresso rotate-12">
+        VS
+      </div>
+<!-- Card A: The Legacy Windows Way (Warning Red/Brown Theme) -->
+<div class="bg-red-50/70 border-3 border-espresso rounded-3xl p-6 sm:p-8 shadow-brutal-lg flex flex-col justify-between relative overflow-hidden">
+<div class="absolute -right-12 -top-12 w-36 h-36 bg-red-200/50 rounded-full border-2 border-espresso pointer-events-none"></div>
+<div>
+<div class="flex items-center justify-between pb-4 mb-6 border-b-2 border-espresso">
+<div>
+<span class="font-display text-xs font-black uppercase tracking-wider text-red-600">THE EXTORTIONIST WAY</span>
+<h3 class="font-display text-2xl sm:text-3xl font-black text-espresso mt-1">Old-School Windows POS</h3>
+</div>
+<span class="px-3 py-1 bg-red-200 text-espresso border-2 border-espresso font-display text-xs font-black rounded-full uppercase shadow-brutal-sm">COST HEAVY</span>
+</div>
+<div class="space-y-3.5 font-display text-sm">
+<div class="flex items-center justify-between py-1.5 border-b border-dashed border-espresso/30">
+<span class="font-bold text-espresso/80">Annual Software Subscription</span>
+<span class="font-black text-espresso">₹20,000 / yr</span>
+</div>
+<div class="flex items-center justify-between py-1.5 border-b border-dashed border-espresso/30">
+<span class="font-bold text-espresso/80">Bulky Desktop Touchscreen Tower</span>
+<span class="font-black text-red-600 bg-red-100 px-2 py-0.5 rounded border border-red-300">₹35,000 upfront</span>
+</div>
+<div class="flex items-center justify-between py-1.5 border-b border-dashed border-espresso/30">
+<span class="font-bold text-espresso/80">Thermal Paper Rolls (BPA Toxic)</span>
+<span class="font-black text-espresso" id="legacy-paper-cost">₹32,850 / yr</span>
+</div>
+<div class="flex items-center justify-between py-1.5 border-b border-dashed border-espresso/30">
+<span class="font-bold text-espresso/80">QR Gateway Cut (1.5% to 2% MDR)</span>
+<span class="font-black text-red-600 bg-red-100 px-2 py-0.5 rounded border border-red-300" id="legacy-gateway-cost">₹1,22,640 / yr</span>
+</div>
+<div class="flex items-center justify-between py-1.5">
+<span class="font-bold text-espresso/80">Mandatory Annual Hardware AMC</span>
+<span class="font-black text-espresso">₹4,500 / yr</span>
+</div>
+</div>
+</div>
+<div class="mt-8 pt-6 border-t-3 border-espresso bg-white -mx-6 sm:-mx-8 -mb-6 sm:-mb-8 p-6 sm:p-8 rounded-b-[21px]">
+<p class="font-display text-xs uppercase tracking-wider font-black text-espresso/70">YEAR 1 TOTAL DRAIN</p>
+<p class="font-display text-4xl sm:text-5xl font-black text-red-600 tracking-tight" id="legacy-total-cost">₹2,14,990</p>
+<p class="font-body text-xs text-espresso/70 mt-1 font-medium">Includes forced hardware lock-in, toxic thermal waste, and payment gateway cuts.</p>
+</div>
+</div>
+<!-- Card B: The Paros Way (Celebratory Green/Orange Neo-Brutalist) -->
+<div class="bg-paros-mint/30 border-3 border-espresso rounded-3xl p-6 sm:p-8 shadow-brutal-xl flex flex-col justify-between relative overflow-hidden">
+<!-- Stamp Sticker -->
+<div class="absolute -top-3 right-6 bg-paros-yellow text-espresso border-2 border-espresso px-4 py-1.5 rounded-full font-display text-xs font-black uppercase tracking-wider shadow-brutal rotate-3">
+          100% ZERO HARDWARE TAX
+        </div>
+<div>
+<div class="flex items-center justify-between pb-4 mb-6 border-b-2 border-espresso">
+<div>
+<span class="font-display text-xs font-black uppercase tracking-wider text-paros-matcha">THE REVOLUTIONARY WAY</span>
+<h3 class="font-display text-2xl sm:text-3xl font-black text-espresso mt-1">Paros Cafe OS</h3>
+</div>
+<span class="px-3 py-1 bg-paros-mint text-espresso border-2 border-espresso font-display text-xs font-black rounded-full uppercase shadow-brutal-sm">ZERO PAPER</span>
+</div>
+<div class="space-y-3.5 font-display text-sm">
+<div class="flex items-center justify-between py-1.5 border-b border-dashed border-espresso/30">
+<span class="font-bold text-espresso/80">Paros Unlimited Annual Cloud OS</span>
+<span class="font-black text-espresso">₹4,999 / yr</span>
+</div>
+<div class="flex items-center justify-between py-1.5 border-b border-dashed border-espresso/30">
+<span class="font-bold text-espresso/80">Hardware (Use your Phone / iPad)</span>
+<span class="font-black text-paros-matcha bg-white px-2 py-0.5 rounded border border-espresso">₹0 (Existing screens)</span>
+</div>
+<div class="flex items-center justify-between py-1.5 border-b border-dashed border-espresso/30">
+<span class="font-bold text-espresso/80">Paper Rolls (WhatsApp GST Receipts)</span>
+<span class="font-black text-paros-matcha bg-white px-2 py-0.5 rounded border border-espresso">₹0 (100% Digital)</span>
+</div>
+<div class="flex items-center justify-between py-1.5 border-b border-dashed border-espresso/30">
+<span class="font-bold text-espresso/80">UPI Merchant QR Surcharge</span>
+<span class="font-black text-paros-matcha bg-white px-2 py-0.5 rounded border border-espresso">₹0 (Direct UPI VPA)</span>
+</div>
+<div class="flex items-center justify-between py-1.5">
+<span class="font-bold text-espresso/80">Maintenance &amp; Instant PWA Updates</span>
+<span class="font-black text-paros-matcha bg-white px-2 py-0.5 rounded border border-espresso">₹0 (Auto Cloud)</span>
+</div>
+</div>
+</div>
+<div class="mt-8 pt-6 border-t-3 border-espresso bg-paros-yellow -mx-6 sm:-mx-8 -mb-6 sm:-mb-8 p-6 sm:p-8 rounded-b-[21px]">
+<p class="font-display text-xs uppercase tracking-wider font-black text-espresso/70">PAROS YEAR 1 TOTAL</p>
+<p class="font-display text-4xl sm:text-5xl font-black text-espresso tracking-tight">₹4,999</p>
+<p class="font-body text-xs text-espresso/80 mt-1 font-medium">Unlimited KOTs, kitchen display, table QR ordering, and WhatsApp receipts.</p>
+</div>
+</div>
+</div>
+<!-- Big Net Savings Celebration Banner -->
+<div class="mt-10 bg-paros-yellow border-3 border-espresso rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-brutal-xl">
+<div class="flex items-center gap-5">
+<div class="w-16 h-16 rounded-2xl bg-paros-orange text-white border-2 border-espresso shadow-brutal flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[36px]">savings</span>
+</div>
+<div>
+<span class="sticker-badge inline-block bg-white text-espresso border border-espresso px-2 py-0.5 rounded font-display text-[11px] font-black uppercase">YOUR CAFE'S NET ROI</span>
+<h4 class="font-display text-2xl sm:text-4xl font-black text-espresso tracking-tight mt-1" id="banner-savings-amount">
+            🎉 You Save ₹2,09,991 in Year 1 with Paros!
+          </h4>
+<p class="font-body text-xs sm:text-sm text-espresso/80 font-medium">Reinvest your hard-earned money into high-grade single origin beans, better espresso machines, or opening your second outlet.</p>
+</div>
+</div>
+<a class="brutal-btn shrink-0 px-8 py-4 bg-espresso text-white border-2 border-espresso rounded-xl font-display font-black text-sm uppercase tracking-wide shadow-brutal" data-path="trial-onboarding" href="#">
+        Switch to Paros &amp; Save Today →
+      </a>
+</div>
+</div>
+</section>
+<!-- CORE PILLARS FEATURE GRID (Neo-Brutalist Architecture) -->
+<section class="w-full bg-paros-cream border-b-2 border-espresso py-16" id="features">
+<div class="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8">
+<div class="text-center max-w-3xl mx-auto mb-12">
+<span class="sticker-badge inline-block bg-paros-mint text-espresso border-2 border-espresso px-4 py-1 rounded-full font-display text-xs font-black uppercase tracking-wider mb-2 shadow-brutal-sm" style="--rotation: -2deg;">
+        ⚡ BUILT FOR CHAOS-FREE HOSPITALITY
+      </span>
+<h2 class="font-display text-3xl sm:text-5xl font-black text-espresso tracking-tight">
+        Engineered for Sunday Brunch Rushes
+      </h2>
+<p class="mt-2 font-body text-base font-medium text-espresso/80">
+        No confusing nested menus, zero thermal printer jams, and total staff peace of mind.
+      </p>
+</div>
+<!-- 4 Chunky Architectural Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- Feature 1: Universal Mode A QR -->
+<div class="bg-white rounded-3xl p-8 border-3 border-espresso shadow-brutal-lg flex flex-col justify-between hover:-translate-y-1 transition-transform">
+<div>
+<div class="w-14 h-14 rounded-2xl bg-paros-yellow border-2 border-espresso shadow-brutal flex items-center justify-center mb-6">
+<span class="material-symbols-outlined text-[30px] text-espresso">qr_code_2</span>
+</div>
+<span class="font-mono text-xs font-black uppercase tracking-wider text-paros-orange">MODE A INNOVATION</span>
+<h3 class="font-display text-2xl font-black text-espresso mt-1">Universal Single Table QR</h3>
+<p class="font-body text-sm sm:text-base text-espresso/80 mt-3 font-medium">
+            Print just <strong>1 single QR code design</strong> across your entire venue. Diners scan, pick their table number from the visual prompt, and order directly. Completely ends sticker-swapping fraud and eliminates reprinting expenses when you move tables together for big groups.
+          </p>
+</div>
+<div class="mt-6 pt-4 border-t-2 border-espresso flex items-center justify-between">
+<span class="font-display text-xs font-black uppercase text-espresso">Scan → Tap Table → Instant Order</span>
+<span class="material-symbols-outlined text-paros-orange font-black">arrow_forward</span>
+</div>
+</div>
+<!-- Feature 2: Dynamic Chef ETA -->
+<div class="bg-white rounded-3xl p-8 border-3 border-espresso shadow-brutal-lg flex flex-col justify-between hover:-translate-y-1 transition-transform">
+<div>
+<div class="w-14 h-14 rounded-2xl bg-paros-mint border-2 border-espresso shadow-brutal flex items-center justify-center mb-6">
+<span class="material-symbols-outlined text-[30px] text-espresso">timer</span>
+</div>
+<span class="font-mono text-xs font-black uppercase tracking-wider text-secondary">LIVE TRANSPARENCY</span>
+<h3 class="font-display text-2xl font-black text-espresso mt-1">1-Tap Chef ETA Countdowns</h3>
+<p class="font-body text-sm sm:text-base text-espresso/80 mt-3 font-medium">
+            When your barista gets hit with 8 pour overs simultaneously, they tap "+5m" or "+10m" on their tablet KDS. The guest's phone tracking screen updates in real time, completely stopping anxious diners from waving their arms asking <em>"kahan hai meri coffee?"</em>
+</p>
+</div>
+<div class="mt-6 pt-4 border-t-2 border-espresso flex items-center justify-between">
+<span class="font-display text-xs font-black uppercase text-espresso">Eliminate Floor Anxiety Instantly</span>
+<span class="material-symbols-outlined text-paros-matcha font-black">arrow_forward</span>
+</div>
+</div>
+<!-- Feature 3: WhatsApp GST Bills -->
+<div class="bg-white rounded-3xl p-8 border-3 border-espresso shadow-brutal-lg flex flex-col justify-between hover:-translate-y-1 transition-transform">
+<div>
+<div class="w-14 h-14 rounded-2xl bg-paros-peach border-2 border-espresso shadow-brutal flex items-center justify-center mb-6">
+<span class="material-symbols-outlined text-[30px] text-espresso">chat</span>
+</div>
+<span class="font-mono text-xs font-black uppercase tracking-wider text-tertiary">GREEN &amp; COMPLIANT</span>
+<h3 class="font-display text-2xl font-black text-espresso mt-1">100% Paperless WhatsApp Bills</h3>
+<p class="font-body text-sm sm:text-base text-espresso/80 mt-3 font-medium">
+            Send an official GST-compliant tax invoice directly to the diner's WhatsApp in under a second. Save upwards of ₹30,000 yearly on toxic BPA thermal rolls while building a verified customer phone directory for your cafe's loyalty CRM.
+          </p>
+</div>
+<div class="mt-6 pt-4 border-t-2 border-espresso flex items-center justify-between">
+<span class="font-display text-xs font-black uppercase text-espresso">Instant WhatsApp Receipt + CRM</span>
+<span class="material-symbols-outlined text-paros-orange font-black">arrow_forward</span>
+</div>
+</div>
+<!-- Feature 4: Shift Cash Lock & Expense Tracking -->
+<div class="bg-white rounded-3xl p-8 border-3 border-espresso shadow-brutal-lg flex flex-col justify-between hover:-translate-y-1 transition-transform">
+<div>
+<div class="w-14 h-14 rounded-2xl bg-paros-orange border-2 border-espresso shadow-brutal flex items-center justify-center mb-6 text-white">
+<span class="material-symbols-outlined text-[30px]">lock_clock</span>
+</div>
+<span class="font-mono text-xs font-black uppercase tracking-wider text-paros-orange">FOOLPROOF AUDITS</span>
+<h3 class="font-display text-2xl font-black text-espresso mt-1">Shift Cash Lock &amp; Spot Petty Cash</h3>
+<p class="font-body text-sm sm:text-base text-espresso/80 mt-3 font-medium">
+            Count drawer cash at opening float and shift changeover with zero discrepancies. When the barista sends an intern for emergency whole milk or ice, log the spot payout in 2 taps and keep your registers strictly balanced.
+          </p>
+</div>
+<div class="mt-6 pt-4 border-t-2 border-espresso flex items-center justify-between">
+<span class="font-display text-xs font-black uppercase text-espresso">Total Shift Accountability</span>
+<span class="material-symbols-outlined text-espresso font-black">arrow_forward</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- TRANSPARENT PRICING SECTION -->
+<section class="w-full bg-paros-cream border-b-2 border-espresso py-16" id="pricing">
+<div class="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8">
+<div class="text-center max-w-3xl mx-auto mb-10">
+<span class="sticker-badge inline-block bg-paros-yellow text-espresso border-2 border-espresso px-4 py-1 rounded-full font-display text-xs font-black uppercase tracking-wider mb-2 shadow-brutal-sm" style="--rotation: -1deg;">
+        NO PROPRIETARY HARDWARE LOCK-IN
+      </span>
+<h2 class="font-display text-3xl sm:text-5xl font-black text-espresso tracking-tight">
+        Honest, Indie-Friendly Pricing
+      </h2>
+<p class="mt-2 font-body text-base font-medium text-espresso/80">
+        No setup extortion. No long-term lock-in contracts. Cancel anytime in one tap.
+      </p>
+<!-- Monthly / Annual Toggle Switch -->
+<div class="mt-8 inline-flex items-center bg-white border-2 border-espresso p-1.5 rounded-2xl shadow-brutal">
+<button class="px-5 py-2 rounded-xl font-display font-black text-xs sm:text-sm uppercase tracking-wide transition-all text-espresso hover:bg-paros-cream" id="toggle-billing-monthly" onclick="setBillingCycle('monthly')">
+          Monthly
+        </button>
+<button class="px-5 py-2 rounded-xl font-display font-black text-xs sm:text-sm uppercase tracking-wide bg-paros-orange text-white border-2 border-espresso shadow-brutal-sm transition-all flex items-center gap-1.5" id="toggle-billing-annual" onclick="setBillingCycle('annual')">
+<span>Annual Billing</span>
+<span class="text-[10px] bg-paros-yellow text-espresso px-2 py-0.5 rounded border border-espresso font-black">2 MONTHS FREE</span>
+</button>
+</div>
+</div>
+<!-- Pricing Plans Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto items-stretch">
+<!-- Plan 1: Silver Plan -->
+<div class="bg-white rounded-3xl p-8 border-3 border-espresso shadow-brutal-lg flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between pb-3 mb-4 border-b-2 border-espresso">
+<div>
+<span class="font-display text-xs font-black uppercase tracking-wider text-espresso/70">SILVER PLAN</span>
+<h3 class="font-display text-2xl font-black text-espresso mt-0.5">Quick Counter &amp; Bakery</h3>
+</div>
+<span class="px-3 py-1 bg-paros-cream border border-espresso text-xs font-display font-black rounded-lg">KIOSKS &amp; BARS</span>
+</div>
+<p class="font-body text-xs sm:text-sm text-espresso/80 font-medium">Ideal for takeaway espresso bars, bakeries, food trucks, and cloud kitchens.</p>
+<!-- Pricing Block -->
+<div class="my-6 p-4 bg-paros-cream rounded-2xl border-2 border-espresso">
+<div class="flex items-baseline gap-1">
+<span class="font-display text-4xl sm:text-5xl font-black text-espresso" id="price-silver-val">₹4,999</span>
+<span class="font-display font-bold text-sm text-espresso/70" id="price-silver-cycle">/ year</span>
+</div>
+<p class="font-mono text-xs font-bold text-paros-matcha mt-1" id="price-silver-note">Effective ₹416/mo (billed annually)</p>
+</div>
+<!-- Feature List -->
+<ul class="space-y-3 font-display text-sm font-bold">
+<li class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-secondary text-[20px] font-black">check_circle</span> Unlimited orders &amp; menu items
+            </li>
+<li class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-secondary text-[20px] font-black">check_circle</span> WhatsApp GST billing included
+            </li>
+<li class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-secondary text-[20px] font-black">check_circle</span> 1 Kitchen KDS screen terminal
+            </li>
+<li class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-secondary text-[20px] font-black">check_circle</span> Offline-first Progressive Web App (PWA)
+            </li>
+<li class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-secondary text-[20px] font-black">check_circle</span> Shift cash lock &amp; spot vendor expense audits
+            </li>
+<li class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-secondary text-[20px] font-black">check_circle</span> 1 Register counter login
+            </li>
+</ul>
+</div>
+<div class="mt-8 pt-4">
+<a class="brutal-btn w-full py-4 inline-flex justify-center items-center rounded-xl bg-paros-cream text-espresso border-2 border-espresso font-display font-black text-sm uppercase tracking-wide shadow-brutal hover:bg-paros-yellow" data-path="trial-onboarding" href="#">
+            Start 14-Day Free Trial →
+          </a>
+</div>
+</div>
+<!-- Plan 2: Gold Plan (Highlighted Neo-Brutalist) -->
+<div class="bg-paros-yellow/30 rounded-3xl p-8 border-3 border-espresso shadow-brutal-xl relative flex flex-col justify-between">
+<!-- Stamp Badge -->
+<div class="absolute -top-3 right-6 bg-paros-orange text-white border-2 border-espresso px-4 py-1 rounded-full font-display text-xs font-black uppercase tracking-wider shadow-brutal rotate-2">
+          ⭐ MOST LOVED BY BARISTAS
+        </div>
+<div>
+<div class="flex items-center justify-between pb-3 mb-4 border-b-2 border-espresso">
+<div>
+<span class="font-display text-xs font-black uppercase tracking-wider text-paros-orange">GOLD PLAN</span>
+<h3 class="font-display text-2xl font-black text-espresso mt-0.5">Full Dine-In &amp; Brewpub</h3>
+</div>
+<span class="px-3 py-1 bg-paros-orange text-white border border-espresso text-xs font-display font-black rounded-lg">FULL VENUE</span>
+</div>
+<p class="font-body text-xs sm:text-sm text-espresso/80 font-medium">For seated specialty cafes, bistros, roasteries, and multi-floor spaces.</p>
+<!-- Pricing Block -->
+<div class="my-6 p-4 bg-white rounded-2xl border-2 border-espresso shadow-brutal-sm">
+<div class="flex items-baseline gap-1">
+<span class="font-display text-4xl sm:text-5xl font-black text-paros-orange" id="price-gold-val">₹8,499</span>
+<span class="font-display font-bold text-sm text-espresso/70" id="price-gold-cycle">/ year</span>
+</div>
+<p class="font-mono text-xs font-bold text-paros-matcha mt-1" id="price-gold-note">Effective ₹708/mo (billed annually)</p>
+</div>
+<!-- Feature List -->
+<ul class="space-y-3 font-display text-sm font-bold">
+<li class="flex items-center gap-2.5 text-espresso bg-paros-yellow/60 px-2 py-1 rounded border border-espresso">
+<span class="material-symbols-outlined text-paros-orange text-[20px] font-black">verified</span> EVERYTHING IN SILVER, PLUS:
+            </li>
+<li class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-secondary text-[20px] font-black">check_circle</span> Universal Table QR ordering (Mode A)
+            </li>
+<li class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-secondary text-[20px] font-black">check_circle</span> Interactive floor plan &amp; live table occupancy
+            </li>
+<li class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-secondary text-[20px] font-black">check_circle</span> Dynamic Chef ETA countdowns on customer mobile
+            </li>
+<li class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-secondary text-[20px] font-black">check_circle</span> Multi-device sync (Counter + Barista + Kitchen)
+            </li>
+<li class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-secondary text-[20px] font-black">check_circle</span> Automated Google Review Collector via WhatsApp
+            </li>
+<li class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-secondary text-[20px] font-black">check_circle</span> Priority WhatsApp VIP Founder Support (24/7)
+            </li>
+</ul>
+</div>
+<div class="mt-8 pt-4">
+<a class="brutal-btn w-full py-4 inline-flex justify-center items-center rounded-xl bg-paros-orange text-white border-2 border-espresso font-display font-black text-sm uppercase tracking-wide shadow-brutal hover:bg-paros-orange/90" data-path="trial-onboarding" href="#">
+            Start 14-Day Free Trial →
+          </a>
+</div>
+</div>
+</div>
+<!-- Assurance Badges -->
+<div class="mt-10 text-center font-display font-bold text-xs sm:text-sm uppercase text-espresso flex flex-wrap items-center justify-center gap-4">
+<span class="bg-white border border-espresso px-3 py-1 rounded-md shadow-brutal-sm">• Zero Hardware Lock-in</span>
+<span class="bg-white border border-espresso px-3 py-1 rounded-md shadow-brutal-sm">• Zero Setup Fees</span>
+<span class="bg-white border border-espresso px-3 py-1 rounded-md shadow-brutal-sm">• 0% Commission on UPI</span>
+<span class="bg-white border border-espresso px-3 py-1 rounded-md shadow-brutal-sm">• Instant 1-Click Cancellation</span>
+</div>
+</div>
+</section>
+<!-- TESTIMONIALS & CAFE PROOF (Neo-Brutalist Speech Bubbles) -->
+<section class="w-full bg-paros-cream border-b-2 border-espresso py-16" id="testimonials">
+<div class="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8">
+<div class="text-center max-w-3xl mx-auto mb-12">
+<span class="sticker-badge inline-block bg-paros-peach text-espresso border-2 border-espresso px-4 py-1 rounded-full font-display text-xs font-black uppercase tracking-wider mb-2 shadow-brutal-sm" style="--rotation: 2deg;">
+        VOICES FROM THE COFFEE BAR
+      </span>
+<h2 class="font-display text-3xl sm:text-5xl font-black text-espresso tracking-tight">
+        "We Threw Out Our Windows Terminal."
+      </h2>
+<p class="mt-2 font-body text-base font-medium text-espresso/80">
+        How indie cafe owners dumped legacy hardware and never looked back.
+      </p>
+</div>
+<!-- Testimonials Grid -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- Quote 1 -->
+<div class="bg-white p-6 sm:p-8 rounded-3xl border-3 border-espresso shadow-brutal-lg flex flex-col justify-between relative">
+<div class="text-paros-orange font-black text-4xl leading-none mb-3">“</div>
+<p class="font-body text-sm sm:text-base font-semibold text-espresso leading-relaxed">
+          We were burning over ₹3,000 every single month on rolls of thermal receipt paper that customers threw in the dustbin 2 seconds later. Paros WhatsApp billing paid for itself in week one, and our brew bar looks pristine with just an iPad.
+        </p>
+<div class="mt-6 pt-4 border-t-2 border-espresso flex items-center gap-3">
+<div class="w-12 h-12 rounded-xl bg-paros-yellow border-2 border-espresso shadow-brutal-sm flex items-center justify-center font-display font-black text-espresso">
+            AK
+          </div>
+<div>
+<p class="font-display font-black text-espresso text-sm">Arjun Kulkarni</p>
+<p class="font-mono text-xs text-espresso/70">Founder, RoastCraft • Indiranagar</p>
+</div>
+</div>
+</div>
+<!-- Quote 2 -->
+<div class="bg-white p-6 sm:p-8 rounded-3xl border-3 border-espresso shadow-brutal-lg flex flex-col justify-between relative">
+<div class="text-paros-orange font-black text-4xl leading-none mb-3">“</div>
+<p class="font-body text-sm sm:text-base font-semibold text-espresso leading-relaxed">
+          Our previous POS would crash and lose tickets whenever Bandra Wi-Fi flickered during monsoon showers. Paros handles local offline sync seamlessly. When Sunday morning rushes happen, our baristas don't drop a single order.
+        </p>
+<div class="mt-6 pt-4 border-t-2 border-espresso flex items-center gap-3">
+<div class="w-12 h-12 rounded-xl bg-paros-mint border-2 border-espresso shadow-brutal-sm flex items-center justify-center font-display font-black text-espresso">
+            SM
+          </div>
+<div>
+<p class="font-display font-black text-espresso text-sm">Sanya Merchant</p>
+<p class="font-mono text-xs text-espresso/70">Head Baker, Sourdough Co. • Bandra</p>
+</div>
+</div>
+</div>
+<!-- Quote 3 -->
+<div class="bg-white p-6 sm:p-8 rounded-3xl border-3 border-espresso shadow-brutal-lg flex flex-col justify-between relative">
+<div class="text-paros-orange font-black text-4xl leading-none mb-3">“</div>
+<p class="font-body text-sm sm:text-base font-semibold text-espresso leading-relaxed">
+          The 1-tap Chef ETA button genuinely saved our floor staff from nervous breakdowns. Diners can see a live countdown on their phone, so they never wave arms angrily asking 'kahan hai mera bagel?'. Absolute calm in our kitchen.
+        </p>
+<div class="mt-6 pt-4 border-t-2 border-espresso flex items-center gap-3">
+<div class="w-12 h-12 rounded-xl bg-paros-peach border-2 border-espresso shadow-brutal-sm flex items-center justify-center font-display font-black text-espresso">
+            VR
+          </div>
+<div>
+<p class="font-display font-black text-espresso text-sm">Vikram Rao</p>
+<p class="font-mono text-xs text-espresso/70">Partner, Third Wave Lab • Hauz Khas</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- HIGH-ENERGY FINAL CTA BANNER -->
+<section class="w-full bg-paros-cream border-b-2 border-espresso py-16">
+<div class="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8">
+<div class="relative rounded-3xl bg-paros-orange border-3 border-espresso p-8 sm:p-14 overflow-hidden shadow-brutal-xl text-center flex flex-col items-center">
+<!-- Tactile Graphic Accents -->
+<div class="absolute -right-16 -top-16 w-52 h-52 bg-paros-yellow rounded-full border-3 border-espresso opacity-40 pointer-events-none"></div>
+<div class="absolute -left-16 -bottom-16 w-52 h-52 bg-white rounded-full border-3 border-espresso opacity-20 pointer-events-none"></div>
+<span class="sticker-badge inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-paros-yellow text-espresso border-2 border-espresso font-display text-xs font-black uppercase tracking-wider mb-4 shadow-brutal-sm" style="--rotation: -2deg;">
+<span class="material-symbols-outlined text-[18px]">bolt</span> READY IN UNDER 180 SECONDS
+      </span>
+<h2 class="font-display text-3xl sm:text-6xl font-black text-white tracking-tight max-w-3xl text-balance">
+        Ready to dump your bulky POS terminal once and for all?
+      </h2>
+<p class="mt-4 font-body text-base sm:text-lg font-medium text-white/90 max-w-xl text-balance">
+        Join 150+ forward-thinking cafe owners. No hardware purchases, zero setup fees, and your tablet or phone is all you need.
+      </p>
+<div class="mt-8 flex flex-col sm:flex-row items-center gap-4">
+<a class="brutal-btn w-full sm:w-auto px-8 py-4 rounded-xl bg-paros-yellow text-espresso border-2 border-espresso font-display font-black text-sm uppercase tracking-wide shadow-brutal" data-path="trial-onboarding" href="#">
+          Start 14-Day Free Trial →
+        </a>
+<a class="brutal-btn w-full sm:w-auto px-8 py-4 rounded-xl bg-white text-espresso border-2 border-espresso font-display font-black text-sm uppercase tracking-wide shadow-brutal hover:bg-paros-cream" data-path="book-demo" href="#">
+          Book 5-Min Live Screen Tour
+        </a>
+</div>
+<p class="mt-4 font-mono text-xs text-white/80 font-bold">
+        Setup takes under 3 minutes • Instant WhatsApp onboarding assistance
+      </p>
+</div>
+</div>
+</section>
+<!-- FAQ ACCORDION SECTION -->
+<section class="w-full bg-paros-cream py-16" id="faq">
+<div class="max-w-[840px] mx-auto px-4 sm:px-6 lg:px-8">
+<div class="text-center mb-10">
+<span class="sticker-badge inline-block bg-paros-mint text-espresso border-2 border-espresso px-4 py-1 rounded-full font-display text-xs font-black uppercase tracking-wider mb-2 shadow-brutal-sm" style="--rotation: 1deg;">
+        GOT QUESTIONS?
+      </span>
+<h3 class="font-display text-3xl sm:text-4xl font-black text-espresso">Frequently Asked Questions</h3>
+<p class="font-body text-sm font-medium text-espresso/70 mt-1">Clear answers before you switch your cafe to Paros.</p>
+</div>
+<div class="space-y-3">
+<!-- FAQ 1 -->
+<div class="bg-white rounded-2xl border-2 border-espresso p-5 shadow-brutal-sm cursor-pointer transition-all hover:bg-paros-yellow/10" onclick="toggleFaq(this)">
+<div class="flex items-center justify-between">
+<span class="font-display text-base font-black text-espresso">Do UPI payments go directly to my own bank account?</span>
+<span class="material-symbols-outlined text-espresso transition-transform faq-arrow font-bold">expand_more</span>
+</div>
+<p class="hidden font-body text-sm font-medium text-espresso/80 mt-3 pt-3 border-t border-dashed border-espresso leading-relaxed">
+          Yes, 100%. Paros does not hold your funds or act as an intermediary escrow. When guests scan your universal QR code, payments route straight into your existing merchant UPI VPA or bank QR. You pay 0% transaction commission to Paros.
+        </p>
+</div>
+<!-- FAQ 2 -->
+<div class="bg-white rounded-2xl border-2 border-espresso p-5 shadow-brutal-sm cursor-pointer transition-all hover:bg-paros-yellow/10" onclick="toggleFaq(this)">
+<div class="flex items-center justify-between">
+<span class="font-display text-base font-black text-espresso">What happens if our cafe Wi-Fi goes down during a rush?</span>
+<span class="material-symbols-outlined text-espresso transition-transform faq-arrow font-bold">expand_more</span>
+</div>
+<p class="hidden font-body text-sm font-medium text-espresso/80 mt-3 pt-3 border-t border-dashed border-espresso leading-relaxed">
+          Paros operates as an offline-first Progressive Web App (PWA). You can continue punching orders, assigning tables, and accepting cash or direct UPI. Everything automatically syncs to your cloud dashboard the moment connection restores.
+        </p>
+</div>
+<!-- FAQ 3 -->
+<div class="bg-white rounded-2xl border-2 border-espresso p-5 shadow-brutal-sm cursor-pointer transition-all hover:bg-paros-yellow/10" onclick="toggleFaq(this)">
+<div class="flex items-center justify-between">
+<span class="font-display text-base font-black text-espresso">Can I still print paper bills if an older customer insists?</span>
+<span class="material-symbols-outlined text-espresso transition-transform faq-arrow font-bold">expand_more</span>
+</div>
+<p class="hidden font-body text-sm font-medium text-espresso/80 mt-3 pt-3 border-t border-dashed border-espresso leading-relaxed">
+          Absolutely. While Paros is engineered to replace paper with WhatsApp receipts, it also supports standard Bluetooth thermal ESC/POS printers in case an occasional guest specifically requests a printed slip.
+        </p>
+</div>
+<!-- FAQ 4 -->
+<div class="bg-white rounded-2xl border-2 border-espresso p-5 shadow-brutal-sm cursor-pointer transition-all hover:bg-paros-yellow/10" onclick="toggleFaq(this)">
+<div class="flex items-center justify-between">
+<span class="font-display text-base font-black text-espresso">How long does cafe menu setup take?</span>
+<span class="material-symbols-outlined text-espresso transition-transform faq-arrow font-bold">expand_more</span>
+</div>
+<p class="hidden font-body text-sm font-medium text-espresso/80 mt-3 pt-3 border-t border-dashed border-espresso leading-relaxed">
+          You can import your existing menu in 180 seconds via Excel/CSV or simply send a photo of your printed menu to our WhatsApp onboarding team. We will structure your items, modifiers, and GST categories for free.
+        </p>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- NEO-BRUTALIST FOOTER -->
+<footer class="w-full bg-paros-cream border-t-3 border-espresso">
+<div class="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-8">
+<div class="flex flex-col md:flex-row md:items-center justify-between pb-8 border-b-2 border-espresso gap-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-paros-orange border-2 border-espresso shadow-brutal-sm flex items-center justify-center font-display font-black text-xl text-white">
+          P
+        </div>
+<div>
+<span class="font-display text-2xl font-black text-espresso tracking-tight">PAROS</span>
+<p class="font-display text-xs font-bold text-espresso/70">Table se Kitchen tak. Bas Paros.</p>
+</div>
+</div>
+<div class="flex flex-wrap items-center gap-2">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border-2 border-espresso text-xs font-display font-black text-espresso shadow-brutal-sm">
+<span class="material-symbols-outlined text-paros-matcha text-[16px] font-bold">verified</span> Built for Indie Food Hustlers
+        </span>
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-paros-mint border-2 border-espresso text-xs font-display font-black text-espresso shadow-brutal-sm">
+<span class="w-2 h-2 rounded-full bg-paros-matcha animate-pulse"></span> 99.99% Cloud SLA
+        </span>
+</div>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-8 py-8">
+<div class="flex flex-col gap-2">
+<h4 class="font-display text-xs font-black uppercase text-espresso tracking-wider">Product</h4>
+<a class="font-display text-sm font-bold text-espresso/80 hover:text-paros-orange transition-colors" data-path="features" href="#features">Features</a>
+<a class="font-display text-sm font-bold text-espresso/80 hover:text-paros-orange transition-colors" data-path="interactive-demo" href="#interactive-demo">Live Simulator</a>
+<a class="font-display text-sm font-bold text-espresso/80 hover:text-paros-orange transition-colors" data-path="savings-calculator" href="#savings-calculator">Savings Calculator</a>
+<a class="font-display text-sm font-bold text-espresso/80 hover:text-paros-orange transition-colors" data-path="pricing" href="#pricing">Transparent Pricing</a>
+</div>
+<div class="flex flex-col gap-2">
+<h4 class="font-display text-xs font-black uppercase text-espresso tracking-wider">Operations</h4>
+<a class="font-display text-sm font-bold text-espresso/80 hover:text-paros-orange transition-colors" data-path="why-paros" href="#testimonials">Why Paros</a>
+<a class="font-display text-sm font-bold text-espresso/80 hover:text-paros-orange transition-colors" data-path="kitchen-display-system" href="#">Digital KDS</a>
+<a class="font-display text-sm font-bold text-espresso/80 hover:text-paros-orange transition-colors" data-path="qr-ordering" href="#">QR Dine-in (Mode A)</a>
+<a class="font-display text-sm font-bold text-espresso/80 hover:text-paros-orange transition-colors" data-path="billing-terminal" href="#">PWA Cloud Billing</a>
+</div>
+<div class="flex flex-col gap-2">
+<h4 class="font-display text-xs font-black uppercase text-espresso tracking-wider">Resources</h4>
+<a class="font-display text-sm font-bold text-espresso/80 hover:text-paros-orange transition-colors" data-path="documentation" href="#">Documentation</a>
+<a class="font-display text-sm font-bold text-espresso/80 hover:text-paros-orange transition-colors" data-path="whatsapp-support" href="#">WhatsApp Onboarding</a>
+<a class="font-display text-sm font-bold text-espresso/80 hover:text-paros-orange transition-colors" data-path="api-integrations" href="#">Merchant UPI Setup</a>
+<a class="font-display text-sm font-bold text-espresso/80 hover:text-paros-orange transition-colors" data-path="community" href="#">Restaurateur Circle</a>
+</div>
+<div class="flex flex-col gap-2">
+<h4 class="font-display text-xs font-black uppercase text-espresso tracking-wider">Trust &amp; Legal</h4>
+<a class="font-display text-sm font-bold text-espresso/80 hover:text-paros-orange transition-colors" data-path="privacy-policy" href="#">Privacy Policy</a>
+<a class="font-display text-sm font-bold text-espresso/80 hover:text-paros-orange transition-colors" data-path="terms" href="#">Terms of Service</a>
+<a class="font-display text-sm font-bold text-espresso/80 hover:text-paros-orange transition-colors" data-path="security" href="#">Cloud Backup &amp; Offline Sync</a>
+<a class="font-display text-sm font-bold text-espresso/80 hover:text-paros-orange transition-colors" data-path="sla-guarantee" href="#">Zero Hardware Guarantee</a>
+</div>
+</div>
+<div class="pt-6 border-t-2 border-espresso flex flex-col sm:flex-row items-center justify-between gap-4 font-mono text-xs text-espresso/70">
+<span>© 2025 Paros Technologies Pvt. Ltd. Crafted with ❤️ for Indian Independent Cafes.</span>
+<div class="flex items-center gap-4 font-display font-bold">
+<a class="hover:text-paros-orange transition-colors" data-path="privacy-policy" href="#">Privacy</a>
+<a class="hover:text-paros-orange transition-colors" data-path="terms" href="#">Terms</a>
+<a class="hover:text-paros-orange transition-colors" data-path="whatsapp-support" href="#">WhatsApp Help</a>
+</div>
+</div>
+</div>
+</footer>
+<!-- INTERACTIVE SCRIPTS -->
+<script>
+  // Demo Tab Switching Logic
+  function switchDemoTab(tabName) {
+    const tabs = ['counter', 'kds', 'qr'];
+    tabs.forEach(t => {
+      const pane = document.getElementById('demo-pane-' + t);
+      const btn = document.getElementById('tab-btn-' + t);
+      if (t === tabName) {
+        pane.classList.remove('hidden');
+        btn.classList.remove('text-espresso', 'hover:bg-paros-yellow', 'border-transparent');
+        btn.classList.add('bg-paros-orange', 'text-white', 'border-2', 'border-espresso', 'shadow-brutal-sm');
+      } else {
+        pane.classList.add('hidden');
+        btn.classList.remove('bg-paros-orange', 'text-white', 'border-espresso', 'shadow-brutal-sm');
+        btn.classList.add('text-espresso', 'hover:bg-paros-yellow', 'border-transparent');
+      }
+    });
+  }
+
+  // Interactive Counter POS Cart Simulator
+  let cartTotal = 700;
+  function addPosItem(name, price) {
+    const cartContainer = document.getElementById('pos-cart-items');
+    const itemRow = document.createElement('div');
+    itemRow.className = "flex items-center justify-between p-3 bg-white rounded-xl border-2 border-espresso shadow-brutal-sm animate-pulse";
+    itemRow.innerHTML = `
+      <div>
+        <p class="font-display font-bold text-espresso text-sm">1× ${name}</p>
+        <p class="font-body text-xs text-espresso/70">Standard Prep</p>
+      </div>
+      <span class="font-display font-black text-espresso text-base">₹${price}</span>
+    `;
+    cartContainer.prepend(itemRow);
+    setTimeout(() => itemRow.classList.remove('animate-pulse'), 500);
+
+    cartTotal += price;
+    updateCartTotals();
+  }
+
+  function updateCartTotals() {
+    const tax = Math.round(cartTotal * 0.05);
+    const grand = cartTotal + tax;
+    document.getElementById('pos-subtotal').innerText = '₹' + cartTotal.toFixed(2);
+    document.getElementById('pos-tax').innerText = '₹' + tax.toFixed(2);
+    document.getElementById('pos-grand-total').innerText = '₹' + grand.toFixed(2);
+  }
+
+  function selectDemoTable(t) {
+    document.querySelectorAll('.tbl-btn').forEach(btn => {
+      btn.className = "tbl-btn px-3 py-1 text-xs font-display font-black rounded-lg border-2 border-espresso bg-white shadow-brutal-sm hover:bg-paros-yellow";
+    });
+    const selected = document.getElementById('tbl-' + t);
+    selected.className = "tbl-btn px-3 py-1 text-xs font-display font-black rounded-lg border-2 border-espresso bg-paros-orange text-white shadow-brutal-sm";
+    document.getElementById('current-table-label').innerText = 'Table ' + t.replace('T', '0') + ' — Dine In';
+  }
+
+  function triggerWhatsAppToast() {
+    const toast = document.getElementById('whatsapp-toast');
+    toast.classList.remove('hidden');
+    setTimeout(() => {
+      toast.classList.add('hidden');
+    }, 4000);
+  }
+
+  // KDS Interactive Functions
+  function adjustKdsTime(timerId, addMinutes) {
+    const el = document.getElementById(timerId);
+    if (el) {
+      el.innerText = (4 + addMinutes) + 'm 20s left';
+      el.classList.add('bg-paros-peach');
+      setTimeout(() => el.classList.remove('bg-paros-peach'), 800);
+    }
+  }
+
+  function markKdsReady(btn) {
+    btn.innerText = '✓ READY FOR SERVING';
+    btn.classList.remove('bg-paros-matcha', 'bg-paros-orange', 'text-white');
+    btn.classList.add('bg-white', 'text-espresso/60');
+  }
+
+  function toggleQrCustomizer() {
+    const box = document.getElementById('qr-modifier-box');
+    box.classList.toggle('hidden');
+  }
+
+  // ROI Calculator Logic
+  function calculateSavings(dailyOrders) {
+    dailyOrders = parseInt(dailyOrders, 10);
+    const tables = Math.max(4, Math.round(dailyOrders / 6.5));
+    document.getElementById('orders-display').innerText = `${dailyOrders} orders / day (${tables} tables)`;
+
+    // Thermal paper rolls: ~1 roll per 40 orders @ ₹45/roll
+    const annualPaperCost = Math.round((dailyOrders / 40) * 45 * 365);
+    // Legacy Payment gateway / MDR: Assuming ₹280 avg ticket size, 1.5% cut
+    const annualGatewayTax = Math.round(dailyOrders * 280 * 365 * 0.015);
+    
+    // Legacy Fixed costs
+    const legacyHardware = 35000;
+    const legacySoftware = 20000;
+    const legacyMaintenance = 4500;
+    const legacyTotal = legacyHardware + legacySoftware + legacyMaintenance + annualPaperCost + annualGatewayTax;
+
+    // Paros Cost
+    const parosTotal = 4999;
+    const netSavings = legacyTotal - parosTotal;
+
+    document.getElementById('legacy-paper-cost').innerText = '₹' + annualPaperCost.toLocaleString('en-IN') + ' / yr';
+    document.getElementById('legacy-gateway-cost').innerText = '₹' + annualGatewayTax.toLocaleString('en-IN') + ' / yr';
+    document.getElementById('legacy-total-cost').innerText = '₹' + legacyTotal.toLocaleString('en-IN');
+    document.getElementById('banner-savings-amount').innerText = `🎉 You Save ₹${netSavings.toLocaleString('en-IN')} in Year 1 with Paros!`;
+  }
+
+  // Billing Cycle Toggle (Monthly vs Annual)
+  function setBillingCycle(type) {
+    const btnMonthly = document.getElementById('toggle-billing-monthly');
+    const btnAnnual = document.getElementById('toggle-billing-annual');
+
+    const pSilverVal = document.getElementById('price-silver-val');
+    const pSilverCycle = document.getElementById('price-silver-cycle');
+    const pSilverNote = document.getElementById('price-silver-note');
+
+    const pGoldVal = document.getElementById('price-gold-val');
+    const pGoldCycle = document.getElementById('price-gold-cycle');
+    const pGoldNote = document.getElementById('price-gold-note');
+
+    if (type === 'monthly') {
+      btnMonthly.className = "px-5 py-2 rounded-xl font-display font-black text-xs sm:text-sm uppercase tracking-wide bg-paros-orange text-white border-2 border-espresso shadow-brutal-sm transition-all";
+      btnAnnual.className = "px-5 py-2 rounded-xl font-display font-black text-xs sm:text-sm uppercase tracking-wide transition-all text-espresso hover:bg-paros-cream flex items-center gap-1.5";
+
+      pSilverVal.innerText = "₹499";
+      pSilverCycle.innerText = "/ month";
+      pSilverNote.innerText = "Billed monthly • Cancel anytime";
+
+      pGoldVal.innerText = "₹899";
+      pGoldCycle.innerText = "/ month";
+      pGoldNote.innerText = "Billed monthly • Cancel anytime";
+    } else {
+      btnAnnual.className = "px-5 py-2 rounded-xl font-display font-black text-xs sm:text-sm uppercase tracking-wide bg-paros-orange text-white border-2 border-espresso shadow-brutal-sm transition-all flex items-center gap-1.5";
+      btnMonthly.className = "px-5 py-2 rounded-xl font-display font-black text-xs sm:text-sm uppercase tracking-wide transition-all text-espresso hover:bg-paros-cream";
+
+      pSilverVal.innerText = "₹4,999";
+      pSilverCycle.innerText = "/ year";
+      pSilverNote.innerText = "Effective ₹416/mo (billed annually)";
+
+      pGoldVal.innerText = "₹8,499";
+      pGoldCycle.innerText = "/ year";
+      pGoldNote.innerText = "Effective ₹708/mo (billed annually)";
+    }
+  }
+
+  // FAQ Accordion Toggle
+  function toggleFaq(card) {
+    const p = card.querySelector('p');
+    const icon = card.querySelector('.faq-arrow');
+    if (p.classList.contains('hidden')) {
+      p.classList.remove('hidden');
+      icon.style.transform = 'rotate(180deg)';
+    } else {
+      p.classList.add('hidden');
+      icon.style.transform = 'rotate(0deg)';
+    }
+  }
+
+  // Initial Calculation Run
+  calculateSavings(80);
+</script>
+</body></html>

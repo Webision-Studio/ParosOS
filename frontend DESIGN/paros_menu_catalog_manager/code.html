@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "on-surface": "#1e1b19", "outline-variant": "#e0bfb7", "error": "#ba1a1a", "inverse-on-surface": "#f7efeb", "primary-fixed": "#ffdbd1", "on-surface-variant": "#58413b", "inverse-primary": "#ffb5a0", "error-container": "#ffdad6", "on-background": "#1e1b19", "primary": "#a63412", "surface-tint": "#aa3614", "outline": "#8c716a", "surface-dim": "#e0d8d5", "surface-container-lowest": "#ffffff", "on-secondary-fixed-variant": "#005323", "secondary-container": "#92f5a4", "on-primary-fixed": "#3b0900", "on-error": "#ffffff", "on-tertiary-fixed-variant": "#6e3900", "on-tertiary": "#ffffff", "secondary-fixed-dim": "#79db8d", "tertiary": "#8d4b00", "primary-container": "#c84c28", "tertiary-fixed-dim": "#ffb77d", "secondary": "#006d30", "surface-container-highest": "#e9e1dd", "surface-container": "#f4ece8", "on-primary": "#ffffff", "inverse-surface": "#33302d", "tertiary-fixed": "#ffdcc3", "tertiary-container": "#b15f00", "on-primary-fixed-variant": "#872000", "on-primary-container": "#fffbff", "primary-fixed-dim": "#ffb5a0", "surface-bright": "#fff8f5", "on-secondary-container": "#007233", "secondary-fixed": "#95f8a7", "on-tertiary-container": "#fffbff", "on-secondary-fixed": "#00210a", "surface": "#fff8f5", "surface-container-high": "#eee7e3", "on-secondary": "#ffffff", "on-error-container": "#93000a", "background": "#fff8f5", "surface-variant": "#e9e1dd", "on-tertiary-fixed": "#2f1500", "surface-container-low": "#faf2ee" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "margin": "2rem", "space-lg": "1.5rem", "gutter": "1.5rem", "space-md": "1rem", "space-xs": "0.25rem", "space-sm": "0.5rem", "gutter-mobile": "1rem", "space-xl": "2.5rem", "margin-mobile": "1.25rem" }, "fontFamily": { "label-sm": ["Plus Jakarta Sans"], "label-md": ["Plus Jakarta Sans"], "headline-sm": ["Plus Jakarta Sans"], "metric-display": ["Plus Jakarta Sans"], "body-lg": ["Plus Jakarta Sans"], "body-sm": ["Plus Jakarta Sans"], "headline-lg": ["Plus Jakarta Sans"], "body-md": ["Plus Jakarta Sans"], "headline-lg-mobile": ["Plus Jakarta Sans"], "display-hero": ["Plus Jakarta Sans"], "display-hero-mobile": ["Plus Jakarta Sans"], "headline-md": ["Plus Jakarta Sans"] }, "fontSize": { "label-sm": ["11px", { "lineHeight": "16px", "letterSpacing": "0.04em", "fontWeight": "700" }], "label-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }], "headline-sm": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "metric-display": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "body-lg": ["18px", { "lineHeight": "28px", "letterSpacing": "-0.005em", "fontWeight": "400" }], "body-sm": ["13px", { "lineHeight": "20px", "fontWeight": "400" }], "headline-lg": ["44px", { "lineHeight": "52px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "body-md": ["15px", { "lineHeight": "24px", "fontWeight": "400" }], "headline-lg-mobile": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.015em", "fontWeight": "700" }], "display-hero": ["64px", { "lineHeight": "72px", "letterSpacing": "-0.03em", "fontWeight": "800" }], "display-hero-mobile": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.025em", "fontWeight": "800" }], "headline-md": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.015em", "fontWeight": "600" }] } } } };</script></head><body class="bg-background font-body-md text-on-surface antialiased min-h-screen"><aside class="fixed left-0 top-0 h-full w-72 bg-surface-container-lowest border-r border-[#E7E5E4] z-50 flex flex-col justify-between shadow-[0_1px_8px_rgba(28,25,23,0.03)]"><div class="flex flex-col flex-1 min-h-0"><div class="h-16 px-space-lg flex items-center gap-space-sm border-b border-[#E7E5E4] bg-surface-container-lowest"><img alt="Brand logo. - Primary color: #e05d38
+- Font: plusJakartaSans
+- Mode: light
+- Roundness: rounded-md
+" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1WqxmRE0Nng2UV8YyeG2HA8UbT0Ul8KC8sGV4_F_r5NIYmMrEnApEFh4o_CMOPmBAndX2JadrtB42Gdwy2e0TPgGcBf_Op25c8UbSR0zAJPQDzmSxcwLe_2uE9ZcqYjIh5LNqBFk2B-Kv_sJ1Ja_uzuuKhS5v-XGcyoJSkrdWfsubwQUsWvxM0rgixjuexwoyaLCY0c03VqI5U49IWcc2pq5ROcg9lbizcm9xNEazZJDMQj-sW1xrng2sg"/><div class="flex flex-col"><span class="font-headline-sm text-headline-sm font-bold text-on-surface leading-tight tracking-tight">Paros</span><span class="font-label-sm text-label-sm text-primary uppercase font-bold tracking-wider">POS • OS</span></div></div><div class="px-space-md py-space-sm"><div class="flex items-center justify-between px-space-sm py-1.5 rounded-lg bg-surface-container-low border border-[#E7E5E4]"><div class="flex items-center gap-2 overflow-hidden"><span class="material-symbols-outlined text-primary text-[18px]">store</span><div class="flex flex-col leading-none truncate"><span class="font-label-md text-[12px] font-semibold text-on-surface truncate">Connaught Place</span><span class="text-[10px] text-on-surface-variant">Flagship Unit #1</span></div></div><span class="material-symbols-outlined text-outline text-[16px]">unfold_more</span></div></div><nav class="flex-1 px-space-sm space-y-0.5 overflow-y-auto" data-active-classes="bg-primary-fixed text-on-primary-fixed font-semibold shadow-[inset_3px_0_0_0_#a63412]"><a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors font-label-md text-label-md" data-path="register-pos" href="#"><span class="material-symbols-outlined text-[20px]">point_of_sale</span><span>Register / POS</span></a><a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors font-label-md text-label-md" data-path="live-orders-kds" href="#"><span class="material-symbols-outlined text-[20px]">soup_kitchen</span><span>Live Orders &amp; KDS</span></a><a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors font-label-md text-label-md" data-path="floor-plan-tables" href="#"><span class="material-symbols-outlined text-[20px]">table_restaurant</span><span>Floor Plan &amp; Tables</span></a><a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors font-label-md text-label-md" data-path="menu-catalog" href="#"><span class="material-symbols-outlined text-[20px]">restaurant_menu</span><span>Menu &amp; Catalog</span></a><a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors font-label-md text-label-md" data-path="online-delivery-aggregators" href="#"><span class="material-symbols-outlined text-[20px]">two_wheeler</span><span>Online Delivery &amp; Aggregators</span></a><a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors font-label-md text-label-md" data-path="cash-drawer-petty-cash" href="#"><span class="material-symbols-outlined text-[20px]">payments</span><span>Cash Drawer &amp; Petty Cash</span></a><a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors font-label-md text-label-md" data-path="analytics-financials" href="#"><span class="material-symbols-outlined text-[20px]">bar_chart</span><span>Analytics &amp; Financials</span></a><a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors font-label-md text-label-md" data-path="customers-crm" href="#"><span class="material-symbols-outlined text-[20px]">group</span><span>Customers &amp; CRM</span></a><a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors font-label-md text-label-md" data-path="settings-peripherals" href="#"><span class="material-symbols-outlined text-[20px]">settings_input_component</span><span>Settings &amp; Peripherals</span></a></nav></div><div class="p-space-md border-t border-[#E7E5E4] bg-surface-container-low/50"><div class="p-space-sm rounded-lg bg-surface-container-lowest border border-[#E7E5E4] shadow-sm"><div class="flex items-center justify-between"><div class="flex items-center gap-2"><span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-secondary"></span></span><span class="font-label-sm text-[11px] font-bold text-on-surface uppercase tracking-wider">Shift 2 Active</span></div><span class="font-label-sm text-[11px] text-on-surface-variant">T-01</span></div><p class="mt-1 text-[11px] text-on-surface-variant font-body-sm truncate">Terminal #01 • Online</p></div></div></aside><div class="pl-72 flex flex-col min-h-screen"><header class="fixed top-0 left-72 right-0 h-16 bg-surface-container-lowest/90 backdrop-blur-md border-b border-[#E7E5E4] z-40 px-space-lg flex items-center justify-between"><div class="flex items-center gap-space-md flex-1 max-w-xl"><div class="relative w-full"><span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[18px]">search</span><input class="w-full pl-9 pr-4 py-1.5 text-body-sm font-body-sm rounded-lg bg-surface-container-low border border-[#E7E5E4] focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-on-surface placeholder:text-outline" placeholder="Search orders, tables, items (Ctrl + K)..." type="text"/></div></div><div class="flex items-center gap-space-md"><div class="hidden lg:flex items-center gap-2 px-2.5 py-1 rounded-full bg-[#DCFCE7] border border-secondary/20"><span class="material-symbols-outlined text-secondary text-[14px]">cloud_done</span><span class="font-label-sm text-[11px] text-secondary font-semibold">Cloud Synced (12ms)</span></div><div class="h-5 w-px bg-[#E7E5E4]"></div><div class="flex items-center gap-3"><div class="flex flex-col text-right"><span class="font-label-md text-label-md font-semibold text-on-surface leading-none">Anya Sharma</span><span class="font-label-sm text-[11px] text-primary font-medium leading-tight">Duty Mgr</span></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shadow-sm"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="w-full pt-16 bg-surface flex-1"><div class="flex flex-col w-full">
+<div class="w-full max-w-[1240px] mx-auto px-margin py-space-lg flex flex-col gap-space-lg">
+<!-- TOP CONTROL BAR -->
+<div class="flex flex-col xl:flex-row xl:items-center justify-between gap-space-md">
+<div class="flex flex-col">
+<div class="flex items-center gap-space-sm">
+<h1 class="font-headline-md text-headline-md font-bold text-on-surface tracking-tight">Menu &amp; Item Catalog</h1>
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm border border-[#E7E5E4]">
+<span class="material-symbols-outlined text-[14px] text-primary">storefront</span>
+            Connaught Place Flagship
+          </span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">
+          Manage handcrafted dishes, live dynamic pricing, recipe variants, and instant POS/QR synchronization.
+        </p>
+</div>
+<div class="flex flex-wrap items-center gap-space-sm">
+<div class="relative min-w-[280px]">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[18px]">search</span>
+<input class="w-full pl-9 pr-14 py-2 text-body-sm font-body-sm rounded-lg bg-surface-container-lowest border border-[#E7E5E4] text-on-surface placeholder:text-outline focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary shadow-sm" id="catalogSearchInput" placeholder="Search 48 items, variants, tags..." type="text"/>
+<kbd class="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none inline-flex items-center gap-0.5 rounded bg-surface-container px-1.5 py-0.5 font-label-sm text-[10px] text-on-surface-variant border border-[#E7E5E4]">⌘K</kbd>
+</div>
+<button class="inline-flex items-center gap-2 px-space-md py-2 rounded-lg bg-surface-container-lowest border border-[#E7E5E4] text-on-surface hover:bg-surface-container-low transition-all font-label-md text-label-md shadow-sm active:scale-[0.98]" onclick="toggleImportDrawer()">
+<span class="material-symbols-outlined text-[18px] text-primary">document_scanner</span>
+<span>Upload Menu</span>
+</button>
+<button class="inline-flex items-center gap-2 px-space-md py-2 rounded-lg bg-primary text-on-primary font-label-md text-label-md font-semibold hover:bg-primary-container transition-all shadow-[0_2px_8px_rgba(166,52,18,0.25)] active:scale-[0.98]" onclick="triggerQuickAddModal()">
+<span class="material-symbols-outlined text-[18px]">add_circle</span>
+<span>Quick Add Item</span>
+</button>
+</div>
+</div>
+<!-- AI DIGITIZER & MULTI-FORMAT IMPORT HERO BANNER -->
+<div class="w-full rounded-xl bg-surface-container-lowest border border-[#E7E5E4] shadow-[0_4px_20px_rgba(28,25,23,0.04)] overflow-hidden transition-all duration-300" id="importDrawer">
+<div class="p-space-lg bg-gradient-to-r from-surface-bright via-surface-container-lowest to-surface-bright border-b border-[#E7E5E4]">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-space-sm">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-primary-fixed flex items-center justify-center text-on-primary-fixed shadow-inner">
+<span class="material-symbols-outlined text-[22px]">auto_awesome</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<h3 class="font-headline-sm text-headline-sm font-bold text-on-surface">Import Menu in 10 Seconds</h3>
+<span class="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-[10px] tracking-wider uppercase font-extrabold">Paros Vision AI</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Automated OCR detects items, dietary markers, variant trees, and thermal pricing with 99.4% precision.</p>
+</div>
+</div>
+<div class="flex items-center gap-2 self-end md:self-auto">
+<a class="inline-flex items-center gap-1 font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors px-2.5 py-1 rounded-md hover:bg-surface-container-low" href="#">
+<span class="material-symbols-outlined text-[16px]">file_download</span>
+<span>CSV Sample Template</span>
+</a>
+<button class="w-8 h-8 rounded-lg flex items-center justify-center text-outline hover:text-on-surface hover:bg-surface-container transition-colors" onclick="toggleImportDrawer()">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+</div>
+<!-- TAB NAVIGATION -->
+<div class="flex items-center gap-2 mt-space-md border-b border-[#E7E5E4]">
+<button class="inline-flex items-center gap-2 pb-2.5 px-3 font-label-md text-label-md text-primary border-b-2 border-primary font-semibold transition-all" id="tabScanBtn" onclick="switchImportTab('scan')">
+<span class="material-symbols-outlined text-[18px]">photo_camera</span>
+<span>Scan Menu Photo / PDF</span>
+</button>
+<button class="inline-flex items-center gap-2 pb-2.5 px-3 font-label-md text-label-md text-on-surface-variant hover:text-on-surface border-b-2 border-transparent transition-all" id="tabCsvBtn" onclick="switchImportTab('csv')">
+<span class="material-symbols-outlined text-[18px]">table_chart</span>
+<span>Excel / POS CSV</span>
+</button>
+<button class="inline-flex items-center gap-2 pb-2.5 px-3 font-label-md text-label-md text-on-surface-variant hover:text-on-surface border-b-2 border-transparent transition-all" id="tabUrlBtn" onclick="switchImportTab('url')">
+<span class="material-symbols-outlined text-[18px]">link</span>
+<span>Sync Swiggy / Zomato URL</span>
+</button>
+</div>
+</div>
+<!-- TAB CONTENT: SCAN / PDF (DEFAULT) -->
+<div class="p-space-lg flex flex-col items-center justify-center bg-surface-container-low/30" id="tabScanContent">
+<div class="w-full max-w-2xl border-2 border-dashed border-[#D6D3D1] hover:border-primary/60 transition-colors rounded-xl p-space-xl flex flex-col items-center text-center bg-surface-container-lowest shadow-sm group cursor-pointer">
+<div class="w-14 h-14 rounded-full bg-surface-container-low group-hover:bg-primary-fixed/50 flex items-center justify-center text-on-surface-variant group-hover:text-primary transition-all mb-3 shadow-inner">
+<span class="material-symbols-outlined text-[28px]">cloud_upload</span>
+</div>
+<p class="font-headline-sm text-[17px] font-bold text-on-surface">Drop physical menu picture, PDF card, or Zomato page export</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1 max-w-md">Our neural visual model reads handwritten specials, multi-column drink menus, and botanical tea cards into catalog items.</p>
+<div class="flex flex-wrap items-center justify-center gap-2 mt-4 mb-5">
+<span class="px-2 py-0.5 rounded bg-surface-container font-label-sm text-[11px] text-on-surface-variant">PNG / JPG / WEBP</span>
+<span class="px-2 py-0.5 rounded bg-surface-container font-label-sm text-[11px] text-on-surface-variant">Vector &amp; Scanned PDF</span>
+<span class="px-2 py-0.5 rounded bg-[#DCFCE7] text-secondary font-label-sm text-[11px] font-semibold">Instant Categorization</span>
+</div>
+<div class="flex items-center gap-3">
+<label class="cursor-pointer inline-flex items-center gap-2 px-space-md py-2 rounded-lg bg-on-surface text-surface font-label-md text-label-md font-semibold hover:bg-surface-tint hover:text-on-primary transition-all shadow-sm">
+<span class="material-symbols-outlined text-[18px]">folder_open</span>
+<span>Select File from Machine</span>
+<input accept=".pdf,.png,.jpg,.jpeg,.csv" class="hidden" type="file"/>
+</label>
+<button class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#E7E5E4] bg-surface-container-lowest text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low text-label-sm font-label-sm transition-colors">
+<span class="material-symbols-outlined text-[16px]">help_center</span>
+<span>Format Guide</span>
+</button>
+</div>
+</div>
+</div>
+<!-- TAB CONTENT: CSV (HIDDEN) -->
+<div class="hidden p-space-lg flex-col items-center justify-center bg-surface-container-low/30" id="tabCsvContent">
+<div class="w-full max-w-xl p-space-lg rounded-xl bg-surface-container-lowest border border-[#E7E5E4] text-center flex flex-col items-center">
+<span class="material-symbols-outlined text-[36px] text-secondary mb-2">csv</span>
+<h4 class="font-headline-sm text-[17px] font-bold text-on-surface">Bulk Spreadsheet Importer</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1 mb-4">Supports Petpooja, POSist, Square, and Toast standard spreadsheet schemas.</p>
+<div class="flex items-center gap-3">
+<button class="px-space-md py-2 rounded-lg bg-primary text-on-primary font-label-md text-label-md font-semibold shadow-sm">Upload CSV File</button>
+<button class="px-space-md py-2 rounded-lg border border-[#E7E5E4] bg-surface-container-lowest font-label-md text-label-md text-on-surface hover:bg-surface-container-low">Download Blank Schema</button>
+</div>
+</div>
+</div>
+<!-- TAB CONTENT: URL SYNC (HIDDEN) -->
+<div class="hidden p-space-lg flex flex-col items-center justify-center bg-surface-container-low/30" id="tabUrlContent">
+<div class="w-full max-w-xl p-space-lg rounded-xl bg-surface-container-lowest border border-[#E7E5E4] flex flex-col gap-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">sync_alt</span>
+<h4 class="font-label-md text-label-md font-bold text-on-surface uppercase tracking-wide">Instant Aggregator URL Fetch</h4>
+</div>
+<div class="flex items-center gap-2">
+<input class="flex-1 px-3 py-2 text-body-sm rounded-lg border border-[#E7E5E4] bg-surface-container-low focus:outline-none focus:border-primary" placeholder="https://www.zomato.com/ncr/paros-connaught-place/order" type="url"/>
+<button class="px-space-md py-2 rounded-lg bg-primary text-on-primary font-label-md text-label-md font-semibold shrink-0">Extract Dishes</button>
+</div>
+<p class="text-[12px] text-on-surface-variant">Live deep-crawls prices, tax categories, descriptions, and packaging surcharges automatically.</p>
+</div>
+</div>
+</div>
+<!-- MAIN TWO-COLUMN WORKSPACE -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-start">
+<!-- LEFT COLUMN: CATEGORIES & QUICK FILTERS (3 COLUMNS) -->
+<aside class="lg:col-span-3 lg:sticky lg:top-20 flex flex-col gap-space-md">
+<div class="p-space-md rounded-xl bg-surface-container-lowest border border-[#E7E5E4] shadow-sm flex flex-col gap-1">
+<div class="flex items-center justify-between px-space-xs mb-2">
+<span class="font-label-sm text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">Menu Sections</span>
+<span class="font-label-sm text-[11px] text-primary font-semibold">48 Active</span>
+</div>
+<button class="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-primary-fixed text-on-primary-fixed font-label-md text-label-md font-bold transition-all shadow-[inset_3px_0_0_0_#a63412]">
+<span class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">all_inclusive</span>
+<span>All Items</span>
+</span>
+<span class="font-label-sm text-[11px] px-2 py-0.5 rounded-full bg-primary/20 text-on-primary-fixed font-bold">48</span>
+</button>
+<button class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-on-surface hover:bg-surface-container-low transition-colors font-label-md text-label-md font-medium">
+<span class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-tertiary">coffee</span>
+<span>Espresso &amp; Brews</span>
+</span>
+<span class="font-label-sm text-[11px] px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-semibold">12</span>
+</button>
+<button class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-on-surface hover:bg-surface-container-low transition-colors font-label-md text-label-md font-medium">
+<span class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-tertiary">bakery_dining</span>
+<span>Artisanal Bakery</span>
+</span>
+<span class="font-label-sm text-[11px] px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-semibold">8</span>
+</button>
+<button class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-on-surface hover:bg-surface-container-low transition-colors font-label-md text-label-md font-medium">
+<span class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-tertiary">lunch_dining</span>
+<span>Sandwiches &amp; Toasts</span>
+</span>
+<span class="font-label-sm text-[11px] px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-semibold">14</span>
+</button>
+<button class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-on-surface hover:bg-surface-container-low transition-colors font-label-md text-label-md font-medium">
+<span class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-tertiary">local_bar</span>
+<span>Coolers &amp; Tonics</span>
+</span>
+<span class="font-label-sm text-[11px] px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-semibold">10</span>
+</button>
+<button class="w-full flex items-center justify-between px-3 py-2 mt-2 rounded-lg text-on-surface hover:bg-surface-container-low transition-colors font-label-md text-label-md font-medium border border-dashed border-[#D6D3D1]">
+<span class="flex items-center gap-2 text-primary font-semibold">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span>Create Category</span>
+</span>
+<kbd class="font-label-sm text-[10px] text-outline">N</kbd>
+</button>
+</div>
+<!-- QUICK INVENTORY FILTER & DIETARY STATUS -->
+<div class="p-space-md rounded-xl bg-surface-container-lowest border border-[#E7E5E4] shadow-sm flex flex-col gap-3">
+<span class="font-label-sm text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">Quick Availability Filters</span>
+<label class="flex items-center justify-between p-2 rounded-lg hover:bg-surface-container-low cursor-pointer transition-colors">
+<div class="flex items-center gap-2">
+<div class="w-2.5 h-2.5 rounded-full bg-error animate-pulse"></div>
+<span class="font-label-sm text-[13px] text-on-surface font-semibold">Only Sold Out (86)</span>
+</div>
+<span class="px-1.5 py-0.5 rounded bg-error-container text-on-error-container font-label-sm text-[11px] font-bold">2</span>
+</label>
+<label class="flex items-center justify-between p-2 rounded-lg hover:bg-surface-container-low cursor-pointer transition-colors">
+<div class="flex items-center gap-2">
+<div class="w-2.5 h-2.5 rounded-full bg-secondary"></div>
+<span class="font-label-sm text-[13px] text-on-surface font-medium">100% Pure Veg Items</span>
+</div>
+<span class="font-label-sm text-[11px] text-on-surface-variant">36</span>
+</label>
+<label class="flex items-center justify-between p-2 rounded-lg hover:bg-surface-container-low cursor-pointer transition-colors">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-primary">local_fire_department</span>
+<span class="font-label-sm text-[13px] text-on-surface font-medium">High Margin Stars</span>
+</div>
+<span class="font-label-sm text-[11px] text-on-surface-variant">14</span>
+</label>
+</div>
+<!-- CATALOG HEALTH CARD -->
+<div class="p-space-md rounded-xl bg-[#FAF8F5] border border-[#E7E5E4] flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">Catalog Quality</span>
+<span class="font-label-sm text-[12px] font-bold text-secondary">96% Complete</span>
+</div>
+<div class="w-full h-1.5 rounded-full bg-surface-container-high overflow-hidden">
+<div class="h-full bg-secondary rounded-full" style="width: 96%;"></div>
+</div>
+<p class="font-body-sm text-[11px] text-on-surface-variant leading-relaxed">
+            All 48 dishes have high-res imagery and calibrated allergen tags ready for touch-free Table QR ordering.
+          </p>
+</div>
+</aside>
+<!-- RIGHT COLUMN: ITEM GRIDS BY CATEGORY (9 COLUMNS) -->
+<main class="lg:col-span-9 flex flex-col gap-space-xl">
+<!-- SECTION 1: ESPRESSO & BREWS -->
+<section class="flex flex-col gap-space-md">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-[#E7E5E4]">
+<div>
+<div class="flex items-center gap-2">
+<h2 class="font-headline-sm text-headline-sm font-bold text-on-surface">☕ Espresso &amp; Brews</h2>
+<span class="px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-[11px] font-semibold">12 Items Active</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Handcrafted espresso, pour-overs, and cold brews synced to Table QR &amp; Barista KDS.</p>
+</div>
+<div class="flex items-center gap-2">
+<button class="px-2.5 py-1 rounded text-label-sm font-label-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low transition-colors inline-flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">swap_vert</span>
+<span>Sort Order</span>
+</button>
+<button class="px-2.5 py-1 rounded text-label-sm font-label-sm text-primary hover:bg-primary-fixed/40 transition-colors inline-flex items-center gap-1 font-semibold">
+<span class="material-symbols-outlined text-[16px]">add</span>
+<span>Add Drink</span>
+</button>
+</div>
+</div>
+<!-- 3-COLUMN CARD GRID -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-space-md">
+<!-- CARD 1: ICED VANILLA LATTE -->
+<div class="group rounded-xl bg-surface-container-lowest border border-[#E7E5E4] shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between overflow-hidden">
+<div class="p-space-md flex flex-col gap-3">
+<div class="flex items-start justify-between gap-2">
+<!-- Veg Badge & Name -->
+<div class="flex items-start gap-2.5 min-w-0">
+<div class="w-4 h-4 border border-secondary flex items-center justify-center rounded-sm shrink-0 mt-0.5 bg-surface-container-lowest" title="Vegetarian">
+<div class="w-2 h-2 rounded-full bg-secondary"></div>
+</div>
+<div class="flex flex-col min-w-0">
+<h3 class="font-label-md text-label-md font-bold text-on-surface truncate group-hover:text-primary transition-colors">Iced Vanilla Latte</h3>
+<span class="font-label-sm text-[11px] text-outline">SKU: ESP-092 • Beverage</span>
+</div>
+</div>
+<!-- 3 dots action menu -->
+<button class="text-outline hover:text-on-surface p-1 rounded-md hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+<p class="font-body-sm text-[12px] text-on-surface-variant line-clamp-2 leading-relaxed">
+                  Double ristretto shot poured over Madagascar vanilla bean reduction and chilled oat milk.
+                </p>
+<!-- Modifiers Badge Pill -->
+<div class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-surface-container-low text-on-surface-variant font-label-sm text-[11px] border border-[#E7E5E4]">
+<span class="material-symbols-outlined text-[14px] text-primary">tune</span>
+<span class="truncate">2 Modifiers (Oat Milk +₹40, Extra Shot +₹50)</span>
+</div>
+</div>
+<!-- CARD FOOTER: PRICE & LIVE INVENTORY TOGGLE -->
+<div class="px-space-md py-2.5 bg-surface-container-low/40 border-t border-[#E7E5E4] flex items-center justify-between">
+<div class="flex items-center gap-1">
+<span class="font-label-sm text-label-sm text-outline font-normal">₹</span>
+<span class="font-headline-sm text-[18px] font-bold text-on-surface tracking-tight">240</span>
+<button class="text-outline hover:text-primary transition-colors ml-1 p-0.5" title="Edit Price">
+<span class="material-symbols-outlined text-[14px]">edit</span>
+</button>
+</div>
+<div class="flex items-center gap-2">
+<span class="font-label-sm text-[11px] font-semibold text-secondary">In Stock</span>
+<!-- Tactile Toggle Switch ON -->
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" onchange="toggleStockState(this)" type="checkbox"/>
+<div class="w-9 h-5 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-secondary"></div>
+</label>
+</div>
+</div>
+</div>
+<!-- CARD 2: CLASSIC FLAT WHITE -->
+<div class="group rounded-xl bg-surface-container-lowest border border-[#E7E5E4] shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between overflow-hidden">
+<div class="p-space-md flex flex-col gap-3">
+<div class="flex items-start justify-between gap-2">
+<div class="flex items-start gap-2.5 min-w-0">
+<div class="w-4 h-4 border border-secondary flex items-center justify-center rounded-sm shrink-0 mt-0.5 bg-surface-container-lowest" title="Vegetarian">
+<div class="w-2 h-2 rounded-full bg-secondary"></div>
+</div>
+<div class="flex flex-col min-w-0">
+<h3 class="font-label-md text-label-md font-bold text-on-surface truncate group-hover:text-primary transition-colors">Classic Flat White</h3>
+<span class="font-label-sm text-[11px] text-outline">SKU: ESP-011 • Hot Classic</span>
+</div>
+</div>
+<button class="text-outline hover:text-on-surface p-1 rounded-md hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+<p class="font-body-sm text-[12px] text-on-surface-variant line-clamp-2 leading-relaxed">
+                  Signature South Indian Arabica espresso blend with velvet micro-foam milk and subtle cocoa notes.
+                </p>
+<div class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-surface-container-low text-on-surface-variant font-label-sm text-[11px] border border-[#E7E5E4]">
+<span class="material-symbols-outlined text-[14px] text-primary">tune</span>
+<span class="truncate">Almond / Oat / Soy milk options</span>
+</div>
+</div>
+<div class="px-space-md py-2.5 bg-surface-container-low/40 border-t border-[#E7E5E4] flex items-center justify-between">
+<div class="flex items-center gap-1">
+<span class="font-label-sm text-label-sm text-outline font-normal">₹</span>
+<span class="font-headline-sm text-[18px] font-bold text-on-surface tracking-tight">210</span>
+<button class="text-outline hover:text-primary transition-colors ml-1 p-0.5" title="Edit Price">
+<span class="material-symbols-outlined text-[14px]">edit</span>
+</button>
+</div>
+<div class="flex items-center gap-2">
+<span class="font-label-sm text-[11px] font-semibold text-secondary">In Stock</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" onchange="toggleStockState(this)" type="checkbox"/>
+<div class="w-9 h-5 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-secondary"></div>
+</label>
+</div>
+</div>
+</div>
+<!-- CARD 3: COLD BREW TONIC -->
+<div class="group rounded-xl bg-surface-container-lowest border border-[#E7E5E4] shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between overflow-hidden">
+<div class="p-space-md flex flex-col gap-3">
+<div class="flex items-start justify-between gap-2">
+<div class="flex items-start gap-2.5 min-w-0">
+<div class="w-4 h-4 border border-secondary flex items-center justify-center rounded-sm shrink-0 mt-0.5 bg-surface-container-lowest" title="Vegetarian">
+<div class="w-2 h-2 rounded-full bg-secondary"></div>
+</div>
+<div class="flex flex-col min-w-0">
+<h3 class="font-label-md text-label-md font-bold text-on-surface truncate group-hover:text-primary transition-colors">Cold Brew Tonic</h3>
+<span class="font-label-sm text-[11px] text-outline">SKU: CB-004 • Specialty Cold</span>
+</div>
+</div>
+<button class="text-outline hover:text-on-surface p-1 rounded-md hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+<p class="font-body-sm text-[12px] text-on-surface-variant line-clamp-2 leading-relaxed">
+                  18-hour cold steeped single estate Chikmagalur with artisanal botanical tonic and dehydrated citrus wheel.
+                </p>
+<div class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-surface-container-low text-on-surface-variant font-label-sm text-[11px] border border-[#E7E5E4]">
+<span class="material-symbols-outlined text-[14px] text-secondary">eco</span>
+<span class="truncate">Zero Added Sugar • Vegan</span>
+</div>
+</div>
+<div class="px-space-md py-2.5 bg-surface-container-low/40 border-t border-[#E7E5E4] flex items-center justify-between">
+<div class="flex items-center gap-1">
+<span class="font-label-sm text-label-sm text-outline font-normal">₹</span>
+<span class="font-headline-sm text-[18px] font-bold text-on-surface tracking-tight">260</span>
+<button class="text-outline hover:text-primary transition-colors ml-1 p-0.5" title="Edit Price">
+<span class="material-symbols-outlined text-[14px]">edit</span>
+</button>
+</div>
+<div class="flex items-center gap-2">
+<span class="font-label-sm text-[11px] font-semibold text-secondary">In Stock</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" onchange="toggleStockState(this)" type="checkbox"/>
+<div class="w-9 h-5 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-secondary"></div>
+</label>
+</div>
+</div>
+</div>
+<!-- CARD 4: CASCARA COLD FIZZ (SOLD OUT / 86 STATE) -->
+<div class="group rounded-xl bg-[#FAFAF9]/80 border border-[#E7E5E4] shadow-sm flex flex-col justify-between overflow-hidden opacity-85 relative">
+<div class="p-space-md flex flex-col gap-3">
+<div class="flex items-start justify-between gap-2">
+<div class="flex items-start gap-2.5 min-w-0">
+<div class="w-4 h-4 border border-secondary flex items-center justify-center rounded-sm shrink-0 mt-0.5 bg-surface-container-lowest" title="Vegetarian">
+<div class="w-2 h-2 rounded-full bg-secondary"></div>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<h3 class="font-label-md text-label-md font-bold text-on-surface/75 truncate">Cascara Cold Fizz</h3>
+<span class="px-1.5 py-0.2 rounded bg-error-container text-on-error-container font-label-sm text-[10px] font-extrabold uppercase tracking-wide">86'D</span>
+</div>
+<span class="font-label-sm text-[11px] text-outline">SKU: CB-088 • Upcycled Coffee</span>
+</div>
+</div>
+<button class="text-outline hover:text-on-surface p-1 rounded-md hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+<p class="font-body-sm text-[12px] text-on-surface-variant/80 line-clamp-2 leading-relaxed">
+                  Upcycled coffee cherry sparkling soda with organic yuzu essence and raw wildflower Himalayan honey.
+                </p>
+<div class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-error-container/30 text-error font-label-sm text-[11px]">
+<span class="material-symbols-outlined text-[14px]">block</span>
+<span>Auto-hidden on Table QR • Disabled on POS</span>
+</div>
+</div>
+<div class="px-space-md py-2.5 bg-surface-container-low/80 border-t border-[#E7E5E4] flex items-center justify-between">
+<div class="flex items-center gap-1 opacity-60">
+<span class="font-label-sm text-label-sm text-outline font-normal">₹</span>
+<span class="font-headline-sm text-[18px] font-bold text-on-surface tracking-tight">220</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="font-label-sm text-[11px] font-bold text-error">Sold Out</span>
+<!-- Tactile Toggle Switch OFF -->
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" onchange="toggleStockState(this)" type="checkbox"/>
+<div class="w-9 h-5 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-secondary"></div>
+</label>
+</div>
+</div>
+</div>
+<!-- CARD 5: NITRO DRAFT COLD BREW -->
+<div class="group rounded-xl bg-surface-container-lowest border border-[#E7E5E4] shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between overflow-hidden">
+<div class="p-space-md flex flex-col gap-3">
+<div class="flex items-start justify-between gap-2">
+<div class="flex items-start gap-2.5 min-w-0">
+<div class="w-4 h-4 border border-secondary flex items-center justify-center rounded-sm shrink-0 mt-0.5 bg-surface-container-lowest" title="Vegetarian">
+<div class="w-2 h-2 rounded-full bg-secondary"></div>
+</div>
+<div class="flex flex-col min-w-0">
+<h3 class="font-label-md text-label-md font-bold text-on-surface truncate group-hover:text-primary transition-colors">Nitro Draft Cold Brew</h3>
+<span class="font-label-sm text-[11px] text-outline">SKU: CB-012 • Tap #2</span>
+</div>
+</div>
+<button class="text-outline hover:text-on-surface p-1 rounded-md hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+<p class="font-body-sm text-[12px] text-on-surface-variant line-clamp-2 leading-relaxed">
+                  Infused with food-grade pure nitrogen for a stout-like creamy head and cascading silk texture.
+                </p>
+<div class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-surface-container-low text-on-surface-variant font-label-sm text-[11px] border border-[#E7E5E4]">
+<span class="material-symbols-outlined text-[14px] text-primary">local_gas_station</span>
+<span class="truncate">Draft Line Pressure: 38 PSI (Good)</span>
+</div>
+</div>
+<div class="px-space-md py-2.5 bg-surface-container-low/40 border-t border-[#E7E5E4] flex items-center justify-between">
+<div class="flex items-center gap-1">
+<span class="font-label-sm text-label-sm text-outline font-normal">₹</span>
+<span class="font-headline-sm text-[18px] font-bold text-on-surface tracking-tight">275</span>
+<button class="text-outline hover:text-primary transition-colors ml-1 p-0.5" title="Edit Price">
+<span class="material-symbols-outlined text-[14px]">edit</span>
+</button>
+</div>
+<div class="flex items-center gap-2">
+<span class="font-label-sm text-[11px] font-semibold text-secondary">In Stock</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" onchange="toggleStockState(this)" type="checkbox"/>
+<div class="w-9 h-5 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-secondary"></div>
+</label>
+</div>
+</div>
+</div>
+<!-- CARD 6: CORTADO PICCOLO -->
+<div class="group rounded-xl bg-surface-container-lowest border border-[#E7E5E4] shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between overflow-hidden">
+<div class="p-space-md flex flex-col gap-3">
+<div class="flex items-start justify-between gap-2">
+<div class="flex items-start gap-2.5 min-w-0">
+<div class="w-4 h-4 border border-secondary flex items-center justify-center rounded-sm shrink-0 mt-0.5 bg-surface-container-lowest" title="Vegetarian">
+<div class="w-2 h-2 rounded-full bg-secondary"></div>
+</div>
+<div class="flex flex-col min-w-0">
+<h3 class="font-label-md text-label-md font-bold text-on-surface truncate group-hover:text-primary transition-colors">Cortado Piccolo</h3>
+<span class="font-label-sm text-[11px] text-outline">SKU: ESP-003 • 1:1 Ratio</span>
+</div>
+</div>
+<button class="text-outline hover:text-on-surface p-1 rounded-md hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+<p class="font-body-sm text-[12px] text-on-surface-variant line-clamp-2 leading-relaxed">
+                  Equal parts dark roast espresso and warm steamed whole milk served in a Gibraltar glass.
+                </p>
+<div class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-surface-container-low text-on-surface-variant font-label-sm text-[11px] border border-[#E7E5E4]">
+<span class="material-symbols-outlined text-[14px] text-tertiary">star</span>
+<span class="truncate">Chef's Barista Favorite</span>
+</div>
+</div>
+<div class="px-space-md py-2.5 bg-surface-container-low/40 border-t border-[#E7E5E4] flex items-center justify-between">
+<div class="flex items-center gap-1">
+<span class="font-label-sm text-label-sm text-outline font-normal">₹</span>
+<span class="font-headline-sm text-[18px] font-bold text-on-surface tracking-tight">195</span>
+<button class="text-outline hover:text-primary transition-colors ml-1 p-0.5" title="Edit Price">
+<span class="material-symbols-outlined text-[14px]">edit</span>
+</button>
+</div>
+<div class="flex items-center gap-2">
+<span class="font-label-sm text-[11px] font-semibold text-secondary">In Stock</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" onchange="toggleStockState(this)" type="checkbox"/>
+<div class="w-9 h-5 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-secondary"></div>
+</label>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- SECTION 2: ARTISANAL BAKERY -->
+<section class="flex flex-col gap-space-md">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-[#E7E5E4]">
+<div>
+<div class="flex items-center gap-2">
+<h2 class="font-headline-sm text-headline-sm font-bold text-on-surface">🥐 Artisanal Bakery</h2>
+<span class="px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-[11px] font-semibold">8 Items Active</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Freshly baked twice daily at 06:30 &amp; 14:00 using fermented mother yeast.</p>
+</div>
+<div class="flex items-center gap-2">
+<button class="px-2.5 py-1 rounded text-label-sm font-label-sm text-primary hover:bg-primary-fixed/40 transition-colors inline-flex items-center gap-1 font-semibold">
+<span class="material-symbols-outlined text-[16px]">add</span>
+<span>Add Pastry</span>
+</button>
+</div>
+</div>
+<!-- BAKERY CARD GRID -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-space-md">
+<!-- CARD 7: FRENCH BUTTER CROISSANT -->
+<div class="group rounded-xl bg-surface-container-lowest border border-[#E7E5E4] shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between overflow-hidden">
+<div class="p-space-md flex flex-col gap-3">
+<div class="flex items-start justify-between gap-2">
+<div class="flex items-start gap-2.5 min-w-0">
+<div class="w-4 h-4 border border-secondary flex items-center justify-center rounded-sm shrink-0 mt-0.5 bg-surface-container-lowest" title="Vegetarian">
+<div class="w-2 h-2 rounded-full bg-secondary"></div>
+</div>
+<div class="flex flex-col min-w-0">
+<h3 class="font-label-md text-label-md font-bold text-on-surface truncate group-hover:text-primary transition-colors">French Butter Croissant</h3>
+<span class="font-label-sm text-[11px] text-outline">SKU: BAK-102 • Laminated</span>
+</div>
+</div>
+<button class="text-outline hover:text-on-surface p-1 rounded-md hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+<p class="font-body-sm text-[12px] text-on-surface-variant line-clamp-2 leading-relaxed">
+                  Layered flaky laminated sourdough pastry with salted French butter and golden honeycomb crumb.
+                </p>
+<div class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-surface-container-low text-on-surface-variant font-label-sm text-[11px] border border-[#E7E5E4]">
+<span class="material-symbols-outlined text-[14px] text-primary">microwave</span>
+<span class="truncate">Modifier: Warm in Hearth +₹0</span>
+</div>
+</div>
+<div class="px-space-md py-2.5 bg-surface-container-low/40 border-t border-[#E7E5E4] flex items-center justify-between">
+<div class="flex items-center gap-1">
+<span class="font-label-sm text-label-sm text-outline font-normal">₹</span>
+<span class="font-headline-sm text-[18px] font-bold text-on-surface tracking-tight">180</span>
+<button class="text-outline hover:text-primary transition-colors ml-1 p-0.5" title="Edit Price">
+<span class="material-symbols-outlined text-[14px]">edit</span>
+</button>
+</div>
+<div class="flex items-center gap-2">
+<span class="font-label-sm text-[11px] font-semibold text-secondary">In Stock</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" onchange="toggleStockState(this)" type="checkbox"/>
+<div class="w-9 h-5 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-secondary"></div>
+</label>
+</div>
+</div>
+</div>
+<!-- CARD 8: SMOKED CHICKEN BRIOCHE (NON-VEG BADGE EXAMPLE) -->
+<div class="group rounded-xl bg-surface-container-lowest border border-[#E7E5E4] shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between overflow-hidden">
+<div class="p-space-md flex flex-col gap-3">
+<div class="flex items-start justify-between gap-2">
+<!-- Non-Veg Badge (Red triangle/circle) -->
+<div class="flex items-start gap-2.5 min-w-0">
+<div class="w-4 h-4 border border-error flex items-center justify-center rounded-sm shrink-0 mt-0.5 bg-surface-container-lowest" title="Non-Vegetarian">
+<div class="w-2 h-2 rounded-full bg-error"></div>
+</div>
+<div class="flex flex-col min-w-0">
+<h3 class="font-label-md text-label-md font-bold text-on-surface truncate group-hover:text-primary transition-colors">Smoked Chicken Brioche Bun</h3>
+<span class="font-label-sm text-[11px] text-outline">SKU: BAK-140 • Savory</span>
+</div>
+</div>
+<button class="text-outline hover:text-on-surface p-1 rounded-md hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+<p class="font-body-sm text-[12px] text-on-surface-variant line-clamp-2 leading-relaxed">
+                  Slow-smoked pulled chicken breast, Dijon emulsion, and quick-pickled cucumbers on toasted golden brioche.
+                </p>
+<div class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-surface-container-low text-on-surface-variant font-label-sm text-[11px] border border-[#E7E5E4]">
+<span class="material-symbols-outlined text-[14px] text-outline">info</span>
+<span class="truncate">Contains Dairy, Egg, Gluten</span>
+</div>
+</div>
+<div class="px-space-md py-2.5 bg-surface-container-low/40 border-t border-[#E7E5E4] flex items-center justify-between">
+<div class="flex items-center gap-1">
+<span class="font-label-sm text-label-sm text-outline font-normal">₹</span>
+<span class="font-headline-sm text-[18px] font-bold text-on-surface tracking-tight">340</span>
+<button class="text-outline hover:text-primary transition-colors ml-1 p-0.5" title="Edit Price">
+<span class="material-symbols-outlined text-[14px]">edit</span>
+</button>
+</div>
+<div class="flex items-center gap-2">
+<span class="font-label-sm text-[11px] font-semibold text-secondary">In Stock</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" onchange="toggleStockState(this)" type="checkbox"/>
+<div class="w-9 h-5 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-secondary"></div>
+</label>
+</div>
+</div>
+</div>
+<!-- CARD 9: PISTACHIO CARDAMOM KNOT -->
+<div class="group rounded-xl bg-surface-container-lowest border border-[#E7E5E4] shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between overflow-hidden">
+<div class="p-space-md flex flex-col gap-3">
+<div class="flex items-start justify-between gap-2">
+<div class="flex items-start gap-2.5 min-w-0">
+<div class="w-4 h-4 border border-secondary flex items-center justify-center rounded-sm shrink-0 mt-0.5 bg-surface-container-lowest" title="Vegetarian">
+<div class="w-2 h-2 rounded-full bg-secondary"></div>
+</div>
+<div class="flex flex-col min-w-0">
+<h3 class="font-label-md text-label-md font-bold text-on-surface truncate group-hover:text-primary transition-colors">Pistachio Cardamom Knot</h3>
+<span class="font-label-sm text-[11px] text-outline">SKU: BAK-109 • Scandinavian Sweet</span>
+</div>
+</div>
+<button class="text-outline hover:text-on-surface p-1 rounded-md hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+<p class="font-body-sm text-[12px] text-on-surface-variant line-clamp-2 leading-relaxed">
+                  Stone-ground Kerala green cardamom dough knotted with roasted Iranian pistachio butter glaze.
+                </p>
+<div class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-[#DCFCE7] text-secondary font-label-sm text-[11px] font-semibold">
+<span class="material-symbols-outlined text-[14px]">trending_up</span>
+<span>Top Morning Seller</span>
+</div>
+</div>
+<div class="px-space-md py-2.5 bg-surface-container-low/40 border-t border-[#E7E5E4] flex items-center justify-between">
+<div class="flex items-center gap-1">
+<span class="font-label-sm text-label-sm text-outline font-normal">₹</span>
+<span class="font-headline-sm text-[18px] font-bold text-on-surface tracking-tight">220</span>
+<button class="text-outline hover:text-primary transition-colors ml-1 p-0.5" title="Edit Price">
+<span class="material-symbols-outlined text-[14px]">edit</span>
+</button>
+</div>
+<div class="flex items-center gap-2">
+<span class="font-label-sm text-[11px] font-semibold text-secondary">In Stock</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" onchange="toggleStockState(this)" type="checkbox"/>
+<div class="w-9 h-5 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-secondary"></div>
+</label>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+</div>
+<!-- QUICK ADD ITEM MODAL DIALOG (HIDDEN BY DEFAULT) -->
+<div class="hidden fixed inset-0 z-50 flex items-center justify-center bg-inverse-surface/40 backdrop-blur-sm p-4" id="quickAddModal">
+<div class="w-full max-w-lg rounded-xl bg-surface-container-lowest border border-[#E7E5E4] shadow-2xl p-space-lg flex flex-col gap-space-md animate-in fade-in zoom-in-95 duration-150">
+<div class="flex items-center justify-between pb-space-sm border-b border-[#E7E5E4]">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[22px]">add_task</span>
+<h3 class="font-headline-sm text-[18px] font-bold text-on-surface">Quick Add Menu Item</h3>
+</div>
+<button class="text-outline hover:text-on-surface p-1 rounded-lg" onclick="triggerQuickAddModal()">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+<div class="flex flex-col gap-3">
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Item Title</label>
+<input class="w-full px-3 py-2 text-body-sm rounded-lg border border-[#E7E5E4] bg-surface focus:outline-none focus:border-primary" placeholder="e.g. Avocado Tartine on Sourdough" type="text"/>
+</div>
+<div class="grid grid-cols-2 gap-3">
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Category</label>
+<select class="w-full px-3 py-2 text-body-sm rounded-lg border border-[#E7E5E4] bg-surface focus:outline-none focus:border-primary">
+<option>Espresso &amp; Brews</option>
+<option>Artisanal Bakery</option>
+<option>Sandwiches &amp; Toasts</option>
+<option>Coolers &amp; Tonics</option>
+</select>
+</div>
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Dine-in Price (₹)</label>
+<div class="relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 font-label-md text-outline">₹</span>
+<input class="w-full pl-7 pr-3 py-2 text-body-sm rounded-lg border border-[#E7E5E4] bg-surface focus:outline-none focus:border-primary" placeholder="260" type="number"/>
+</div>
+</div>
+</div>
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Dietary Tag</label>
+<div class="flex items-center gap-4 pt-1">
+<label class="inline-flex items-center gap-2 text-body-sm cursor-pointer">
+<input checked="" class="text-secondary focus:ring-secondary" name="dietType" type="radio"/>
+<span>🟢 Pure Veg</span>
+</label>
+<label class="inline-flex items-center gap-2 text-body-sm cursor-pointer">
+<input class="text-error focus:ring-error" name="dietType" type="radio"/>
+<span>🔴 Non-Veg</span>
+</label>
+<label class="inline-flex items-center gap-2 text-body-sm cursor-pointer">
+<input class="text-tertiary focus:ring-tertiary" name="dietType" type="radio"/>
+<span>🟡 Contains Egg</span>
+</label>
+</div>
+</div>
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Recipe Short Description</label>
+<textarea class="w-full px-3 py-2 text-body-sm rounded-lg border border-[#E7E5E4] bg-surface focus:outline-none focus:border-primary" placeholder="Tasting notes, key ingredients, origin..." rows="2"></textarea>
+</div>
+</div>
+<div class="flex items-center justify-end gap-2 pt-space-sm border-t border-[#E7E5E4]">
+<button class="px-space-md py-2 rounded-lg border border-[#E7E5E4] text-on-surface font-label-md text-label-md hover:bg-surface-container-low transition-colors" onclick="triggerQuickAddModal()">Cancel</button>
+<button class="px-space-md py-2 rounded-lg bg-primary text-on-primary font-label-md text-label-md font-semibold hover:bg-primary-container transition-all shadow-sm" onclick="triggerQuickAddModal()">Save &amp; Broadcast Item</button>
+</div>
+</div>
+</div>
+<!-- TACTILE DOCKED PREVIEW & SYNC DOCK (BOTTOM ANCHOR) -->
+<div class="sticky bottom-4 z-40 w-full max-w-4xl mx-auto mt-space-md">
+<div class="rounded-xl bg-surface-container-lowest/95 backdrop-blur-md border border-[#E7E5E4] p-space-sm shadow-[0_8px_32px_rgba(28,25,23,0.08)] flex flex-col sm:flex-row items-center justify-between gap-3">
+<div class="flex items-center gap-3 px-2">
+<span class="relative flex h-3 w-3">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75"></span>
+<span class="relative inline-flex rounded-full h-3 w-3 bg-secondary"></span>
+</span>
+<div class="flex flex-col">
+<span class="font-label-md text-[13px] font-bold text-on-surface flex items-center gap-1.5">
+<span>48 Items Live on Table QR &amp; Terminals</span>
+<span class="text-outline font-normal">•</span>
+<span class="font-body-sm text-[12px] text-on-surface-variant font-normal">Synced 2m ago</span>
+</span>
+<span class="text-[11px] text-on-surface-variant">No pending menu diffs detected on Connaught Place fleet</span>
+</div>
+</div>
+<div class="flex items-center gap-2 shrink-0">
+<button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#E7E5E4] bg-surface text-on-surface font-label-sm text-label-sm hover:bg-surface-container-low transition-colors" onclick="simulateQrPreview()">
+<span class="material-symbols-outlined text-[16px] text-primary">qr_code_scanner</span>
+<span>Test Customer QR View</span>
+</button>
+<button class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-on-surface text-surface font-label-sm text-label-sm font-semibold hover:bg-surface-tint hover:text-on-primary transition-all shadow-sm" onclick="simulatePushSync(this)">
+<span class="material-symbols-outlined text-[16px]">bolt</span>
+<span>Push Sync to 12 Tables</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<script>
+  function toggleImportDrawer() {
+    const drawer = document.getElementById('importDrawer');
+    if (drawer.classList.contains('hidden')) {
+      drawer.classList.remove('hidden');
+    } else {
+      drawer.classList.add('hidden');
+    }
+  }
+
+  function switchImportTab(type) {
+    const scanTab = document.getElementById('tabScanBtn');
+    const csvTab = document.getElementById('tabCsvBtn');
+    const urlTab = document.getElementById('tabUrlBtn');
+
+    const scanContent = document.getElementById('tabScanContent');
+    const csvContent = document.getElementById('tabCsvContent');
+    const urlContent = document.getElementById('tabUrlContent');
+
+    [scanTab, csvTab, urlTab].forEach(btn => {
+      btn.className = "inline-flex items-center gap-2 pb-2.5 px-3 font-label-md text-label-md text-on-surface-variant hover:text-on-surface border-b-2 border-transparent transition-all";
+    });
+
+    scanContent.classList.add('hidden');
+    scanContent.classList.remove('flex');
+    csvContent.classList.add('hidden');
+    csvContent.classList.remove('flex');
+    urlContent.classList.add('hidden');
+    urlContent.classList.remove('flex');
+
+    if (type === 'scan') {
+      scanTab.className = "inline-flex items-center gap-2 pb-2.5 px-3 font-label-md text-label-md text-primary border-b-2 border-primary font-semibold transition-all";
+      scanContent.classList.remove('hidden');
+      scanContent.classList.add('flex');
+    } else if (type === 'csv') {
+      csvTab.className = "inline-flex items-center gap-2 pb-2.5 px-3 font-label-md text-label-md text-primary border-b-2 border-primary font-semibold transition-all";
+      csvContent.classList.remove('hidden');
+      csvContent.classList.add('flex');
+    } else if (type === 'url') {
+      urlTab.className = "inline-flex items-center gap-2 pb-2.5 px-3 font-label-md text-label-md text-primary border-b-2 border-primary font-semibold transition-all";
+      urlContent.classList.remove('hidden');
+      urlContent.classList.add('flex');
+    }
+  }
+
+  function triggerQuickAddModal() {
+    const modal = document.getElementById('quickAddModal');
+    modal.classList.toggle('hidden');
+  }
+
+  function toggleStockState(el) {
+    const parentContainer = el.closest('.group');
+    const labelSpan = el.parentElement.previousElementSibling;
+    if (el.checked) {
+      labelSpan.textContent = 'In Stock';
+      labelSpan.className = 'font-label-sm text-[11px] font-semibold text-secondary';
+      if (parentContainer) {
+        parentContainer.classList.remove('opacity-85', 'bg-[#FAFAF9]/80');
+        parentContainer.classList.add('bg-surface-container-lowest');
+      }
+    } else {
+      labelSpan.textContent = 'Sold Out';
+      labelSpan.className = 'font-label-sm text-[11px] font-bold text-error';
+      if (parentContainer) {
+        parentContainer.classList.add('opacity-85', 'bg-[#FAFAF9]/80');
+        parentContainer.classList.remove('bg-surface-container-lowest');
+      }
+    }
+  }
+
+  function simulatePushSync(btn) {
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<span class="material-symbols-outlined text-[16px] animate-spin">sync</span><span>Broadcasting...</span>';
+    btn.disabled = true;
+    setTimeout(() => {
+      btn.innerHTML = '<span class="material-symbols-outlined text-[16px] text-secondary">check_circle</span><span>Synced!</span>';
+      setTimeout(() => {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+      }, 2000);
+    }, 900);
+  }
+
+  function simulateQrPreview() {
+    window.open('about:blank', '_blank');
+  }
+</script></main></div></body></html>
