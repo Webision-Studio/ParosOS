@@ -23,20 +23,34 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Cafe not found' }, { status: 404 });
     }
 
-    // Fetch active kitchen orders
-    const orders = await prisma.order.findMany({
-      where: {
-        cafeId: cafe.id,
-        status: { in: ['PLACED', 'PREPARING', 'READY'] },
-      },
-      include: {
-        items: true,
-        table: true,
-      },
-      orderBy: { createdAt: 'asc' },
-    });
+    // Fetch active kitchen orders and recently served/bumped orders
+    const [orders, servedOrders] = await Promise.all([
+      prisma.order.findMany({
+        where: {
+          cafeId: cafe.id,
+          status: { in: ['PLACED', 'PREPARING', 'READY'] },
+        },
+        include: {
+          items: true,
+          table: true,
+        },
+        orderBy: { createdAt: 'asc' },
+      }),
+      prisma.order.findMany({
+        where: {
+          cafeId: cafe.id,
+          status: 'SERVED',
+        },
+        include: {
+          items: true,
+          table: true,
+        },
+        orderBy: { updatedAt: 'desc' },
+        take: 20,
+      }),
+    ]);
 
-    return NextResponse.json({ cafe, orders });
+    return NextResponse.json({ cafe, orders, servedOrders });
   } catch (error) {
     console.error('KDS GET error:', error);
     return NextResponse.json({ error: 'Failed to fetch KDS tickets' }, { status: 500 });
@@ -142,18 +156,34 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true });
     }
 
-    // 5. Recall Last Bumped Ticket
-    if (action === 'recall-last') {
-      const lastServed = await prisma.order.findFirst({
-        where: { status: 'SERVED' },
-        orderBy: { updatedAt: 'desc' },
-      });
+    // 5. Recall Ticket (Last or Specific by orderId)
+    if (action === 'recall-last' || action === 'recall-order') {
+      let orderToRecall = null;
+      if (orderId) {
+        orderToRecall = await prisma.order.findFirst({
+          where: { OR: [{ id: orderId }, { orderNumber: orderId }] },
+        });
+      } else {
+        orderToRecall = await prisma.order.findFirst({
+          where: { status: 'SERVED' },
+          orderBy: { updatedAt: 'desc' },
+        });
+      }
 
-      if (lastServed) {
+      if (orderToRecall) {
         const recalled = await prisma.order.update({
-          where: { id: lastServed.id },
+          where: { id: orderToRecall.id },
           data: { status: 'PREPARING' },
         });
+
+        // Set table status to OCCUPIED and point to this order
+        if (orderToRecall.tableId) {
+          await prisma.table.update({
+            where: { id: orderToRecall.tableId },
+            data: { currentStatus: 'OCCUPIED', activeOrderId: orderToRecall.id },
+          }).catch(() => {});
+        }
+
         return NextResponse.json({ success: true, order: recalled });
       }
 

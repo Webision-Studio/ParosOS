@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
     }
 
     // 2. Fetch Tables (with active orders for live sync), Categories, Menu Items, Active Shift
-    const [tables, categories, menuItems, activeShift, recentOrders] = await Promise.all([
+    const [tables, categories, menuItems, activeShift, recentOrders, servedOrders] = await Promise.all([
       prisma.table.findMany({
         where: { cafeId: cafe.id },
         include: {
@@ -57,6 +57,12 @@ export async function GET(req: NextRequest) {
         orderBy: { createdAt: 'desc' },
         take: 20,
       }),
+      prisma.order.findMany({
+        where: { cafeId: cafe.id, status: 'SERVED' },
+        include: { items: true, table: true },
+        orderBy: { updatedAt: 'desc' },
+        take: 20,
+      }),
     ]);
 
     return NextResponse.json({
@@ -66,6 +72,7 @@ export async function GET(req: NextRequest) {
       menuItems,
       activeShift,
       recentOrders,
+      servedOrders,
     });
   } catch (error) {
     console.error('POS fetch error:', error);

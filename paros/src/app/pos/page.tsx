@@ -57,6 +57,8 @@ interface LiveOrderQueue {
   status: 'IN_KITCHEN' | 'READY_AT_PASS' | 'COMPLETED';
   itemsSummary: string;
   elapsedTime: string;
+  specialNotes?: string;
+  paymentMode?: 'UPI_PREPAID' | 'PAY_LATER' | null;
 }
 
 export default function PosRegisterPage() {
@@ -136,6 +138,8 @@ export default function PosRegisterPage() {
 
   // Live Orders in Expediter Queue (starts clean, loaded from real orders)
   const [liveOrders, setLiveOrders] = useState<LiveOrderQueue[]>([]);
+  const [servedOrders, setServedOrders] = useState<LiveOrderQueue[]>([]);
+  const [expediterSubTab, setExpediterSubTab] = useState<'active' | 'served'>('active');
 
   const [menuItems, setMenuItems] = useState<MenuItemData[]>([
     { id: 'm1', name: 'Specialty Pour Over (Ratnagiri)', description: 'Single-origin light roast brewed on Hario V60', price: 260, isVeg: true, category: { name: 'Hot Coffee' } },
@@ -248,16 +252,52 @@ export default function PosRegisterPage() {
 
           // 2. Sync Expediter Queue & Kitchen Alerts
           if (data?.recentOrders) {
-            const mappedOrders: LiveOrderQueue[] = data.recentOrders.map((o: any) => ({
-              id: o.id,
-              orderNumber: o.orderNumber,
-              table: o.table?.tableNumber ? `Table ${o.table.tableNumber}` : 'Takeaway',
-              customerName: o.customerName || 'Guest',
-              status: o.status === 'READY' ? 'READY_AT_PASS' : 'IN_KITCHEN',
-              itemsSummary: (o.items || []).map((it: any) => `${it.quantity}x ${it.name}`).join(', '),
-              elapsedTime: `${Math.floor((Date.now() - new Date(o.createdAt).getTime()) / 60000)}m ago`,
-            }));
+            const mappedOrders: LiveOrderQueue[] = data.recentOrders.map((o: any) => {
+              const pMode = o.specialNotes?.includes('PREPAID') || o.specialNotes?.includes('UPI')
+                ? 'UPI_PREPAID'
+                : o.specialNotes?.includes('PAY LATER')
+                ? 'PAY_LATER'
+                : null;
+              return {
+                id: o.id,
+                orderNumber: o.orderNumber,
+                table: o.table?.tableNumber ? `Table ${o.table.tableNumber}` : 'Takeaway',
+                customerName: o.customerName || 'Guest',
+                status: o.status === 'READY' ? 'READY_AT_PASS' : 'IN_KITCHEN',
+                itemsSummary: (o.items || []).map((it: any) => `${it.quantity}x ${it.name}`).join(', '),
+                elapsedTime: `${Math.floor((Date.now() - new Date(o.createdAt).getTime()) / 60000)}m ago`,
+                specialNotes: o.specialNotes,
+                paymentMode: pMode,
+              };
+            });
             setLiveOrders(mappedOrders);
+          } else {
+            setLiveOrders([]);
+          }
+
+          if (data?.servedOrders) {
+            const mappedServed: LiveOrderQueue[] = data.servedOrders.map((o: any) => {
+              const pMode = o.specialNotes?.includes('PREPAID') || o.specialNotes?.includes('UPI')
+                ? 'UPI_PREPAID'
+                : o.specialNotes?.includes('PAY LATER')
+                ? 'PAY_LATER'
+                : null;
+              return {
+                id: o.id,
+                orderNumber: o.orderNumber,
+                table: o.table?.tableNumber ? `Table ${o.table.tableNumber}` : 'Takeaway',
+                customerName: o.customerName || 'Guest',
+                status: 'COMPLETED' as const,
+                itemsSummary: (o.items || []).map((it: any) => `${it.quantity}x ${it.name}`).join(', '),
+                elapsedTime: `Handed over ${Math.floor((Date.now() - new Date(o.updatedAt || o.createdAt).getTime()) / 60000)}m ago`,
+                specialNotes: o.specialNotes,
+                paymentMode: pMode,
+              };
+            });
+            setServedOrders(mappedServed);
+          } else {
+            setServedOrders([]);
+          }
 
             // 3. Detect Ready Orders for Audio Chime & Banner (supports multiple orders)
             const readyOrders = (data.recentOrders || []).filter((o: any) => o.status === 'READY');
@@ -279,7 +319,6 @@ export default function PosRegisterPage() {
             } else {
               setReadyNotification(null);
             }
-          }
         })
         .catch(() => {});
     }
@@ -687,7 +726,7 @@ export default function PosRegisterPage() {
                 <div className="flex items-center gap-2 font-display text-xs text-espresso/60 font-medium">
                   <span>Shift: Open</span>
                   <span>•</span>
-                  <span className="text-paros-matcha font-bold">SQLite DB Synced</span>
+                  <span className="text-paros-matcha font-bold">Supabase Cloud DB Synced</span>
                 </div>
               </div>
             </div>
@@ -813,70 +852,200 @@ export default function PosRegisterPage() {
           {/* ═══ VIEW MODE: EXPEDITER QUEUE ═══ */}
           {activeView === 'orders' ? (
             <div className="bg-white p-5 rounded-2xl border-2 border-espresso shadow-brutal flex-1 flex flex-col gap-4">
-              <div className="flex items-center justify-between pb-3 border-b-2 border-espresso">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b-2 border-espresso">
                 <div className="flex items-center gap-2">
                   <span className="material-symbols-outlined text-paros-orange text-[22px]">soup_kitchen</span>
-                  <h2 className="font-display text-lg font-black text-espresso">
-                    Live Kitchen Expediter & Delivery Pass
-                  </h2>
+                  <div>
+                    <h2 className="font-display text-lg font-black text-espresso">
+                      Live Kitchen Expediter & Delivery Pass
+                    </h2>
+                    <p className="font-body text-xs text-espresso/60">
+                      Live tracking of in-prep tickets and runner handovers
+                    </p>
+                  </div>
                 </div>
-                <span className="font-display text-xs font-bold text-espresso/70">
-                  Auto-sync with Kitchen KDS
-                </span>
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {liveOrders.map((ord) => (
-                  <div
-                    key={ord.id}
-                    className={`p-4 rounded-2xl border-2 border-espresso flex flex-col justify-between ${
-                      ord.status === 'READY_AT_PASS'
-                        ? 'bg-paros-mint border-emerald-600 shadow-brutal ring-2 ring-emerald-400'
-                        : ord.status === 'COMPLETED'
-                        ? 'bg-paros-cream/50 opacity-60'
-                        : 'bg-white shadow-brutal-sm'
+                {/* Sub-tab Switcher: Active vs Handed Over to Runner */}
+                <div className="flex items-center gap-1 bg-paros-cream p-1 rounded-xl border-2 border-espresso shadow-brutal-sm">
+                  <button
+                    onClick={() => setExpediterSubTab('active')}
+                    className={`px-3 py-1.5 rounded-lg font-display text-xs font-black uppercase transition-all flex items-center gap-1.5 ${
+                      expediterSubTab === 'active'
+                        ? 'bg-paros-orange text-white shadow-brutal-sm'
+                        : 'text-espresso hover:bg-paros-yellow/40'
                     }`}
                   >
-                    <div>
-                      <div className="flex items-center justify-between pb-2 mb-2 border-b border-dashed border-espresso/20">
-                        <div className="flex items-center gap-2">
-                          <span className="font-display font-black text-base text-espresso">{ord.table}</span>
-                          <span className="font-mono text-xs font-bold bg-white px-2 py-0.5 rounded border border-espresso">
-                            {ord.orderNumber}
-                          </span>
-                        </div>
-                        <span
-                          className={`font-display text-xs font-black uppercase px-2 py-0.5 rounded ${
+                    <span>⚡ Active Pass</span>
+                    <span className="bg-white/20 px-1.5 py-0.2 rounded font-mono text-[10px]">
+                      {liveOrders.length}
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => setExpediterSubTab('served')}
+                    className={`px-3 py-1.5 rounded-lg font-display text-xs font-black uppercase transition-all flex items-center gap-1.5 ${
+                      expediterSubTab === 'served'
+                        ? 'bg-paros-matcha text-white shadow-brutal-sm'
+                        : 'text-espresso hover:bg-paros-yellow/40'
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-[15px]">task_alt</span>
+                    <span>Handed to Runner</span>
+                    <span className="bg-white/20 px-1.5 py-0.2 rounded font-mono text-[10px]">
+                      {servedOrders.length}
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              {/* TAB 1: ACTIVE PASS / IN KITCHEN */}
+              {expediterSubTab === 'active' && (
+                <>
+                  {liveOrders.length === 0 ? (
+                    <div className="p-8 text-center flex flex-col items-center justify-center my-6">
+                      <div className="w-14 h-14 rounded-2xl bg-paros-mint flex items-center justify-center border-2 border-espresso shadow-brutal-sm mb-3">
+                        <span className="material-symbols-outlined text-emerald-800 text-[28px]">done_all</span>
+                      </div>
+                      <p className="font-display font-black text-base text-espresso">Pass is Clear</p>
+                      <p className="font-body text-xs text-espresso/60 max-w-xs mt-1">
+                        No orders are currently cooking in the kitchen or waiting at the pass.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {liveOrders.map((ord) => (
+                        <div
+                          key={ord.id}
+                          className={`p-4 rounded-2xl border-2 border-espresso flex flex-col justify-between ${
                             ord.status === 'READY_AT_PASS'
-                              ? 'bg-emerald-600 text-white animate-pulse'
-                              : ord.status === 'COMPLETED'
-                              ? 'bg-espresso text-white'
-                              : 'bg-paros-yellow text-espresso'
+                              ? 'bg-paros-mint border-emerald-600 shadow-brutal ring-2 ring-emerald-400'
+                              : 'bg-white shadow-brutal-sm'
                           }`}
                         >
-                          {ord.status === 'READY_AT_PASS'
-                            ? 'Ready at Pass 🛎️'
-                            : ord.status === 'COMPLETED'
-                            ? 'Served'
-                            : 'Cooking in KDS'}
-                        </span>
-                      </div>
-                      <p className="font-body text-xs text-espresso font-semibold">{ord.customerName}</p>
-                      <p className="font-body text-xs text-espresso/70 mt-1">{ord.itemsSummary}</p>
-                      <p className="font-mono text-[10px] text-espresso/50 mt-2">{ord.elapsedTime}</p>
-                    </div>
+                          <div>
+                            <div className="flex items-center justify-between pb-2 mb-2 border-b border-dashed border-espresso/20">
+                              <div className="flex items-center gap-2">
+                                <span className="font-display font-black text-base text-espresso">{ord.table}</span>
+                                <span className="font-mono text-xs font-bold bg-white px-2 py-0.5 rounded border border-espresso">
+                                  {ord.orderNumber}
+                                </span>
+                              </div>
+                              <span
+                                className={`font-display text-xs font-black uppercase px-2 py-0.5 rounded ${
+                                  ord.status === 'READY_AT_PASS'
+                                    ? 'bg-emerald-600 text-white animate-pulse'
+                                    : 'bg-paros-yellow text-espresso'
+                                }`}
+                              >
+                                {ord.status === 'READY_AT_PASS' ? 'Ready at Pass 🛎️' : 'Cooking in KDS'}
+                              </span>
+                            </div>
 
-                    {ord.status === 'READY_AT_PASS' && (
-                      <button
-                        onClick={() => handleMarkOrderServed(ord.id, ord.table.replace('Table ', ''))}
-                        className="brutal-btn mt-3 w-full py-2 bg-espresso text-white font-display text-xs font-black uppercase rounded-xl border border-espresso shadow-brutal-sm"
-                      >
-                        Handover to Runner & Clear ➔
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
+                            {/* Payment Badge */}
+                            {ord.paymentMode && (
+                              <div className="mb-2">
+                                <span
+                                  className={`text-[9px] font-black uppercase px-2 py-0.5 rounded border border-espresso ${
+                                    ord.paymentMode === 'UPI_PREPAID'
+                                      ? 'bg-emerald-100 text-emerald-900 border-emerald-400'
+                                      : 'bg-amber-100 text-amber-900 border-amber-400'
+                                  }`}
+                                >
+                                  {ord.paymentMode === 'UPI_PREPAID' ? '● PAID ONLINE (UPI)' : '● UNPAID TAB: COLLECT DUE'}
+                                </span>
+                              </div>
+                            )}
+
+                            <p className="font-body text-xs text-espresso font-semibold">{ord.customerName}</p>
+                            <p className="font-body text-xs text-espresso/70 mt-1">{ord.itemsSummary}</p>
+                            <p className="font-mono text-[10px] text-espresso/50 mt-2">{ord.elapsedTime}</p>
+                          </div>
+
+                          {ord.status === 'READY_AT_PASS' && (
+                            <button
+                              onClick={() => handleMarkOrderServed(ord.id, ord.table.replace('Table ', ''))}
+                              className="brutal-btn mt-3 w-full py-2 bg-espresso text-white font-display text-xs font-black uppercase rounded-xl border border-espresso shadow-brutal-sm flex items-center justify-center gap-1.5"
+                            >
+                              <span className="material-symbols-outlined text-[16px]">check_circle</span>
+                              <span>Handover to Runner & Clear ➔</span>
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* TAB 2: HANDED OVER TO RUNNER (RECENTLY SERVED HISTORY) */}
+              {expediterSubTab === 'served' && (
+                <>
+                  {servedOrders.length === 0 ? (
+                    <div className="p-8 text-center flex flex-col items-center justify-center my-6">
+                      <div className="w-14 h-14 rounded-2xl bg-paros-cream flex items-center justify-center border-2 border-espresso shadow-brutal-sm mb-3">
+                        <span className="material-symbols-outlined text-espresso/60 text-[28px]">history</span>
+                      </div>
+                      <p className="font-display font-black text-base text-espresso">No Handed Over Orders Yet</p>
+                      <p className="font-body text-xs text-espresso/60 max-w-xs mt-1">
+                        When orders are marked served and given to runners, they will appear here for audit and settlement.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {servedOrders.map((ord) => {
+                        const tableNumOnly = ord.table.replace('Table ', '').trim();
+                        return (
+                          <div
+                            key={ord.id}
+                            className="p-4 rounded-2xl border-2 border-espresso bg-surface-container-low shadow-brutal-sm flex flex-col justify-between"
+                          >
+                            <div>
+                              <div className="flex items-center justify-between pb-2 mb-2 border-b border-dashed border-espresso/20">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-display font-black text-base text-espresso">{ord.table}</span>
+                                  <span className="font-mono text-xs font-bold bg-white px-2 py-0.5 rounded border border-espresso">
+                                    {ord.orderNumber}
+                                  </span>
+                                </div>
+                                <span className="bg-paros-matcha text-white font-display text-[10px] font-black uppercase px-2 py-0.5 rounded flex items-center gap-1">
+                                  <span className="material-symbols-outlined text-[13px]">task_alt</span>
+                                  <span>Handed to Runner</span>
+                                </span>
+                              </div>
+
+                              {/* Payment Badge */}
+                              <div className="mb-2">
+                                <span
+                                  className={`text-[9px] font-black uppercase px-2 py-0.5 rounded border border-espresso ${
+                                    ord.paymentMode === 'UPI_PREPAID'
+                                      ? 'bg-emerald-100 text-emerald-900 border-emerald-400'
+                                      : 'bg-amber-100 text-amber-900 border-amber-400'
+                                  }`}
+                                >
+                                  {ord.paymentMode === 'UPI_PREPAID' ? '● PAID ONLINE (UPI)' : '● UNPAID TAB: COLLECT DUE'}
+                                </span>
+                              </div>
+
+                              <p className="font-body text-xs text-espresso font-semibold">{ord.customerName}</p>
+                              <p className="font-body text-xs text-espresso/80 mt-1">{ord.itemsSummary}</p>
+                              <p className="font-mono text-[10px] text-espresso/60 mt-2 font-bold">{ord.elapsedTime}</p>
+                            </div>
+
+                            <button
+                              onClick={() => {
+                                setSelectedTable(tableNumOnly);
+                                setActiveView('menu');
+                              }}
+                              className="brutal-btn mt-3 w-full py-2 bg-white hover:bg-paros-yellow text-espresso font-display text-xs font-black uppercase rounded-xl border border-espresso shadow-brutal-sm flex items-center justify-center gap-1"
+                            >
+                              <span>Open Table {tableNumOnly} Tab ➔</span>
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           ) : (
             /* ═══ VIEW MODE: MENU CATALOG ═══ */
