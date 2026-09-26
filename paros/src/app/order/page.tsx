@@ -54,9 +54,11 @@ export default function TableQrOrderPage() {
   ]);
 
   // Order Result
+  const [placedOrderId, setPlacedOrderId] = useState<string | null>(null);
   const [placedOrderNumber, setPlacedOrderNumber] = useState('#1042');
   const [countdownSeconds, setCountdownSeconds] = useState(480); // 8 minutes
   const [orderStatus, setOrderStatus] = useState<'BREWING' | 'PLATING' | 'READY'>('BREWING');
+  const [chefAddedEtaMessage, setChefAddedEtaMessage] = useState<string | null>(null);
 
   // Fetch live menu and tables from backend
   useEffect(() => {
@@ -99,21 +101,68 @@ export default function TableQrOrderPage() {
   const gst = Math.round(subtotal * 0.05);
   const total = subtotal + gst;
 
-  // Countdown timer in Step 4
+  // Live ETA & Kitchen Status Synchronization in Step 4
   useEffect(() => {
     if (step !== 4) return;
-    const interval = setInterval(() => {
+
+    // Local 1-second ticker for smooth visual countdown
+    const localTicker = setInterval(() => {
       setCountdownSeconds((prev) => {
         if (prev <= 1) {
-          setOrderStatus('READY');
           return 0;
         }
         if (prev < 180) setOrderStatus('PLATING');
         return prev - 1;
       });
     }, 1000);
-    return () => clearInterval(interval);
-  }, [step]);
+
+    // Live poller to sync ETA updates & Ready state from KDS
+    let lastKnownPrepMinutes = 10;
+    function pollLiveOrderStatus() {
+      if (!placedOrderId && !placedOrderNumber) return;
+      const query = placedOrderId
+        ? `orderId=${placedOrderId}`
+        : `orderNumber=${encodeURIComponent(placedOrderNumber)}`;
+      fetch(`/api/order?${query}`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => {
+          if (data?.order) {
+            const ord = data.order;
+            if (ord.status === 'READY' || ord.status === 'SERVED') {
+              setOrderStatus('READY');
+              setCountdownSeconds(0);
+            } else {
+              // Check if Chef pushed dynamic ETA (+5m / +10m)
+              const dynamicMins = ord.dynamicPrepMinutes || 10;
+              if (dynamicMins > lastKnownPrepMinutes) {
+                const diff = dynamicMins - lastKnownPrepMinutes;
+                setChefAddedEtaMessage(`⏱️ Kitchen rush update: Chef added +${diff}m to guarantee artisanal quality.`);
+                lastKnownPrepMinutes = dynamicMins;
+                setTimeout(() => setChefAddedEtaMessage(null), 6000);
+              }
+              const createdAtMs = new Date(ord.createdAt).getTime();
+              const elapsedSecs = Math.floor((Date.now() - createdAtMs) / 1000);
+              const remaining = Math.max(0, dynamicMins * 60 - elapsedSecs);
+              setCountdownSeconds(remaining);
+              if (remaining < 180) {
+                setOrderStatus('PLATING');
+              } else {
+                setOrderStatus('BREWING');
+              }
+            }
+          }
+        })
+        .catch(() => {});
+    }
+
+    pollLiveOrderStatus();
+    const pollerInterval = setInterval(pollLiveOrderStatus, 2000);
+
+    return () => {
+      clearInterval(localTicker);
+      clearInterval(pollerInterval);
+    };
+  }, [step, placedOrderId, placedOrderNumber]);
 
   function addToCartWithCustomization() {
     if (!customizingItem) return;
@@ -169,8 +218,14 @@ export default function TableQrOrderPage() {
         }),
       });
       const data = await res.json();
-      if (data.orderNumber) {
-        setPlacedOrderNumber(data.orderNumber);
+      if (data?.orderId || data?.order?.id) {
+        setPlacedOrderId(data.orderId || data?.order?.id);
+      }
+      if (data?.orderNumber || data?.order?.orderNumber) {
+        setPlacedOrderNumber(data.orderNumber || data?.order?.orderNumber);
+      }
+      if (data?.prepTimeMinutes || data?.order?.dynamicPrepMinutes) {
+        setCountdownSeconds((data.prepTimeMinutes || data?.order?.dynamicPrepMinutes) * 60);
       }
     } catch {
       // Offline fallback
@@ -507,6 +562,14 @@ export default function TableQrOrderPage() {
                   : `Barista is crafting your order. Average wait time remaining:`}
               </p>
             </div>
+
+            {/* Chef Dynamic ETA Alert Banner */}
+            {chefAddedEtaMessage && (
+              <div className="w-full bg-paros-yellow text-espresso p-3 rounded-2xl border-2 border-espresso shadow-brutal-sm font-display text-xs font-bold animate-in slide-in-from-top-2 flex items-center gap-2">
+                <span className="material-symbols-outlined text-paros-orange text-[20px]">timer</span>
+                <span>{chefAddedEtaMessage}</span>
+              </div>
+            )}
 
             {/* Live Countdown Display */}
             {orderStatus !== 'READY' && (

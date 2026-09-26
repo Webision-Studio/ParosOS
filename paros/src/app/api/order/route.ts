@@ -7,6 +7,20 @@ export async function GET(req: NextRequest) {
     const session = await getSession();
     const { searchParams } = new URL(req.url);
     const cafeSlug = searchParams.get('cafeSlug');
+    const orderId = searchParams.get('orderId');
+    const orderNumber = searchParams.get('orderNumber');
+
+    // 1. Live Order Status Lookup (for customer countdown & ETA polling)
+    if (orderId || orderNumber) {
+      const order = await prisma.order.findFirst({
+        where: orderId ? { id: orderId } : { orderNumber: orderNumber as string },
+        include: { items: true, table: true },
+      });
+      if (!order) {
+        return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+      }
+      return NextResponse.json({ order });
+    }
 
     let cafe = null;
     if (session?.cafeId) {
@@ -103,9 +117,10 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
+      orderId: order.id,
       order,
       orderNumber,
-      prepTimeMinutes: 10,
+      prepTimeMinutes: order.dynamicPrepMinutes || 10,
     });
   } catch (error) {
     console.error('Order creation error:', error);

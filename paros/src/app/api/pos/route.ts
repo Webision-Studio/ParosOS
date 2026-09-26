@@ -26,10 +26,18 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'No cafe found' }, { status: 404 });
     }
 
-    // 2. Fetch Tables, Categories, Menu Items, Active Shift
+    // 2. Fetch Tables (with active orders for live sync), Categories, Menu Items, Active Shift
     const [tables, categories, menuItems, activeShift, recentOrders] = await Promise.all([
       prisma.table.findMany({
         where: { cafeId: cafe.id },
+        include: {
+          orders: {
+            where: { status: { in: ['PLACED', 'PREPARING', 'READY'] } },
+            include: { items: true },
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+          },
+        },
         orderBy: { tableNumber: 'asc' },
       }),
       prisma.category.findMany({
@@ -44,10 +52,10 @@ export async function GET(req: NextRequest) {
         where: { cafeId: cafe.id, status: 'OPEN' },
       }),
       prisma.order.findMany({
-        where: { cafeId: cafe.id, status: { in: ['PLACED', 'PREPARING'] } },
+        where: { cafeId: cafe.id, status: { in: ['PLACED', 'PREPARING', 'READY'] } },
         include: { items: true, table: true },
         orderBy: { createdAt: 'desc' },
-        take: 10,
+        take: 20,
       }),
     ]);
 
@@ -90,36 +98,61 @@ export async function POST(req: NextRequest) {
         customerName,
       } = body;
 
-      // Create Order
-      const orderNumber = `#${Math.floor(1000 + Math.random() * 9000)}`;
-      const order = await prisma.order.create({
-        data: {
+      // Find table by id or tableNumber
+      const table = await prisma.table.findFirst({
+        where: {
           cafeId: targetCafeId,
-          tableId: tableId || null,
-          orderNumber,
-          source: 'POS',
-          status: 'SERVED',
-          customerName: customerName || 'Walk-in Guest',
-          customerPhone: customerPhone || '+91 98450 XXXXX',
-          items: {
-            create: items.map((i: { menuItemId?: string; name: string; price: number; quantity: number; notes?: string }) => ({
-              menuItemId: i.menuItemId || null,
-              name: i.name,
-              price: i.price,
-              quantity: i.quantity || 1,
-              status: 'READY',
-              notes: i.notes || '',
-            })),
-          },
+          OR: [{ id: String(tableId) }, { tableNumber: String(tableId) }],
         },
       });
+
+      let order = null;
+      if (table?.activeOrderId) {
+        order = await prisma.order.findUnique({
+          where: { id: table.activeOrderId },
+        });
+      }
+
+      if (order) {
+        order = await prisma.order.update({
+          where: { id: order.id },
+          data: {
+            status: 'SERVED',
+            customerName: customerName || order.customerName,
+            customerPhone: customerPhone || order.customerPhone,
+          },
+        });
+      } else {
+        const orderNumber = `#${Math.floor(1000 + Math.random() * 9000)}`;
+        order = await prisma.order.create({
+          data: {
+            cafeId: targetCafeId,
+            tableId: table?.id || null,
+            orderNumber,
+            source: 'POS',
+            status: 'SERVED',
+            customerName: customerName || 'Walk-in Guest',
+            customerPhone: customerPhone || '+91 98450 XXXXX',
+            items: {
+              create: (items || []).map((i: { menuItemId?: string; name: string; price: number; quantity: number; notes?: string }) => ({
+                menuItemId: i.menuItemId || null,
+                name: i.name,
+                price: Number(i.price),
+                quantity: Number(i.quantity || 1),
+                status: 'READY',
+                notes: i.notes || '',
+              })),
+            },
+          },
+        });
+      }
 
       // Create Bill
       const bill = await prisma.bill.create({
         data: {
           cafeId: targetCafeId,
           orderId: order.id,
-          billNumber: `INV-${orderNumber.replace('#', '')}`,
+          billNumber: `INV-${order.orderNumber.replace('#', '')}`,
           subtotal: Number(subtotal),
           cgst: Number(cgst),
           sgst: Number(sgst),
@@ -151,9 +184,9 @@ export async function POST(req: NextRequest) {
       }
 
       // Reset Table status if dine-in
-      if (tableId) {
+      if (table) {
         await prisma.table.update({
-          where: { id: tableId },
+          where: { id: table.id },
           data: { currentStatus: 'AVAILABLE', activeOrderId: null },
         });
       }
@@ -164,19 +197,26 @@ export async function POST(req: NextRequest) {
     // 2. Park / Hold Order
     if (action === 'park-order') {
       const { tableId, items, customerName } = body;
+      const table = await prisma.table.findFirst({
+        where: {
+          cafeId: targetCafeId,
+          OR: [{ id: String(tableId) }, { tableNumber: String(tableId) }],
+        },
+      });
+
       const order = await prisma.order.create({
         data: {
           cafeId: targetCafeId,
-          tableId: tableId || null,
+          tableId: table?.id || null,
           orderNumber: `#${Math.floor(1000 + Math.random() * 9000)}`,
           source: 'POS',
           status: 'PLACED',
           customerName: customerName || 'Parked Ticket',
           items: {
-            create: items.map((i: { name: string; price: number; quantity: number; notes?: string }) => ({
+            create: (items || []).map((i: { name: string; price: number; quantity: number; notes?: string }) => ({
               name: i.name,
-              price: i.price,
-              quantity: i.quantity || 1,
+              price: Number(i.price),
+              quantity: Number(i.quantity || 1),
               status: 'PENDING',
               notes: i.notes || '',
             })),
@@ -184,9 +224,9 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      if (tableId) {
+      if (table) {
         await prisma.table.update({
-          where: { id: tableId },
+          where: { id: table.id },
           data: { currentStatus: 'OCCUPIED', activeOrderId: order.id },
         });
       }

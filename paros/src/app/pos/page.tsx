@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -84,10 +84,45 @@ export default function PosRegisterPage() {
 
   // KDS Ready Notification Banner (null by default; only shows when a real kitchen ticket is ready)
   const [readyNotification, setReadyNotification] = useState<{
+    id?: string;
     table: string;
     orderNumber: string;
     items: string;
   } | null>(null);
+  const lastNotifiedReadyId = useRef<string | null>(null);
+
+  // Web Audio Service Chime Synthesizer
+  function playReadyChime() {
+    try {
+      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      const ctx = new AudioCtx();
+      // First high ding (C6)
+      const osc1 = ctx.createOscillator();
+      const gain1 = ctx.createGain();
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(1046.5, ctx.currentTime);
+      gain1.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
+      osc1.connect(gain1);
+      gain1.connect(ctx.destination);
+      osc1.start();
+      osc1.stop(ctx.currentTime + 0.35);
+
+      // Second higher ding (E6)
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(1318.5, ctx.currentTime + 0.15);
+      gain2.gain.setValueAtTime(0.35, ctx.currentTime + 0.15);
+      gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.6);
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+      osc2.start(ctx.currentTime + 0.15);
+      osc2.stop(ctx.currentTime + 0.6);
+    } catch {
+      // AudioContext unavailable
+    }
+  }
 
   // Tender / Cash State
   const [tenderAmount, setTenderAmount] = useState<number>(500);
@@ -117,52 +152,125 @@ export default function PosRegisterPage() {
       setCurrentTime(now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
     }, 1000);
 
-    // Fetch DB data
-    fetch('/api/pos')
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data?.cafe?.name) setCafeName(data.cafe.name);
-        if (data?.menuItems?.length) setMenuItems(data.menuItems);
-        if (data?.tables?.length) {
-          const loadedTables = data.tables.map((t: { id: string; tableNumber: string; capacity: number; currentStatus: string }) => ({
-            id: t.id,
-            tableNumber: t.tableNumber,
-            capacity: t.capacity || 4,
-            currentStatus: (t.currentStatus as 'AVAILABLE' | 'OCCUPIED' | 'READY_TO_SERVE') || 'AVAILABLE',
-          }));
-          setTables(loadedTables);
-          if (loadedTables[0]?.tableNumber) {
-            setSelectedTable(loadedTables[0].tableNumber);
-          }
-        }
-        if (data?.recentOrders?.length) {
-          const mappedOrders = data.recentOrders.map((o: { id: string; orderNumber: string; customerName?: string; status: string; table?: { tableNumber: string }; items?: Array<{ name: string; quantity: number }> }) => ({
-            id: o.id,
-            orderNumber: o.orderNumber,
-            table: o.table?.tableNumber ? `Table ${o.table.tableNumber}` : 'Takeaway',
-            customerName: o.customerName || 'Guest',
-            status: o.status === 'READY' ? 'READY_AT_PASS' : 'IN_KITCHEN',
-            itemsSummary: (o.items || []).map((it) => `${it.quantity}x ${it.name}`).join(', '),
-            elapsedTime: 'Just now',
-          }));
-          setLiveOrders(mappedOrders);
+    // Live POS Data Fetcher & Synchronizer
+    function loadPosData() {
+      fetch('/api/pos')
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data?.cafe?.name) setCafeName(data.cafe.name);
+          if (data?.menuItems?.length) setMenuItems(data.menuItems);
 
-          const readyOrder = data.recentOrders.find((o: { status: string }) => o.status === 'READY');
-          if (readyOrder) {
-            setReadyNotification({
-              table: readyOrder.table?.tableNumber || 'Takeaway',
-              orderNumber: readyOrder.orderNumber,
-              items: (readyOrder.items || []).map((it: { name: string }) => it.name).join(' + '),
+          // 1. Sync Floor Tables & Carts
+          if (data?.tables?.length) {
+            const loadedTables: TableNode[] = data.tables.map((t: any) => {
+              const activeOrder = t.orders?.[0];
+              const tableAmount = (activeOrder?.items || []).reduce(
+                (sum: number, it: any) => sum + (it.price || 0) * (it.quantity || 1),
+                0
+              );
+
+              return {
+                id: t.id,
+                tableNumber: t.tableNumber,
+                capacity: t.capacity || 4,
+                currentStatus: (t.currentStatus as 'AVAILABLE' | 'OCCUPIED' | 'READY_TO_SERVE') || 'AVAILABLE',
+                orderNumber: activeOrder?.orderNumber,
+                amount: tableAmount > 0 ? Math.round(tableAmount * 1.05) : undefined,
+              };
             });
-          } else {
-            setReadyNotification(null);
+
+            setTables(loadedTables);
+
+            // Synchronize Table Carts from live DB active orders (e.g. from Customer QR)
+            setTableCarts((prevCarts) => {
+              let changed = false;
+              const nextCarts = { ...prevCarts };
+
+              data.tables.forEach((t: any) => {
+                const activeOrder = t.orders?.[0];
+                const localCart = prevCarts[t.tableNumber] || [];
+
+                if (activeOrder && activeOrder.items?.length > 0) {
+                  // If local cart is empty, populate from DB order
+                  if (localCart.length === 0) {
+                    nextCarts[t.tableNumber] = activeOrder.items.map((it: any) => ({
+                      id: it.id,
+                      name: it.name,
+                      price: it.price,
+                      quantity: it.quantity,
+                      isVeg: true,
+                      notes: it.notes,
+                    }));
+                    changed = true;
+                  }
+                } else if (t.currentStatus === 'AVAILABLE' && localCart.length > 0) {
+                  // If table was freed in DB, clear local cart
+                  nextCarts[t.tableNumber] = [];
+                  changed = true;
+                }
+              });
+
+              return changed ? nextCarts : prevCarts;
+            });
+
+            // Synchronize Table Customer details
+            setTableCustomers((prevCusts) => {
+              let changed = false;
+              const nextCusts = { ...prevCusts };
+
+              data.tables.forEach((t: any) => {
+                const activeOrder = t.orders?.[0];
+                if (activeOrder && (!prevCusts[t.tableNumber]?.name || !prevCusts[t.tableNumber]?.phone)) {
+                  nextCusts[t.tableNumber] = {
+                    name: activeOrder.customerName || `Guest Table ${t.tableNumber}`,
+                    phone: activeOrder.customerPhone || '',
+                  };
+                  changed = true;
+                }
+              });
+
+              return changed ? nextCusts : prevCusts;
+            });
           }
-        } else {
-          setLiveOrders([]);
-          setReadyNotification(null);
-        }
-      })
-      .catch(() => {});
+
+          // 2. Sync Expediter Queue & Kitchen Alerts
+          if (data?.recentOrders) {
+            const mappedOrders: LiveOrderQueue[] = data.recentOrders.map((o: any) => ({
+              id: o.id,
+              orderNumber: o.orderNumber,
+              table: o.table?.tableNumber ? `Table ${o.table.tableNumber}` : 'Takeaway',
+              customerName: o.customerName || 'Guest',
+              status: o.status === 'READY' ? 'READY_AT_PASS' : 'IN_KITCHEN',
+              itemsSummary: (o.items || []).map((it: any) => `${it.quantity}x ${it.name}`).join(', '),
+              elapsedTime: `${Math.floor((Date.now() - new Date(o.createdAt).getTime()) / 60000)}m ago`,
+            }));
+            setLiveOrders(mappedOrders);
+
+            // 3. Detect Ready Order for Audio Chime & Banner
+            const readyOrder = data.recentOrders.find((o: any) => o.status === 'READY');
+            if (readyOrder) {
+              setReadyNotification({
+                id: readyOrder.id,
+                table: readyOrder.table?.tableNumber || 'Takeaway',
+                orderNumber: readyOrder.orderNumber,
+                items: (readyOrder.items || []).map((it: any) => `${it.quantity}x ${it.name}`).join(' + '),
+              });
+
+              // Ring chime if this is a newly ready order
+              if (lastNotifiedReadyId.current !== readyOrder.id) {
+                lastNotifiedReadyId.current = readyOrder.id;
+                playReadyChime();
+              }
+            } else {
+              setReadyNotification(null);
+            }
+          }
+        })
+        .catch(() => {});
+    }
+
+    loadPosData();
+    const pollInterval = setInterval(loadPosData, 3000);
 
     // Keyboard shortcut '/'
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -176,6 +284,7 @@ export default function PosRegisterPage() {
 
     return () => {
       clearInterval(timer);
+      clearInterval(pollInterval);
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, []);
@@ -508,12 +617,30 @@ export default function PosRegisterPage() {
                   </p>
                 </div>
               </div>
-              <button
-                onClick={() => setActiveView('orders')}
-                className="brutal-btn px-3 py-1.5 bg-white text-espresso font-display text-xs font-black uppercase rounded-xl border border-espresso shadow-brutal-sm shrink-0"
-              >
-                View Queue
-              </button>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={() => {
+                    if (readyNotification.id) {
+                      fetch('/api/kds', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'bump-order', orderId: readyNotification.id }),
+                      }).catch(() => {});
+                    }
+                    setReadyNotification(null);
+                    showToast(`✓ Order for Table ${readyNotification.table} marked served!`);
+                  }}
+                  className="brutal-btn px-3 py-1.5 bg-paros-matcha text-white font-display text-xs font-black uppercase rounded-xl border border-espresso shadow-brutal-sm"
+                >
+                  ✓ Mark Served
+                </button>
+                <button
+                  onClick={() => setActiveView('orders')}
+                  className="brutal-btn px-3 py-1.5 bg-white text-espresso font-display text-xs font-black uppercase rounded-xl border border-espresso shadow-brutal-sm"
+                >
+                  Queue
+                </button>
+              </div>
             </div>
           )}
 
@@ -1030,24 +1157,14 @@ export default function PosRegisterPage() {
               <div className="grid grid-cols-2 gap-2">
                 <button
                   onClick={() => handleSettle('CASH')}
-                  disabled={currentCart.length === 0}
-                  className={`brutal-btn py-3.5 font-display font-black text-xs sm:text-sm uppercase rounded-xl border-2 border-espresso shadow-brutal flex items-center justify-center gap-1.5 ${
-                    currentCart.length === 0
-                      ? 'bg-espresso/40 text-white/60 cursor-not-allowed'
-                      : 'bg-espresso text-white hover:bg-espresso/90'
-                  }`}
+                  className="brutal-btn py-3.5 font-display font-black text-xs sm:text-sm uppercase rounded-xl border-2 border-espresso shadow-brutal flex items-center justify-center gap-1.5 bg-espresso text-white hover:bg-espresso/90 transition-all"
                 >
                   <span className="material-symbols-outlined text-[18px]">payments</span>
                   <span>SETTLE CASH {grandTotal > 0 ? `₹${grandTotal}` : ''}</span>
                 </button>
                 <button
                   onClick={() => handleSettle('UPI')}
-                  disabled={currentCart.length === 0}
-                  className={`brutal-btn py-3.5 font-display font-black text-xs sm:text-sm uppercase rounded-xl border-2 border-espresso shadow-brutal flex items-center justify-center gap-1.5 ${
-                    currentCart.length === 0
-                      ? 'bg-paros-matcha/40 text-white/60 cursor-not-allowed'
-                      : 'bg-paros-matcha text-white hover:bg-emerald-700'
-                  }`}
+                  className="brutal-btn py-3.5 font-display font-black text-xs sm:text-sm uppercase rounded-xl border-2 border-espresso shadow-brutal flex items-center justify-center gap-1.5 bg-paros-matcha text-white hover:bg-emerald-700 transition-all"
                 >
                   <span className="material-symbols-outlined text-[18px]">qr_code_scanner</span>
                   <span>CONFIRM UPI PAID</span>
