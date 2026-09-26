@@ -32,10 +32,12 @@ export async function GET(req: NextRequest) {
         where: { cafeId: cafe.id },
         include: {
           orders: {
-            where: { status: { in: ['PLACED', 'PREPARING', 'READY'] } },
+            where: {
+              status: { in: ['PLACED', 'PREPARING', 'READY', 'SERVED'] },
+              bills: { none: {} },
+            },
             include: { items: true },
-            orderBy: { createdAt: 'desc' },
-            take: 1,
+            orderBy: { createdAt: 'asc' },
           },
         },
         orderBy: { tableNumber: 'asc' },
@@ -86,7 +88,12 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { action, cafeId } = body;
 
-    const targetCafeId = session?.cafeId || cafeId;
+    let targetCafeId = session?.cafeId || cafeId;
+    if (!targetCafeId) {
+      const defaultCafe = await prisma.tenant.findFirst({ orderBy: { createdAt: 'desc' } });
+      targetCafeId = defaultCafe?.id;
+    }
+
     if (!targetCafeId) {
       return NextResponse.json({ error: 'Cafe ID is required' }, { status: 400 });
     }
@@ -105,33 +112,59 @@ export async function POST(req: NextRequest) {
         customerName,
       } = body;
 
-      // Find table by id or tableNumber
+      // Find table by id or tableNumber (case-insensitive & handles 'T4' vs '4')
+      const cleanTableId = String(tableId).replace(/^T/i, '').trim();
       const table = await prisma.table.findFirst({
         where: {
           cafeId: targetCafeId,
-          OR: [{ id: String(tableId) }, { tableNumber: String(tableId) }],
+          OR: [
+            { id: String(tableId) },
+            { tableNumber: { equals: String(tableId), mode: 'insensitive' } },
+            { tableNumber: { equals: cleanTableId, mode: 'insensitive' } },
+            { tableNumber: { equals: `T${cleanTableId}`, mode: 'insensitive' } },
+          ],
         },
       });
 
-      let order = null;
-      if (table?.activeOrderId) {
-        order = await prisma.order.findUnique({
+      // Find any active unbilled orders for this table
+      const activeOrders = table
+        ? await prisma.order.findMany({
+            where: {
+              tableId: table.id,
+              status: { not: 'CANCELLED' },
+              bills: { none: {} },
+            },
+            include: { items: true },
+            orderBy: { createdAt: 'desc' },
+          })
+        : [];
+
+      let primaryOrder: (typeof activeOrders)[number] | null = activeOrders[0] || null;
+      if (!primaryOrder && table?.activeOrderId) {
+        primaryOrder = await prisma.order.findUnique({
           where: { id: table.activeOrderId },
+          include: { items: true },
         });
       }
 
-      if (order) {
-        order = await prisma.order.update({
-          where: { id: order.id },
+      if (primaryOrder) {
+        // Mark primary order and any unbilled orders for this table as SERVED
+        await prisma.order.updateMany({
+          where: {
+            OR: [
+              { id: primaryOrder.id },
+              ...(table ? [{ tableId: table.id, bills: { none: {} } }] : []),
+            ],
+          },
           data: {
             status: 'SERVED',
-            customerName: customerName || order.customerName,
-            customerPhone: customerPhone || order.customerPhone,
+            customerName: customerName || primaryOrder.customerName,
+            customerPhone: customerPhone || primaryOrder.customerPhone,
           },
         });
       } else {
         const orderNumber = `#${Math.floor(1000 + Math.random() * 9000)}`;
-        order = await prisma.order.create({
+        primaryOrder = await prisma.order.create({
           data: {
             cafeId: targetCafeId,
             tableId: table?.id || null,
@@ -151,15 +184,16 @@ export async function POST(req: NextRequest) {
               })),
             },
           },
+          include: { items: true },
         });
       }
 
-      // Create Bill
+      // Create Bill attached to primaryOrder.id
       const bill = await prisma.bill.create({
         data: {
           cafeId: targetCafeId,
-          orderId: order.id,
-          billNumber: `INV-${order.orderNumber.replace('#', '')}`,
+          orderId: primaryOrder.id,
+          billNumber: `INV-${primaryOrder.orderNumber.replace('#', '')}-${Math.floor(100 + Math.random() * 900)}`,
           subtotal: Number(subtotal),
           cgst: Number(cgst),
           sgst: Number(sgst),
@@ -170,6 +204,27 @@ export async function POST(req: NextRequest) {
           whatsappSent: true,
         },
       });
+
+      // If there are other unbilled orders for this table, close them with bills as part of this table tab
+      const otherUnbilled = activeOrders.filter((o) => o.id !== primaryOrder.id);
+      for (const other of otherUnbilled) {
+        const otherSubtotal = other.items.reduce((s, it) => s + it.price * it.quantity, 0);
+        await prisma.bill.create({
+          data: {
+            cafeId: targetCafeId,
+            orderId: other.id,
+            billNumber: `INV-${other.orderNumber.replace('#', '')}-${Math.floor(100 + Math.random() * 900)}`,
+            subtotal: otherSubtotal,
+            cgst: Math.round(otherSubtotal * 0.025 * 100) / 100,
+            sgst: Math.round(otherSubtotal * 0.025 * 100) / 100,
+            total: Math.round(otherSubtotal * 1.05),
+            paymentMethod: paymentMethod || 'UPI',
+            paymentStatus: 'PAID',
+            customerPhone: customerPhone || null,
+            whatsappSent: false,
+          },
+        }).catch(() => {});
+      }
 
       // If Cash, update active Shift cash sales
       if (paymentMethod === 'CASH') {
@@ -198,16 +253,22 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      return NextResponse.json({ success: true, order, bill });
+      return NextResponse.json({ success: true, order: primaryOrder, bill });
     }
 
     // 2. Park / Hold Order
     if (action === 'park-order') {
       const { tableId, items, customerName } = body;
+      const cleanTableId = String(tableId).replace(/^T/i, '').trim();
       const table = await prisma.table.findFirst({
         where: {
           cafeId: targetCafeId,
-          OR: [{ id: String(tableId) }, { tableNumber: String(tableId) }],
+          OR: [
+            { id: String(tableId) },
+            { tableNumber: { equals: String(tableId), mode: 'insensitive' } },
+            { tableNumber: { equals: cleanTableId, mode: 'insensitive' } },
+            { tableNumber: { equals: `T${cleanTableId}`, mode: 'insensitive' } },
+          ],
         },
       });
 

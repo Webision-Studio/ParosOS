@@ -76,9 +76,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Cafe not found' }, { status: 404 });
     }
 
-    // Find table
+    // Find table (case-insensitive & handles 'T4' vs '4' or 'Takeaway')
+    const cleanTableNum = String(tableNumber).replace(/^T/i, '').trim();
     const table = await prisma.table.findFirst({
-      where: { cafeId: cafe.id, tableNumber: String(tableNumber) },
+      where: {
+        cafeId: cafe.id,
+        OR: [
+          { tableNumber: { equals: String(tableNumber), mode: 'insensitive' } },
+          { tableNumber: { equals: cleanTableNum, mode: 'insensitive' } },
+          { tableNumber: { equals: `T${cleanTableNum}`, mode: 'insensitive' } },
+        ],
+      },
     });
 
     const orderNumber = `#${Math.floor(1000 + Math.random() * 9000)}`;

@@ -170,17 +170,22 @@ export default function PosRegisterPage() {
           // 1. Sync Floor Tables & Carts
           if (data?.tables?.length) {
             const loadedTables: TableNode[] = data.tables.map((t: any) => {
-              const activeOrder = t.orders?.[0];
-              const tableAmount = (activeOrder?.items || []).reduce(
+              const tableOrders = t.currentStatus === 'AVAILABLE' ? [] : (t.orders || []);
+              const allItems = tableOrders.flatMap((o: any) => o.items || []);
+              const tableAmount = allItems.reduce(
                 (sum: number, it: any) => sum + (it.price || 0) * (it.quantity || 1),
                 0
               );
-              const isOrderReady = activeOrder?.status === 'READY';
-              const pMode = activeOrder?.specialNotes?.includes('PREPAID') || activeOrder?.specialNotes?.includes('UPI')
-                ? 'UPI_PREPAID'
-                : activeOrder?.specialNotes?.includes('PAY LATER')
-                ? 'PAY_LATER'
-                : null;
+              const isOrderReady = tableOrders.some((o: any) => o.status === 'READY');
+              const hasPayLater = tableOrders.some((o: any) => o.specialNotes?.includes('PAY LATER'));
+              const allPrepaid =
+                tableOrders.length > 0 &&
+                tableOrders.every(
+                  (o: any) =>
+                    o.specialNotes?.includes('PREPAID') || o.specialNotes?.includes('UPI')
+                );
+              const pMode = allPrepaid ? 'UPI_PREPAID' : hasPayLater ? 'PAY_LATER' : null;
+              const allOrderNums = tableOrders.map((o: any) => o.orderNumber).join(', ');
 
               return {
                 id: t.id,
@@ -189,10 +194,14 @@ export default function PosRegisterPage() {
                 currentStatus: isOrderReady
                   ? 'READY_TO_SERVE'
                   : (t.currentStatus as 'AVAILABLE' | 'OCCUPIED' | 'READY_TO_SERVE') || 'AVAILABLE',
-                orderNumber: activeOrder?.orderNumber,
+                orderNumber: allOrderNums || undefined,
                 amount: tableAmount > 0 ? Math.round(tableAmount * 1.05) : undefined,
                 paymentMode: pMode,
-                specialNotes: activeOrder?.specialNotes,
+                specialNotes:
+                  tableOrders
+                    .map((o: any) => o.specialNotes)
+                    .filter(Boolean)
+                    .join(' • ') || undefined,
               };
             });
 
@@ -204,13 +213,14 @@ export default function PosRegisterPage() {
               const nextCarts = { ...prevCarts };
 
               data.tables.forEach((t: any) => {
-                const activeOrder = t.orders?.[0];
+                const tableOrders = t.orders || [];
+                const allItems = tableOrders.flatMap((o: any) => o.items || []);
                 const localCart = prevCarts[t.tableNumber] || [];
 
-                if (activeOrder && activeOrder.items?.length > 0) {
-                  // If local cart is empty, populate from DB order
+                if (allItems.length > 0) {
+                  // If local cart is empty, populate from DB orders
                   if (localCart.length === 0) {
-                    nextCarts[t.tableNumber] = activeOrder.items.map((it: any) => ({
+                    nextCarts[t.tableNumber] = allItems.map((it: any) => ({
                       id: it.id,
                       name: it.name,
                       price: it.price,
@@ -242,6 +252,9 @@ export default function PosRegisterPage() {
                     name: activeOrder.customerName || `Guest Table ${t.tableNumber}`,
                     phone: activeOrder.customerPhone || '',
                   };
+                  changed = true;
+                } else if (t.currentStatus === 'AVAILABLE' && prevCusts[t.tableNumber]?.name) {
+                  nextCusts[t.tableNumber] = { name: '', phone: '' };
                   changed = true;
                 }
               });

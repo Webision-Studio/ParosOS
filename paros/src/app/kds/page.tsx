@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 
 interface KdsItem {
@@ -33,6 +33,7 @@ export default function KdsStudioPage() {
   // Tickets State (starts empty, loaded dynamically from live database)
   const [tickets, setTickets] = useState<KdsTicket[]>([]);
   const [servedTickets, setServedTickets] = useState<KdsTicket[]>([]);
+  const hasLoadedOnce = useRef(false);
 
   // Audio Chime Synthesizer
   function playKitchenChime() {
@@ -152,12 +153,14 @@ export default function KdsStudioPage() {
           });
 
           setTickets((prev) => {
-            if (mapped.length > prev.length) {
+            if (hasLoadedOnce.current && mapped.length > prev.length) {
               playKitchenChime();
             }
+            hasLoadedOnce.current = true;
             return mapped;
           });
         } else {
+          hasLoadedOnce.current = true;
           setTickets([]);
         }
 
@@ -209,6 +212,7 @@ export default function KdsStudioPage() {
 
   // Toggle item status (tap to strike/complete)
   function toggleItem(ticketId: string, itemId: string) {
+    let becameAllDone = false;
     setTickets((prev) =>
       prev.map((t) => {
         if (t.id === ticketId) {
@@ -218,6 +222,9 @@ export default function KdsStudioPage() {
               : i
           );
           const allDone = updatedItems.every((i) => i.status === 'READY');
+          if (allDone && t.status !== 'READY') {
+            becameAllDone = true;
+          }
           return {
             ...t,
             items: updatedItems,
@@ -233,6 +240,16 @@ export default function KdsStudioPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'toggle-item', itemId }),
     }).catch(() => {});
+
+    if (becameAllDone) {
+      playKitchenChime();
+      showToast(`🛎️ All items ready! Order runner notified on POS.`);
+      fetch('/api/kds', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'mark-ready', orderId: ticketId }),
+      }).catch(() => {});
+    }
   }
 
   // Push Chef ETA (+5m / +10m)
@@ -298,8 +315,17 @@ export default function KdsStudioPage() {
 
   // Bump All Completed Items
   function bumpAllCompleted() {
+    const readyTickets = tickets.filter((t) => t.status === 'READY');
     setTickets((prev) => prev.filter((t) => t.status !== 'READY'));
-    showToast(`✓ Bumped all completed ready tickets.`);
+    showToast(`✓ Bumped all ${readyTickets.length} ready tickets to runner.`);
+
+    readyTickets.forEach((t) => {
+      fetch('/api/kds', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'bump-order', orderId: t.id }),
+      }).catch(() => {});
+    });
   }
 
   // Recall Last Bumped

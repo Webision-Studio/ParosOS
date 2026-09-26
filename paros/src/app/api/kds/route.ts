@@ -176,6 +176,12 @@ export async function POST(req: NextRequest) {
           data: { status: 'PREPARING' },
         });
 
+        // Reset items to PENDING for the kitchen station
+        await prisma.orderItem.updateMany({
+          where: { orderId: orderToRecall.id },
+          data: { status: 'PENDING' },
+        });
+
         // Set table status to OCCUPIED and point to this order
         if (orderToRecall.tableId) {
           await prisma.table.update({

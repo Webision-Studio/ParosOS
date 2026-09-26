@@ -57,7 +57,7 @@ export default function TableQrOrderPage() {
   const [placedOrderId, setPlacedOrderId] = useState<string | null>(null);
   const [placedOrderNumber, setPlacedOrderNumber] = useState('#1042');
   const [countdownSeconds, setCountdownSeconds] = useState(480); // 8 minutes
-  const [orderStatus, setOrderStatus] = useState<'BREWING' | 'PLATING' | 'READY'>('BREWING');
+  const [orderStatus, setOrderStatus] = useState<'BREWING' | 'PLATING' | 'READY' | 'SERVED'>('BREWING');
   const [chefAddedEtaMessage, setChefAddedEtaMessage] = useState<string | null>(null);
   const [paymentMode, setPaymentMode] = useState<'UPI_NOW' | 'PAY_LATER'>('UPI_NOW');
 
@@ -129,8 +129,11 @@ export default function TableQrOrderPage() {
         .then((data) => {
           if (data?.order) {
             const ord = data.order;
-            if (ord.status === 'READY' || ord.status === 'SERVED') {
+            if (ord.status === 'READY') {
               setOrderStatus('READY');
+              setCountdownSeconds(0);
+            } else if (ord.status === 'SERVED') {
+              setOrderStatus('SERVED');
               setCountdownSeconds(0);
             } else {
               // Check if Chef pushed dynamic ETA (+5m / +10m)
@@ -630,13 +633,15 @@ export default function TableQrOrderPage() {
             {/* Status Icon */}
             <div
               className={`w-24 h-24 rounded-full border-3 border-espresso flex items-center justify-center shadow-brutal-lg ${
-                orderStatus === 'READY'
-                  ? 'bg-paros-mint text-emerald-700 animate-bounce'
+                orderStatus === 'SERVED'
+                  ? 'bg-paros-mint text-emerald-800'
+                  : orderStatus === 'READY'
+                  ? 'bg-paros-matcha text-white animate-bounce'
                   : 'bg-paros-yellow text-espresso animate-pulse'
               }`}
             >
               <span className="text-4xl">
-                {orderStatus === 'READY' ? '🛎️' : orderStatus === 'PLATING' ? '🍽️' : '☕'}
+                {orderStatus === 'SERVED' ? '🍽️' : orderStatus === 'READY' ? '🛎️' : orderStatus === 'PLATING' ? '🥗' : '☕'}
               </span>
             </div>
 
@@ -646,14 +651,18 @@ export default function TableQrOrderPage() {
                 Order {placedOrderNumber}
               </span>
               <h2 className="font-display text-2xl font-black text-espresso mt-3">
-                {orderStatus === 'READY'
+                {orderStatus === 'SERVED'
+                  ? 'Order Served! Enjoy your food ☕'
+                  : orderStatus === 'READY'
                   ? 'Your Order is Ready!'
                   : orderStatus === 'PLATING'
                   ? 'Plating & Garnishing'
                   : 'Brewing & Heating'}
               </h2>
               <p className="font-body text-xs text-espresso/70 mt-1 max-w-xs">
-                {orderStatus === 'READY'
+                {orderStatus === 'SERVED'
+                  ? `Your order was delivered to Table ${selectedTable}. Need anything else? Just tap Add More Items below!`
+                  : orderStatus === 'READY'
                   ? isTakeaway
                     ? 'Please collect your order at the counter pickup station!'
                     : `Server is bringing your fresh order to Table ${selectedTable} now.`
@@ -670,7 +679,7 @@ export default function TableQrOrderPage() {
             )}
 
             {/* Live Countdown Display */}
-            {orderStatus !== 'READY' && (
+            {orderStatus !== 'READY' && orderStatus !== 'SERVED' && (
               <div className="bg-white px-8 py-5 rounded-3xl border-3 border-espresso shadow-brutal-lg">
                 <span className="font-mono text-5xl font-black text-paros-orange tabular-nums">
                   {formatTime(countdownSeconds)}
@@ -711,17 +720,18 @@ export default function TableQrOrderPage() {
               </div>
             )}
 
-            {/* Start New Order */}
+            {/* Start New Order / Add Items */}
             <button
               onClick={() => {
                 setCart([]);
-                setStep(1);
+                setStep(2); // Jump straight to Menu, preserving selectedTable!
                 setOrderStatus('BREWING');
                 setCountdownSeconds(480);
               }}
-              className="mt-auto w-full py-3 bg-white hover:bg-paros-cream font-display font-bold text-xs uppercase rounded-xl border border-espresso shadow-brutal-sm"
+              className="mt-auto w-full py-3.5 bg-paros-orange text-white hover:bg-paros-orange/90 font-display font-black text-xs uppercase rounded-xl border-2 border-espresso shadow-brutal flex items-center justify-center gap-1.5"
             >
-              Order More Items ➔
+              <span>+ Add More Items to Table {selectedTable}</span>
+              <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
             </button>
           </div>
         )}
