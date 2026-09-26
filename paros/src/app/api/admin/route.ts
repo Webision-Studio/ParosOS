@@ -131,6 +131,32 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, expense });
     }
 
+    // Delete / Void Expense
+    if (action === 'delete-expense') {
+      const { expenseId } = body;
+      const expense = await prisma.expense.findUnique({ where: { id: expenseId } });
+      if (!expense) {
+        return NextResponse.json({ error: 'Expense not found' }, { status: 404 });
+      }
+
+      // If it was paid from drawer cash, restore active shift float
+      if (expense.paidVia === 'DRAWER_CASH' && expense.shiftId) {
+        const shift = await prisma.cashShift.findUnique({ where: { id: expense.shiftId } });
+        if (shift && shift.status === 'OPEN') {
+          const restoredExpenses = Math.max(0, shift.pettyExpenses - expense.amount);
+          const restoredExpected = shift.openingCash + shift.cashSales - restoredExpenses;
+          await prisma.cashShift.update({
+            where: { id: shift.id },
+            data: { pettyExpenses: restoredExpenses, expectedCash: restoredExpected },
+          });
+        }
+      }
+
+      await prisma.expense.delete({ where: { id: expenseId } });
+
+      return NextResponse.json({ success: true, deletedId: expenseId });
+    }
+
     // 2. Close Shift (Day-End Z-Report)
     if (action === 'close-shift') {
       const { countedCash, notes } = body;

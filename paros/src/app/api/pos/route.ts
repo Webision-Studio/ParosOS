@@ -26,8 +26,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'No cafe found' }, { status: 404 });
     }
 
-    // 2. Fetch Tables (with active orders for live sync), Categories, Menu Items, Active Shift
-    const [tables, categories, menuItems, activeShift, recentOrders, servedOrders] = await Promise.all([
+    // 2. Fetch Tables (with active orders for live sync), Categories, Menu Items, Active Shift, and Recent Expenses
+    const [tables, categories, menuItems, activeShift, recentOrders, servedOrders, expenses] = await Promise.all([
       prisma.table.findMany({
         where: { cafeId: cafe.id },
         include: {
@@ -65,6 +65,11 @@ export async function GET(req: NextRequest) {
         orderBy: { updatedAt: 'desc' },
         take: 20,
       }),
+      prisma.expense.findMany({
+        where: { cafeId: cafe.id },
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+      }),
     ]);
 
     return NextResponse.json({
@@ -75,6 +80,7 @@ export async function GET(req: NextRequest) {
       activeShift,
       recentOrders,
       servedOrders,
+      expenses,
     });
   } catch (error) {
     console.error('POS fetch error:', error);
@@ -104,6 +110,7 @@ export async function POST(req: NextRequest) {
         tableId,
         items,
         subtotal,
+        discount,
         cgst,
         sgst,
         total,
@@ -195,6 +202,7 @@ export async function POST(req: NextRequest) {
           orderId: primaryOrder.id,
           billNumber: `INV-${primaryOrder.orderNumber.replace('#', '')}-${Math.floor(100 + Math.random() * 900)}`,
           subtotal: Number(subtotal),
+          discount: Number(discount || 0),
           cgst: Number(cgst),
           sgst: Number(sgst),
           total: Number(total),
@@ -304,11 +312,12 @@ export async function POST(req: NextRequest) {
 
     // 3. Add Petty Expense from Drawer
     if (action === 'add-expense') {
-      const { title, amount, category, receiptNote } = body;
+      const { title, amount, category, paidVia, receiptNote } = body;
       const activeShift = await prisma.cashShift.findFirst({
         where: { cafeId: targetCafeId, status: 'OPEN' },
       });
 
+      const mode = paidVia || 'DRAWER_CASH';
       const expense = await prisma.expense.create({
         data: {
           cafeId: targetCafeId,
@@ -316,12 +325,12 @@ export async function POST(req: NextRequest) {
           title: title || 'Miscellaneous Expense',
           amount: Number(amount),
           category: category || 'INGREDIENTS',
-          paidVia: 'DRAWER_CASH',
+          paidVia: mode,
           receiptNote: receiptNote || null,
         },
       });
 
-      if (activeShift) {
+      if (activeShift && mode === 'DRAWER_CASH') {
         const updatedExpenses = activeShift.pettyExpenses + Number(amount);
         const updatedExpected = activeShift.openingCash + activeShift.cashSales - updatedExpenses;
         await prisma.cashShift.update({

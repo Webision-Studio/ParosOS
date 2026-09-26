@@ -31,26 +31,9 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function GET(req: NextRequest) {
-  try {
-    await prisma.bill.deleteMany();
-    await prisma.orderItem.deleteMany();
-    await prisma.order.deleteMany();
-    await prisma.expense.deleteMany();
-    await prisma.cashShift.deleteMany();
-    await prisma.customer.deleteMany();
-    await prisma.menuItem.deleteMany();
-    await prisma.category.deleteMany();
-    await prisma.table.deleteMany();
-    await prisma.zone.deleteMany();
-    await prisma.user.deleteMany();
-    await prisma.tenant.deleteMany();
-
-    await clearSession();
-
-    return NextResponse.redirect(new URL('/onboarding', req.url));
-  } catch (error) {
-    console.error('System reset error:', error);
-    return NextResponse.json({ error: String(error) }, { status: 500 });
-  }
+export async function GET() {
+  return NextResponse.json(
+    { error: 'GET method not allowed on system reset. Send POST request with confirmation to reset.' },
+    { status: 405 }
+  );
 }

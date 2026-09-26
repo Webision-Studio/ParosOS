@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 
 interface ExpenseItem {
@@ -43,31 +43,52 @@ export default function AdminFinancialDashboard() {
 
   // Live Expenses State (starts clean)
   const [expenses, setExpenses] = useState<ExpenseItem[]>([]);
+  const [expenseFilterCategory, setExpenseFilterCategory] = useState<string>('ALL');
 
-  // Load real financial and shift data from backend
+  const categoryTotals = useMemo(() => {
+    return {
+      INGREDIENTS: expenses.filter((e) => e.category === 'INGREDIENTS').reduce((s, e) => s + e.amount, 0),
+      PACKAGING: expenses.filter((e) => e.category === 'PACKAGING').reduce((s, e) => s + e.amount, 0),
+      UTILITIES: expenses.filter((e) => e.category === 'UTILITIES').reduce((s, e) => s + e.amount, 0),
+      MISC: expenses.filter((e) => e.category === 'MISC').reduce((s, e) => s + e.amount, 0),
+    };
+  }, [expenses]);
+
+  const filteredExpenses = useMemo(() => {
+    if (expenseFilterCategory === 'ALL') return expenses;
+    return expenses.filter((e) => e.category === expenseFilterCategory);
+  }, [expenses, expenseFilterCategory]);
+
+  // Load real financial and shift data from backend with live polling
   useEffect(() => {
-    fetch('/api/admin')
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data?.cafe?.name) setOutletName(data.cafe.name);
-        if (data?.kpis) {
-          setKpis(data.kpis);
-          setCountedCash(String(data.kpis.currentDrawerCash));
-        }
-        if (data?.expenses?.length) {
-          setExpenses(
-            data.expenses.map((e: { id: string; title: string; amount: number; category: string; paidVia: string; createdAt: string }) => ({
-              id: e.id,
-              title: e.title,
-              amount: e.amount,
-              category: e.category,
-              paidVia: e.paidVia === 'DRAWER_CASH' ? 'Drawer Cash' : 'UPI',
-              time: new Date(e.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            }))
-          );
-        }
-      })
-      .catch(() => {});
+    function loadAdminData() {
+      fetch('/api/admin')
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data?.cafe?.name) setOutletName(data.cafe.name);
+          if (data?.kpis) {
+            setKpis(data.kpis);
+            setCountedCash(String(data.kpis.currentDrawerCash));
+          }
+          if (data?.expenses) {
+            setExpenses(
+              data.expenses.map((e: { id: string; title: string; amount: number; category: string; paidVia: string; createdAt: string }) => ({
+                id: e.id,
+                title: e.title,
+                amount: e.amount,
+                category: e.category,
+                paidVia: e.paidVia === 'DRAWER_CASH' ? 'Drawer Cash' : 'UPI',
+                time: new Date(e.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              }))
+            );
+          }
+        })
+        .catch(() => {});
+    }
+
+    loadAdminData();
+    const poller = setInterval(loadAdminData, 4000);
+    return () => clearInterval(poller);
   }, []);
 
   function showToast(msg: string) {
@@ -118,6 +139,62 @@ export default function AdminFinancialDashboard() {
         paidVia: expensePaidVia,
       }),
     }).catch(() => {});
+  }
+
+  // Handle Void / Delete Expense
+  async function handleDeleteExpense(expenseId: string) {
+    const toDelete = expenses.find((e) => e.id === expenseId);
+    if (!toDelete) return;
+
+    if (!confirm(`Are you sure you want to void expense "${toDelete.title}" (₹${toDelete.amount})?`)) return;
+
+    setExpenses((prev) => prev.filter((e) => e.id !== expenseId));
+    setKpis((prev) => ({
+      ...prev,
+      totalExpenses: Math.max(0, prev.totalExpenses - toDelete.amount),
+      netCashFlow: prev.grossSales - Math.max(0, prev.totalExpenses - toDelete.amount),
+      currentDrawerCash:
+        toDelete.paidVia === 'Drawer Cash'
+          ? prev.currentDrawerCash + toDelete.amount
+          : prev.currentDrawerCash,
+    }));
+    showToast(`✓ Voided expense "${toDelete.title}". Drawer balance restored!`);
+
+    fetch('/api/admin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'delete-expense',
+        expenseId,
+      }),
+    }).catch(() => {});
+  }
+
+  // Export Expenses CSV
+  function exportExpensesCsv() {
+    if (expenses.length === 0) {
+      showToast('⚠️ No expenses to export yet.');
+      return;
+    }
+    const headers = ['Expense ID', 'Title', 'Category', 'Paid Via', 'Time', 'Amount (INR)'];
+    const rows = expenses.map((e) => [
+      `"${e.id}"`,
+      `"${e.title.replace(/"/g, '""')}"`,
+      `"${e.category}"`,
+      `"${e.paidVia}"`,
+      `"${e.time}"`,
+      e.amount,
+    ]);
+    const csvContent =
+      'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `paros-expenses-${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast('✓ Downloaded GST Sales & Expense CSV report!');
   }
 
   // Handle Day-End Cash Reconciliation
@@ -305,7 +382,7 @@ export default function AdminFinancialDashboard() {
             </div>
 
             <button
-              onClick={() => showToast('📊 Exporting GST Sales & Expense CSV report...')}
+              onClick={exportExpensesCsv}
               className="px-3.5 py-1.5 bg-paros-cream hover:bg-paros-yellow border border-espresso rounded-xl font-display text-xs font-bold flex items-center gap-1 shadow-brutal-sm"
             >
               <span className="material-symbols-outlined text-[16px]">download</span>
@@ -406,44 +483,162 @@ export default function AdminFinancialDashboard() {
 
           {/* ═══ LIVE EXPENSES LOG ═══ */}
           <div className="bg-white rounded-2xl border-2 border-espresso shadow-brutal p-6">
-            <div className="flex items-center justify-between pb-3 border-b-2 border-espresso mb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b-2 border-espresso gap-3 mb-4">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-paros-orange text-[22px]">receipt_long</span>
-                <h2 className="font-display text-lg font-black text-espresso">
-                  Shift Petty Expenses & Cash Drawer Deductions
-                </h2>
+                <div>
+                  <h2 className="font-display text-lg font-black text-espresso">
+                    Shift Petty Expenses & Cash Drawer Deductions
+                  </h2>
+                  <p className="font-body text-xs text-espresso/60">
+                    Live record of all till deductions & vendor payouts
+                  </p>
+                </div>
               </div>
-              <button
-                onClick={() => setIsExpenseModalOpen(true)}
-                className="brutal-btn px-3 py-1.5 bg-paros-orange text-white font-display text-xs font-black uppercase rounded-xl border border-espresso shadow-brutal-sm flex items-center gap-1"
-              >
-                <span className="material-symbols-outlined text-[16px]">add</span>
-                <span>Log New</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={exportExpensesCsv}
+                  className="brutal-btn px-3 py-1.5 bg-paros-cream text-espresso font-display text-xs font-black uppercase rounded-xl border border-espresso shadow-brutal-sm flex items-center gap-1 hover:bg-paros-yellow/40 transition-colors"
+                >
+                  <span className="material-symbols-outlined text-[16px]">download</span>
+                  <span>Export CSV</span>
+                </button>
+                <button
+                  onClick={() => setIsExpenseModalOpen(true)}
+                  className="brutal-btn px-3 py-1.5 bg-paros-orange text-white font-display text-xs font-black uppercase rounded-xl border border-espresso shadow-brutal-sm flex items-center gap-1"
+                >
+                  <span className="material-symbols-outlined text-[16px]">add</span>
+                  <span>Log New</span>
+                </button>
+              </div>
             </div>
 
-            <div className="flex flex-col gap-2.5">
-              {expenses.map((e) => (
-                <div
-                  key={e.id}
-                  className="p-3 bg-paros-cream rounded-xl border border-espresso flex items-center justify-between shadow-sm"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-white border border-espresso flex items-center justify-center font-bold text-xs text-espresso">
-                      ₹
-                    </div>
-                    <div>
-                      <p className="font-display text-sm font-bold text-espresso">{e.title}</p>
-                      <p className="font-body text-xs text-espresso/60">
-                        {e.category} • Paid via {e.paidVia} • {e.time}
-                      </p>
-                    </div>
-                  </div>
-                  <span className="font-mono text-sm font-black text-red-600 tabular-nums">
-                    -₹{e.amount}
-                  </span>
+            {/* Category Breakdown Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+              <div className="p-3 bg-amber-50 rounded-xl border border-espresso/20 flex flex-col justify-between">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-display text-[10px] font-black uppercase text-amber-900">Ingredients</span>
+                  <span className="material-symbols-outlined text-[16px] text-amber-700">local_cafe</span>
                 </div>
+                <p className="font-display text-lg font-black text-espresso tabular-nums">
+                  ₹{categoryTotals.INGREDIENTS.toLocaleString('en-IN')}
+                </p>
+              </div>
+              <div className="p-3 bg-blue-50 rounded-xl border border-espresso/20 flex flex-col justify-between">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-display text-[10px] font-black uppercase text-blue-900">Packaging</span>
+                  <span className="material-symbols-outlined text-[16px] text-blue-700">inventory_2</span>
+                </div>
+                <p className="font-display text-lg font-black text-espresso tabular-nums">
+                  ₹{categoryTotals.PACKAGING.toLocaleString('en-IN')}
+                </p>
+              </div>
+              <div className="p-3 bg-purple-50 rounded-xl border border-espresso/20 flex flex-col justify-between">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-display text-[10px] font-black uppercase text-purple-900">Utilities</span>
+                  <span className="material-symbols-outlined text-[16px] text-purple-700">bolt</span>
+                </div>
+                <p className="font-display text-lg font-black text-espresso tabular-nums">
+                  ₹{categoryTotals.UTILITIES.toLocaleString('en-IN')}
+                </p>
+              </div>
+              <div className="p-3 bg-rose-50 rounded-xl border border-espresso/20 flex flex-col justify-between">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-display text-[10px] font-black uppercase text-rose-900">Miscellaneous</span>
+                  <span className="material-symbols-outlined text-[16px] text-rose-700">more_horiz</span>
+                </div>
+                <p className="font-display text-lg font-black text-espresso tabular-nums">
+                  ₹{categoryTotals.MISC.toLocaleString('en-IN')}
+                </p>
+              </div>
+            </div>
+
+            {/* Filter Pills */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-2 mb-3 border-b border-espresso/10">
+              {(['ALL', 'INGREDIENTS', 'PACKAGING', 'UTILITIES', 'MISC'] as const).map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setExpenseFilterCategory(cat)}
+                  className={`px-3 py-1 rounded-lg font-display text-xs font-black uppercase border transition-all ${
+                    expenseFilterCategory === cat
+                      ? 'bg-espresso text-white border-espresso shadow-sm'
+                      : 'bg-paros-cream text-espresso/70 border-espresso/20 hover:bg-paros-yellow/30'
+                  }`}
+                >
+                  {cat === 'ALL' ? `All (${expenses.length})` : cat}
+                </button>
               ))}
+            </div>
+
+            {/* Expenses List */}
+            <div className="flex flex-col gap-2.5 max-h-[380px] overflow-y-auto pr-1">
+              {filteredExpenses.length === 0 ? (
+                <div className="text-center py-8 text-espresso/50 font-display text-xs">
+                  <span className="material-symbols-outlined text-[32px] text-espresso/30 block mb-1">receipt</span>
+                  No expenses recorded in this category yet.
+                </div>
+              ) : (
+                filteredExpenses.map((e) => {
+                  const getCategoryIcon = (cat: string) => {
+                    switch (cat) {
+                      case 'INGREDIENTS':
+                        return 'local_cafe';
+                      case 'PACKAGING':
+                        return 'inventory_2';
+                      case 'UTILITIES':
+                        return 'bolt';
+                      default:
+                        return 'receipt_long';
+                    }
+                  };
+                  return (
+                    <div
+                      key={e.id}
+                      className="p-3 bg-paros-cream rounded-xl border border-espresso flex items-center justify-between shadow-sm hover:border-paros-orange/60 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-lg bg-white border border-espresso flex items-center justify-center font-bold text-espresso shadow-sm">
+                          <span className="material-symbols-outlined text-[18px] text-paros-orange">
+                            {getCategoryIcon(e.category)}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="font-display text-sm font-bold text-espresso">{e.title}</p>
+                          <div className="flex items-center gap-2 mt-0.5 font-body text-xs text-espresso/60">
+                            <span className="px-1.5 py-0.2 bg-white rounded border border-espresso/20 text-[10px] font-display font-bold uppercase">
+                              {e.category}
+                            </span>
+                            <span>•</span>
+                            <span
+                              className={`px-1.5 py-0.2 rounded text-[10px] font-display font-bold uppercase border ${
+                                e.paidVia === 'Drawer Cash'
+                                  ? 'bg-amber-100 text-amber-900 border-amber-300'
+                                  : 'bg-indigo-100 text-indigo-900 border-indigo-300'
+                              }`}
+                            >
+                              {e.paidVia}
+                            </span>
+                            <span>•</span>
+                            <span>{e.time}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="font-mono text-sm font-black text-red-600 tabular-nums">
+                          -₹{e.amount}
+                        </span>
+                        <button
+                          onClick={() => handleDeleteExpense(e.id)}
+                          title="Void / Delete Expense"
+                          className="w-7 h-7 rounded-lg bg-red-50 text-red-600 border border-red-200 hover:bg-red-500 hover:text-white flex items-center justify-center transition-colors"
+                        >
+                          <span className="material-symbols-outlined text-[16px]">delete</span>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
         </main>
@@ -464,10 +659,40 @@ export default function AdminFinancialDashboard() {
               </div>
               <button
                 onClick={() => setIsExpenseModalOpen(false)}
-                className="w-7 h-7 rounded-full bg-paros-cream border border-espresso flex items-center justify-center font-black text-xs"
+                className="w-7 h-7 rounded-full bg-paros-cream border border-espresso flex items-center justify-center font-black text-xs hover:bg-paros-orange hover:text-white transition-colors"
               >
                 ✕
               </button>
+            </div>
+
+            {/* Quick Presets */}
+            <div className="mb-4">
+              <label className="font-display text-[10px] font-black uppercase tracking-wider text-espresso/70 block mb-1.5">
+                ⚡ Quick Presets (1-Tap):
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { label: '🥛 Fresh Milk (10L)', title: 'Fresh Milk (10L)', amount: 340, category: 'INGREDIENTS' },
+                  { label: '🧊 Ice Bags (50kg)', title: 'Ice Bags (50kg)', amount: 120, category: 'INGREDIENTS' },
+                  { label: '💧 RO Water Jars', title: 'RO Water 20L Jars', amount: 80, category: 'UTILITIES' },
+                  { label: '📦 Takeaway Cups', title: 'Paper Cups & Lids', amount: 450, category: 'PACKAGING' },
+                ].map((preset) => (
+                  <button
+                    key={preset.label}
+                    type="button"
+                    onClick={() => {
+                      setExpenseTitle(preset.title);
+                      setExpenseAmount(String(preset.amount));
+                      setExpenseCategory(preset.category);
+                      setExpensePaidVia('DRAWER_CASH');
+                    }}
+                    className="p-2 bg-paros-cream rounded-xl border border-espresso text-left hover:bg-paros-yellow/40 transition-colors shadow-xs"
+                  >
+                    <span className="font-display text-xs font-bold text-espresso block">{preset.label}</span>
+                    <span className="font-mono text-[11px] font-bold text-espresso/70">₹{preset.amount}</span>
+                  </button>
+                ))}
+              </div>
             </div>
 
             <form onSubmit={handleLogExpense} className="flex flex-col gap-4">

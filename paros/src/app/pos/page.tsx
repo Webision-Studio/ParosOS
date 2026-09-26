@@ -39,6 +39,7 @@ interface SettlementBill {
   tableNumber: string;
   items: CartItem[];
   subtotal: number;
+  discount?: number;
   cgst: number;
   sgst: number;
   total: number;
@@ -81,6 +82,21 @@ export default function PosRegisterPage() {
   // Settlement Bill Modal State
   const [settledBill, setSettledBill] = useState<SettlementBill | null>(null);
   const [whatsappSentStatus, setWhatsappSentStatus] = useState(false);
+
+  // Table Discounts (tableNumber -> percentage, e.g. 10%)
+  const [tableDiscounts, setTableDiscounts] = useState<Record<string, number>>({});
+
+  // Split Bill Modal State
+  const [isSplitModalOpen, setIsSplitModalOpen] = useState(false);
+  const [splitCount, setSplitCount] = useState<number>(2);
+
+  // Cash Drawer Till & Expense State
+  const [drawerCash, setDrawerCash] = useState<number>(2000);
+  const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
+  const [posExpenseTitle, setPosExpenseTitle] = useState('');
+  const [posExpenseAmount, setPosExpenseAmount] = useState('');
+  const [posExpenseCategory, setPosExpenseCategory] = useState('INGREDIENTS');
+  const [posExpensePaidVia, setPosExpensePaidVia] = useState<'DRAWER_CASH' | 'UPI'>('DRAWER_CASH');
 
   // System Reset Modal State
   const [showResetModal, setShowResetModal] = useState(false);
@@ -332,6 +348,11 @@ export default function PosRegisterPage() {
             } else {
               setReadyNotification(null);
             }
+
+            // 4. Sync Active Shift & Cash Drawer Till Float
+            if (data?.activeShift?.expectedCash !== undefined) {
+              setDrawerCash(data.activeShift.expectedCash);
+            }
         })
         .catch(() => {});
     }
@@ -384,9 +405,12 @@ export default function PosRegisterPage() {
     return currentCart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   }, [currentCart]);
 
-  const cgst = Math.round(subtotal * 0.025 * 100) / 100;
-  const sgst = Math.round(subtotal * 0.025 * 100) / 100;
-  const grandTotal = Math.round(subtotal + cgst + sgst);
+  const discountPercent = tableDiscounts[selectedTable] || 0;
+  const discountAmount = Math.round(subtotal * (discountPercent / 100));
+  const taxableAmount = Math.max(0, subtotal - discountAmount);
+  const cgst = Math.round(taxableAmount * 0.025 * 100) / 100;
+  const sgst = Math.round(taxableAmount * 0.025 * 100) / 100;
+  const grandTotal = Math.round(taxableAmount + cgst + sgst);
   const changeDue = tenderAmount - grandTotal;
 
   // Add Item to Current Table Cart
@@ -477,6 +501,7 @@ export default function PosRegisterPage() {
       tableNumber: selectedTable,
       items: [...currentCart],
       subtotal,
+      discount: discountAmount,
       cgst,
       sgst,
       total: grandTotal,
@@ -499,6 +524,7 @@ export default function PosRegisterPage() {
         tableId: selectedTable,
         items: currentCart,
         subtotal,
+        discount: discountAmount,
         cgst,
         sgst,
         total: grandTotal,
@@ -534,8 +560,63 @@ export default function PosRegisterPage() {
       [tableToFree]: { name: '', phone: '' },
     }));
 
+    // Reset discount for this table
+    setTableDiscounts((prev) => {
+      const next = { ...prev };
+      delete next[tableToFree];
+      return next;
+    });
+
     setSettledBill(null);
     showToast(`✓ Table ${tableToFree} settled & freed for next guests!`);
+  }
+
+  // Toggle Flat 10% Discount for selected table
+  function handleToggleDiscount() {
+    if (currentCart.length === 0) {
+      showToast('⚠️ Add items to cart before applying discount');
+      return;
+    }
+    setTableDiscounts((prev) => {
+      const current = prev[selectedTable] || 0;
+      const next = current > 0 ? 0 : 10;
+      showToast(next > 0 ? `✓ 10% Flat Discount applied to Table ${selectedTable}!` : `Discount removed from Table ${selectedTable}`);
+      return { ...prev, [selectedTable]: next };
+    });
+  }
+
+  // Handle Log POS Drawer Expense
+  async function handleLogPosExpense(e: React.FormEvent) {
+    e.preventDefault();
+    if (!posExpenseTitle || !posExpenseAmount) return;
+
+    const amt = Number(posExpenseAmount);
+    if (isNaN(amt) || amt <= 0) {
+      showToast('⚠️ Please enter a valid expense amount');
+      return;
+    }
+
+    if (posExpensePaidVia === 'DRAWER_CASH') {
+      setDrawerCash((prev) => Math.max(0, prev - amt));
+    }
+
+    setIsExpenseModalOpen(false);
+    showToast(`✓ Logged ₹${amt} (${posExpenseTitle}) to drawer expenses!`);
+
+    fetch('/api/pos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'add-expense',
+        title: posExpenseTitle,
+        amount: amt,
+        category: posExpenseCategory,
+        paidVia: posExpensePaidVia,
+      }),
+    }).catch(() => {});
+
+    setPosExpenseTitle('');
+    setPosExpenseAmount('');
   }
 
   // Mark Order as Handed Over to Guest
@@ -646,8 +727,21 @@ export default function PosRegisterPage() {
             </Link>
           </div>
 
-          {/* Clock & Fresh Registration Button */}
+          {/* Till Float & Clock & Fresh Registration Button */}
           <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-paros-cream rounded-xl border border-espresso font-display text-xs font-bold shadow-brutal-sm">
+              <span className="material-symbols-outlined text-[16px] text-paros-orange">point_of_sale</span>
+              <span className="hidden md:inline text-espresso/60 uppercase text-[10px]">Till Cash:</span>
+              <span className="font-mono font-black text-espresso">₹{drawerCash.toLocaleString('en-IN')}</span>
+              <button
+                onClick={() => setIsExpenseModalOpen(true)}
+                title="Log quick petty cash expense from till drawer"
+                className="ml-1 text-[10px] px-1.5 py-0.5 bg-paros-orange text-white rounded font-black hover:bg-orange-600 uppercase"
+              >
+                + Exp
+              </button>
+            </div>
+
             <div className="hidden sm:flex items-center gap-1 font-mono text-xs font-bold text-espresso bg-paros-cream px-2.5 py-1 rounded-lg border border-espresso">
               <span className="material-symbols-outlined text-[14px]">schedule</span>
               <span>{currentTime}</span>
@@ -1335,21 +1429,31 @@ export default function PosRegisterPage() {
                   <span>Park</span>
                 </button>
                 <button
-                  onClick={() => showToast('Split bill: Even 50/50 split generated')}
+                  onClick={() => {
+                    if (currentCart.length === 0) {
+                      showToast('⚠️ Add items to cart before splitting bill');
+                      return;
+                    }
+                    setIsSplitModalOpen(true);
+                  }}
                   className="p-1.5 rounded-lg bg-paros-cream hover:bg-paros-yellow border border-espresso font-display text-[10px] font-black uppercase shadow-brutal-sm flex flex-col items-center gap-0.5"
                 >
                   <span className="material-symbols-outlined text-[16px]">call_split</span>
                   <span>Split</span>
                 </button>
                 <button
-                  onClick={() => showToast('Discount: Flat 10% applied')}
-                  className="p-1.5 rounded-lg bg-paros-cream hover:bg-paros-yellow border border-espresso font-display text-[10px] font-black uppercase shadow-brutal-sm flex flex-col items-center gap-0.5"
+                  onClick={handleToggleDiscount}
+                  className={`p-1.5 rounded-lg border font-display text-[10px] font-black uppercase shadow-brutal-sm flex flex-col items-center gap-0.5 transition-colors ${
+                    discountPercent > 0
+                      ? 'bg-paros-orange text-white border-espresso ring-1 ring-espresso'
+                      : 'bg-paros-cream hover:bg-paros-yellow border-espresso text-espresso'
+                  }`}
                 >
                   <span className="material-symbols-outlined text-[16px]">percent</span>
-                  <span>Discount</span>
+                  <span>{discountPercent > 0 ? '10% Applied' : 'Discount'}</span>
                 </button>
                 <button
-                  onClick={() => showToast('Logged ₹340 Milk expense to drawer float')}
+                  onClick={() => setIsExpenseModalOpen(true)}
                   className="p-1.5 rounded-lg bg-paros-cream hover:bg-paros-yellow border border-espresso font-display text-[10px] font-black uppercase shadow-brutal-sm flex flex-col items-center gap-0.5"
                 >
                   <span className="material-symbols-outlined text-[16px]">receipt</span>
@@ -1363,6 +1467,12 @@ export default function PosRegisterPage() {
                   <span>Table {selectedTable} Subtotal ({currentCart.length} items)</span>
                   <span className="tabular-nums">₹{subtotal.toFixed(2)}</span>
                 </div>
+                {discountAmount > 0 && (
+                  <div className="flex justify-between text-emerald-700 font-bold">
+                    <span>Discount (10% OFF)</span>
+                    <span className="tabular-nums">-₹{discountAmount.toFixed(2)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-espresso/70">
                   <span>CGST (2.5%) + SGST (2.5%)</span>
                   <span className="tabular-nums">₹{(cgst + sgst).toFixed(2)}</span>
@@ -1508,6 +1618,12 @@ export default function PosRegisterPage() {
                   <span>Subtotal</span>
                   <span>₹{settledBill.subtotal.toFixed(2)}</span>
                 </div>
+                {settledBill.discount !== undefined && settledBill.discount > 0 && (
+                  <div className="flex justify-between text-emerald-700 font-bold">
+                    <span>Discount (10% OFF)</span>
+                    <span>-₹{settledBill.discount.toFixed(2)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-espresso/70">
                   <span>CGST (2.5%) + SGST (2.5%)</span>
                   <span>₹{(settledBill.cgst + settledBill.sgst).toFixed(2)}</span>
@@ -1631,6 +1747,216 @@ export default function PosRegisterPage() {
                 <span>{resetLoading ? 'Wiping DB...' : 'Wipe & Register New'}</span>
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal: Split Bill Calculator ── */}
+      {isSplitModalOpen && (
+        <div className="fixed inset-0 bg-espresso/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl border-3 border-espresso shadow-brutal-xl p-6 sm:p-7 w-full max-w-md animate-in zoom-in-95">
+            <div className="flex justify-between items-center pb-3 border-b-2 border-espresso mb-4">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-paros-orange text-[24px]">call_split</span>
+                <h3 className="font-display text-lg font-black text-espresso">
+                  Split Table {selectedTable} Bill
+                </h3>
+              </div>
+              <button
+                onClick={() => setIsSplitModalOpen(false)}
+                className="w-7 h-7 rounded-full bg-paros-cream border border-espresso flex items-center justify-center font-black text-xs hover:bg-paros-orange hover:text-white transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-4 bg-paros-cream rounded-2xl border-2 border-espresso mb-4 text-center">
+              <span className="font-display text-xs uppercase font-bold text-espresso/60 block">
+                Total Amount Payable
+              </span>
+              <span className="font-display text-3xl font-black text-paros-orange tabular-nums">
+                ₹{grandTotal.toFixed(2)}
+              </span>
+            </div>
+
+            <div className="mb-4">
+              <label className="font-display text-xs font-black uppercase text-espresso block mb-2">
+                Number of Guests Sharing:
+              </label>
+              <div className="grid grid-cols-4 gap-2">
+                {[2, 3, 4, 5].map((cnt) => (
+                  <button
+                    key={cnt}
+                    type="button"
+                    onClick={() => setSplitCount(cnt)}
+                    className={`py-2 rounded-xl font-display text-sm font-black border transition-all ${
+                      splitCount === cnt
+                        ? 'bg-paros-orange text-white border-espresso shadow-brutal-sm'
+                        : 'bg-paros-cream text-espresso border-espresso hover:bg-paros-yellow/40'
+                    }`}
+                  >
+                    {cnt} Way
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="p-4 bg-paros-mint/40 rounded-2xl border-2 border-espresso mb-4">
+              <div className="flex justify-between items-center">
+                <span className="font-display text-xs font-black uppercase text-espresso">
+                  Each Guest Pays:
+                </span>
+                <span className="font-display text-2xl font-black text-espresso tabular-nums">
+                  ₹{Math.ceil(grandTotal / splitCount)}
+                </span>
+              </div>
+              <p className="font-body text-xs text-espresso/70 mt-1">
+                Even split among {splitCount} guests ({splitCount} × ₹{Math.ceil(grandTotal / splitCount)})
+              </p>
+            </div>
+
+            <button
+              onClick={() => {
+                const perPerson = Math.ceil(grandTotal / splitCount);
+                if (navigator.clipboard) {
+                  navigator.clipboard.writeText(
+                    `Table ${selectedTable} Split Bill (${splitCount} guests): Total ₹${grandTotal} = ₹${perPerson} each. Pay via UPI: paros.demo@okhdfcbank`
+                  );
+                }
+                showToast(`✓ Copied ₹${perPerson} split bill summary to clipboard!`);
+                setIsSplitModalOpen(false);
+              }}
+              className="brutal-btn w-full py-3 bg-paros-matcha text-white font-display font-black text-sm uppercase rounded-xl border-2 border-espresso shadow-brutal flex items-center justify-center gap-1.5"
+            >
+              <span className="material-symbols-outlined text-[18px]">content_copy</span>
+              <span>Copy Split UPI Text ➔</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal: POS Drawer Expense Modal ── */}
+      {isExpenseModalOpen && (
+        <div className="fixed inset-0 bg-espresso/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl border-3 border-espresso shadow-brutal-xl p-6 w-full max-w-md animate-in zoom-in-95">
+            <div className="flex justify-between items-center pb-3 border-b-2 border-espresso mb-4">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-paros-orange text-[22px]">payments</span>
+                <div>
+                  <h3 className="font-display text-lg font-black text-espresso">
+                    Log Drawer Cash Expense
+                  </h3>
+                  <p className="font-body text-xs text-espresso/60">
+                    Till Float: ₹{drawerCash.toLocaleString('en-IN')} available
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsExpenseModalOpen(false)}
+                className="w-7 h-7 rounded-full bg-paros-cream border border-espresso flex items-center justify-center font-black text-xs hover:bg-paros-orange hover:text-white transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Quick 1-tap presets */}
+            <div className="mb-4">
+              <label className="font-display text-[10px] font-black uppercase tracking-wider text-espresso/70 block mb-1.5">
+                ⚡ Quick Presets (1-Tap):
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { label: '🥛 Fresh Milk (10L)', title: 'Fresh Milk (10L)', amount: 340, category: 'INGREDIENTS' },
+                  { label: '🧊 Ice Bags (50kg)', title: 'Ice Bags (50kg)', amount: 120, category: 'INGREDIENTS' },
+                  { label: '💧 RO Water Jars', title: 'RO Water 20L Jars', amount: 80, category: 'UTILITIES' },
+                  { label: '📦 Takeaway Cups', title: 'Paper Cups & Lids', amount: 450, category: 'PACKAGING' },
+                ].map((preset) => (
+                  <button
+                    key={preset.label}
+                    type="button"
+                    onClick={() => {
+                      setPosExpenseTitle(preset.title);
+                      setPosExpenseAmount(String(preset.amount));
+                      setPosExpenseCategory(preset.category);
+                      setPosExpensePaidVia('DRAWER_CASH');
+                    }}
+                    className="p-2 bg-paros-cream rounded-xl border border-espresso text-left hover:bg-paros-yellow/40 transition-colors shadow-xs"
+                  >
+                    <span className="font-display text-xs font-bold text-espresso block">{preset.label}</span>
+                    <span className="font-mono text-[11px] font-bold text-espresso/70">₹{preset.amount}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <form onSubmit={handleLogPosExpense} className="flex flex-col gap-3.5">
+              <div>
+                <label className="font-display text-xs font-black uppercase text-espresso block mb-1">
+                  Expense Description:
+                </label>
+                <input
+                  type="text"
+                  value={posExpenseTitle}
+                  onChange={(e) => setPosExpenseTitle(e.target.value)}
+                  placeholder="e.g. Milk, Mint leaves, Lemons"
+                  required
+                  className="w-full p-2.5 bg-paros-cream border-2 border-espresso rounded-xl font-display text-sm font-bold text-espresso outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="font-display text-xs font-black uppercase text-espresso block mb-1">
+                  Amount (₹):
+                </label>
+                <input
+                  type="number"
+                  value={posExpenseAmount}
+                  onChange={(e) => setPosExpenseAmount(e.target.value)}
+                  placeholder="340"
+                  required
+                  className="w-full p-2.5 bg-paros-cream border-2 border-espresso rounded-xl font-mono text-xl font-black text-espresso outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-display text-xs font-black uppercase text-espresso block mb-1">
+                    Category:
+                  </label>
+                  <select
+                    value={posExpenseCategory}
+                    onChange={(e) => setPosExpenseCategory(e.target.value)}
+                    className="w-full p-2.5 bg-paros-cream border-2 border-espresso rounded-xl font-display text-xs font-bold text-espresso outline-none"
+                  >
+                    <option value="INGREDIENTS">Ingredients</option>
+                    <option value="PACKAGING">Packaging</option>
+                    <option value="UTILITIES">Utilities</option>
+                    <option value="MISC">Miscellaneous</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="font-display text-xs font-black uppercase text-espresso block mb-1">
+                    Paid Via:
+                  </label>
+                  <select
+                    value={posExpensePaidVia}
+                    onChange={(e) => setPosExpensePaidVia(e.target.value as 'DRAWER_CASH' | 'UPI')}
+                    className="w-full p-2.5 bg-paros-cream border-2 border-espresso rounded-xl font-display text-xs font-bold text-espresso outline-none"
+                  >
+                    <option value="DRAWER_CASH">Drawer Float Cash</option>
+                    <option value="UPI">Direct UPI</option>
+                  </select>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="brutal-btn w-full py-3.5 bg-paros-orange text-white font-display font-black text-sm uppercase rounded-xl border-2 border-espresso shadow-brutal mt-1"
+              >
+                Log Expense & Deduct Float ➔
+              </button>
+            </form>
           </div>
         </div>
       )}
