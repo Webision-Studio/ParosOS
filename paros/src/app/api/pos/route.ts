@@ -146,12 +146,22 @@ export async function POST(req: NextRequest) {
           })
         : [];
 
-      let primaryOrder: (typeof activeOrders)[number] | null = activeOrders[0] || null;
-      if (!primaryOrder && table?.activeOrderId) {
+      const isTakeawayStation = table && (table.tableNumber.toLowerCase() === 'takeaway' || table.tableNumber.toLowerCase() === 'counter');
+
+      let primaryOrder: (typeof activeOrders)[number] | null = null;
+      if (body.orderId) {
         primaryOrder = await prisma.order.findUnique({
-          where: { id: table.activeOrderId },
+          where: { id: body.orderId },
           include: { items: true },
         });
+      } else if (!isTakeawayStation) {
+        primaryOrder = activeOrders[0] || null;
+        if (!primaryOrder && table?.activeOrderId) {
+          primaryOrder = await prisma.order.findUnique({
+            where: { id: table.activeOrderId },
+            include: { items: true },
+          });
+        }
       }
 
       if (primaryOrder) {
@@ -170,23 +180,28 @@ export async function POST(req: NextRequest) {
           },
         });
       } else {
-        const orderNumber = `#${Math.floor(1000 + Math.random() * 9000)}`;
+        const orderNumber = body.tokenNumber || `#${Math.floor(1000 + Math.random() * 9000)}`;
+        const shouldSendToKitchen = body.sendToKitchen !== undefined ? body.sendToKitchen : true;
+        const initialStatus = shouldSendToKitchen ? 'PLACED' : 'SERVED';
+        const itemStatus = shouldSendToKitchen ? 'PENDING' : 'READY';
+
         primaryOrder = await prisma.order.create({
           data: {
             cafeId: targetCafeId,
             tableId: table?.id || null,
             orderNumber,
             source: 'POS',
-            status: 'SERVED',
-            customerName: customerName || 'Walk-in Guest',
+            status: initialStatus,
+            customerName: customerName || (table?.tableNumber === 'Takeaway' ? 'Express Takeaway' : 'Walk-in Guest'),
             customerPhone: customerPhone || '+91 98450 XXXXX',
+            specialNotes: body.specialNotes || (table?.tableNumber === 'Takeaway' ? 'EXPRESS TOKEN • PREPAID' : 'COUNTER POS ORDER'),
             items: {
               create: (items || []).map((i: { menuItemId?: string; name: string; price: number; quantity: number; notes?: string }) => ({
                 menuItemId: i.menuItemId || null,
                 name: i.name,
                 price: Number(i.price),
                 quantity: Number(i.quantity || 1),
-                status: 'READY',
+                status: itemStatus,
                 notes: i.notes || '',
               })),
             },

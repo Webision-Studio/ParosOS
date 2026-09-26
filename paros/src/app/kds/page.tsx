@@ -130,7 +130,10 @@ export default function KdsStudioPage() {
             return {
               id: o.id,
               orderNumber: o.orderNumber,
-              tableLabel: o.table?.tableNumber ? `TABLE ${o.table.tableNumber}` : 'TAKEAWAY',
+              tableLabel:
+                o.table?.tableNumber && o.table.tableNumber.toLowerCase() !== 'takeaway'
+                  ? `TABLE ${o.table.tableNumber}`
+                  : `TOKEN ${o.orderNumber}`,
               source: (o.source as 'POS' | 'QR' | 'TAKEAWAY') || 'QR',
               customerName: o.customerName || 'Guest',
               elapsedSeconds: Math.max(0, elapsed),

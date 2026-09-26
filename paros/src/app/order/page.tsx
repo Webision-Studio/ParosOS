@@ -28,6 +28,7 @@ export default function TableQrOrderPage() {
   // Table selection
   const [selectedTable, setSelectedTable] = useState<string>('1');
   const [isTakeaway, setIsTakeaway] = useState(false);
+  const [isCounterOnlyCafe, setIsCounterOnlyCafe] = useState(false);
   const [availableTables, setAvailableTables] = useState<string[]>(['1', '2', '3', '4', '5', '6', '7', '8']);
   const [cafeName, setCafeName] = useState<string>('Artisan Roastery');
 
@@ -64,11 +65,12 @@ export default function TableQrOrderPage() {
   // Fetch live menu and tables from backend
   useEffect(() => {
     // Check if ?table=X was provided in URL (e.g. /order?table=3)
+    let urlTable: string | null = null;
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
-      const tableParam = params.get('table');
-      if (tableParam) {
-        setSelectedTable(tableParam);
+      urlTable = params.get('table');
+      if (urlTable) {
+        setSelectedTable(urlTable);
         setStep(2); // Jump straight to Menu for this table!
       }
     }
@@ -78,19 +80,25 @@ export default function TableQrOrderPage() {
       .then((data) => {
         if (data?.cafe?.name) setCafeName(data.cafe.name);
         if (data?.menuItems?.length) setMenuItems(data.menuItems);
+
+        const isCounterMode = data?.cafe?.qrMode === 'COUNTER_ONLY';
+        let numbers: string[] = [];
         if (data?.tables?.length) {
-          const numbers = data.tables
+          numbers = data.tables
             .map((t: { tableNumber: string }) => t.tableNumber)
-            .filter((n: string) => n.toLowerCase() !== 'takeaway');
-          if (numbers.length > 0) {
-            setAvailableTables(numbers);
-            // Only set default if table not already specified in URL
-            if (typeof window !== 'undefined') {
-              const p = new URLSearchParams(window.location.search);
-              if (!p.get('table')) {
-                setSelectedTable(numbers[0]);
-              }
-            }
+            .filter((n: string) => n.toLowerCase() !== 'takeaway' && n.toLowerCase() !== 'counter');
+        }
+
+        if (isCounterMode || numbers.length === 0) {
+          setIsCounterOnlyCafe(true);
+          setIsTakeaway(true);
+          setSelectedTable('Takeaway');
+          setAvailableTables([]);
+          setStep(2); // Jump straight to Menu for counter pickup!
+        } else {
+          setAvailableTables(numbers);
+          if (!urlTable && numbers.length > 0) {
+            setSelectedTable(numbers[0]);
           }
         }
       })
@@ -260,13 +268,17 @@ export default function TableQrOrderPage() {
                 {cafeName}
               </p>
               <p className="font-mono text-[9px] text-paros-matcha font-bold">
-                ● Dine-In Active
+                {isCounterOnlyCafe ? '● Express Counter' : isTakeaway ? '● Takeaway Order' : '● Dine-In Active'}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            {!isTakeaway ? (
+            {isCounterOnlyCafe ? (
+              <span className="px-2.5 py-1 bg-paros-mint border-2 border-espresso rounded-lg font-display text-xs font-black shadow-brutal-sm">
+                ⚡ Token Order
+              </span>
+            ) : !isTakeaway ? (
               <span className="px-2.5 py-1 bg-paros-yellow border-2 border-espresso rounded-lg font-display text-xs font-black shadow-brutal-sm">
                 Table {selectedTable}
               </span>
@@ -287,81 +299,103 @@ export default function TableQrOrderPage() {
         {/* ══ STEP 1: WHERE ARE YOU SITTING? ══ */}
         {step === 1 && (
           <div className="p-4 flex flex-col gap-4 flex-1">
-            {/* Callout */}
-            <div className="bg-white p-4 rounded-2xl border-2 border-espresso shadow-brutal flex flex-col gap-2">
-              <span className="sticker-badge inline-block bg-paros-yellow text-espresso border border-espresso px-2.5 py-0.5 rounded-full font-display text-[10px] font-black uppercase w-fit">
-                ⚡ Powered by Paros Mode A
-              </span>
-              <h1 className="font-display text-2xl font-black text-espresso tracking-tight">
-                Where are you sitting today?
-              </h1>
-              <p className="font-body text-xs text-espresso/70">
-                Check the stand on your table and select your number below.
-              </p>
-            </div>
-
-            {/* Table Number Grid */}
-            <div className="grid grid-cols-4 gap-2.5">
-              {availableTables.map((tbl) => (
+            {isCounterOnlyCafe ? (
+              <div className="bg-white p-6 rounded-2xl border-2 border-espresso shadow-brutal flex flex-col gap-3 text-center my-auto">
+                <div className="w-14 h-14 rounded-2xl bg-paros-mint mx-auto flex items-center justify-center border-2 border-espresso shadow-brutal-sm text-3xl">
+                  ⚡
+                </div>
+                <h1 className="font-display text-2xl font-black text-espresso tracking-tight">
+                  Welcome to {cafeName}!
+                </h1>
+                <p className="font-body text-xs text-espresso/70">
+                  We are an express counter service cafe. Order from your phone, pay via UPI, and pick up fresh with your live Token Number!
+                </p>
                 <button
-                  key={tbl}
+                  onClick={() => setStep(2)}
+                  className="brutal-btn mt-4 w-full py-4 bg-paros-orange text-white font-display font-black text-sm uppercase rounded-2xl border-2 border-espresso shadow-brutal flex items-center justify-center gap-2"
+                >
+                  <span>Start Express Order ➔</span>
+                </button>
+              </div>
+            ) : (
+              <>
+                {/* Callout */}
+                <div className="bg-white p-4 rounded-2xl border-2 border-espresso shadow-brutal flex flex-col gap-2">
+                  <span className="sticker-badge inline-block bg-paros-yellow text-espresso border border-espresso px-2.5 py-0.5 rounded-full font-display text-[10px] font-black uppercase w-fit">
+                    ⚡ Powered by Paros Mode A
+                  </span>
+                  <h1 className="font-display text-2xl font-black text-espresso tracking-tight">
+                    Where are you sitting today?
+                  </h1>
+                  <p className="font-body text-xs text-espresso/70">
+                    Check the stand on your table and select your number below.
+                  </p>
+                </div>
+
+                {/* Table Number Grid */}
+                <div className="grid grid-cols-4 gap-2.5">
+                  {availableTables.map((tbl) => (
+                    <button
+                      key={tbl}
+                      onClick={() => {
+                        setSelectedTable(tbl);
+                        setIsTakeaway(false);
+                      }}
+                      className={`py-3.5 rounded-2xl border-2 border-espresso flex flex-col items-center justify-center transition-all ${
+                        selectedTable === tbl && !isTakeaway
+                          ? 'bg-paros-orange text-white shadow-brutal scale-105'
+                          : 'bg-white hover:bg-paros-yellow text-espresso shadow-brutal-sm'
+                      }`}
+                    >
+                      <span className="font-display text-[10px] uppercase font-bold opacity-80">Table</span>
+                      <span className="font-display text-2xl font-black">{tbl}</span>
+                      <span className="text-[10px] opacity-70">🪑 4p</span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Takeaway Option */}
+                <button
                   onClick={() => {
-                    setSelectedTable(tbl);
-                    setIsTakeaway(false);
+                    setIsTakeaway(true);
+                    setSelectedTable('Takeaway');
                   }}
-                  className={`py-3.5 rounded-2xl border-2 border-espresso flex flex-col items-center justify-center transition-all ${
-                    selectedTable === tbl && !isTakeaway
-                      ? 'bg-paros-orange text-white shadow-brutal scale-105'
-                      : 'bg-white hover:bg-paros-yellow text-espresso shadow-brutal-sm'
+                  className={`p-3.5 rounded-2xl border-2 border-espresso flex items-center justify-between transition-all ${
+                    isTakeaway
+                      ? 'bg-paros-yellow shadow-brutal'
+                      : 'bg-white hover:bg-paros-cream shadow-brutal-sm'
                   }`}
                 >
-                  <span className="font-display text-[10px] uppercase font-bold opacity-80">Table</span>
-                  <span className="font-display text-2xl font-black">{tbl}</span>
-                  <span className="text-[10px] opacity-70">🪑 4p</span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">🛍️</span>
+                    <div className="text-left">
+                      <p className="font-display text-sm font-black text-espresso">Takeaway / Counter Pickup</p>
+                      <p className="font-body text-[11px] text-espresso/70">Grab & go directly from barista</p>
+                    </div>
+                  </div>
+                  <span className="text-xs font-display font-black bg-paros-mint px-2 py-0.5 rounded border border-espresso">
+                    SKIP LINE
+                  </span>
                 </button>
-              ))}
-            </div>
 
-            {/* Takeaway Option */}
-            <button
-              onClick={() => {
-                setIsTakeaway(true);
-                setSelectedTable('Takeaway');
-              }}
-              className={`p-3.5 rounded-2xl border-2 border-espresso flex items-center justify-between transition-all ${
-                isTakeaway
-                  ? 'bg-paros-yellow shadow-brutal'
-                  : 'bg-white hover:bg-paros-cream shadow-brutal-sm'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">🛍️</span>
-                <div className="text-left">
-                  <p className="font-display text-sm font-black text-espresso">Takeaway / Counter Pickup</p>
-                  <p className="font-body text-[11px] text-espresso/70">Grab & go directly from barista</p>
+                {/* Trust Pill */}
+                <div className="mt-auto bg-white p-3 rounded-2xl border border-dashed border-espresso flex items-center justify-around text-center text-xs font-display font-bold">
+                  <span>✓ No App Download</span>
+                  <span>•</span>
+                  <span>✓ WhatsApp Bill</span>
+                  <span>•</span>
+                  <span>✓ 0% Surcharge</span>
                 </div>
-              </div>
-              <span className="text-xs font-display font-black bg-paros-mint px-2 py-0.5 rounded border border-espresso">
-                SKIP LINE
-              </span>
-            </button>
 
-            {/* Trust Pill */}
-            <div className="mt-auto bg-white p-3 rounded-2xl border border-dashed border-espresso flex items-center justify-around text-center text-xs font-display font-bold">
-              <span>✓ No App Download</span>
-              <span>•</span>
-              <span>✓ WhatsApp Bill</span>
-              <span>•</span>
-              <span>✓ 0% Surcharge</span>
-            </div>
-
-            {/* Next CTA */}
-            <button
-              onClick={() => setStep(2)}
-              className="brutal-btn w-full py-4 bg-espresso text-white font-display font-black text-sm uppercase rounded-2xl border-2 border-espresso shadow-brutal flex items-center justify-center gap-2"
-            >
-              <span>View Menu for Table {selectedTable} ➔</span>
-            </button>
+                {/* Next CTA */}
+                <button
+                  onClick={() => setStep(2)}
+                  className="brutal-btn w-full py-4 bg-espresso text-white font-display font-black text-sm uppercase rounded-2xl border-2 border-espresso shadow-brutal flex items-center justify-center gap-2"
+                >
+                  <span>View Menu for Table {selectedTable} ➔</span>
+                </button>
+              </>
+            )}
           </div>
         )}
 
@@ -371,15 +405,25 @@ export default function TableQrOrderPage() {
             {/* Header */}
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="font-display text-xl font-black text-espresso">Artisanal Menu</h2>
-                <p className="font-body text-xs text-espresso/70">Freshly roasted & baked in-house</p>
+                <h2 className="font-display text-xl font-black text-espresso">
+                  {isCounterOnlyCafe ? 'Express Counter Menu' : 'Artisanal Menu'}
+                </h2>
+                <p className="font-body text-xs text-espresso/70">
+                  {isCounterOnlyCafe ? 'Freshly prepared for counter pickup' : 'Freshly roasted & baked in-house'}
+                </p>
               </div>
-              <button
-                onClick={() => setStep(1)}
-                className="text-xs font-display font-bold underline text-espresso/60"
-              >
-                Change Table
-              </button>
+              {!isCounterOnlyCafe ? (
+                <button
+                  onClick={() => setStep(1)}
+                  className="text-xs font-display font-bold underline text-espresso/60"
+                >
+                  Change Table
+                </button>
+              ) : (
+                <span className="text-[10px] font-display font-black uppercase px-2 py-0.5 rounded bg-paros-yellow border border-espresso">
+                  Token Pickup
+                </span>
+              )}
             </div>
 
             {/* Items List */}
@@ -579,14 +623,14 @@ export default function TableQrOrderPage() {
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="font-display font-black text-sm text-espresso">
-                        Order Now & Pay Later
+                        {isCounterOnlyCafe ? 'Pay Cash / UPI at Counter' : 'Order Now & Pay Later'}
                       </span>
                       <span className="text-[10px] font-mono font-bold bg-white text-amber-900 px-1.5 py-0.5 rounded border border-amber-400">
-                        Dine-In Tab
+                        {isCounterOnlyCafe ? 'Counter Tab' : 'Dine-In Tab'}
                       </span>
                     </div>
                     <p className="font-mono text-[11px] text-espresso/70 mt-0.5">
-                      Pay waiter at table or cashier before leaving
+                      {isCounterOnlyCafe ? 'Pay cashier when collecting your token parcel' : 'Pay waiter at table or cashier before leaving'}
                     </p>
                   </div>
                 </div>
@@ -630,42 +674,61 @@ export default function TableQrOrderPage() {
         {/* ══ STEP 4: LIVE ETA TRACKER & COUNTDOWN ══ */}
         {step === 4 && (
           <div className="p-4 flex flex-col gap-4 flex-1 items-center text-center justify-center">
+            {/* Prominent Pickup Token Card for Counter / Takeaway */}
+            {(isCounterOnlyCafe || isTakeaway) && (
+              <div className="w-full bg-paros-yellow p-4 rounded-3xl border-3 border-espresso shadow-brutal flex flex-col items-center animate-in zoom-in-95">
+                <span className="font-display text-[10px] font-black uppercase tracking-widest text-espresso/70">
+                  YOUR PICKUP TOKEN
+                </span>
+                <span className="font-display text-5xl font-black text-espresso my-1 tracking-tight">
+                  {placedOrderNumber}
+                </span>
+                <span className="font-display text-xs font-bold text-espresso/80">
+                  ⚡ Collect at Express Counter when called
+                </span>
+              </div>
+            )}
+
             {/* Status Icon */}
             <div
-              className={`w-24 h-24 rounded-full border-3 border-espresso flex items-center justify-center shadow-brutal-lg ${
+              className={`w-20 h-20 rounded-full border-3 border-espresso flex items-center justify-center shadow-brutal-lg ${
                 orderStatus === 'SERVED'
                   ? 'bg-paros-mint text-emerald-800'
                   : orderStatus === 'READY'
                   ? 'bg-paros-matcha text-white animate-bounce'
-                  : 'bg-paros-yellow text-espresso animate-pulse'
+                  : 'bg-paros-cream text-espresso animate-pulse'
               }`}
             >
-              <span className="text-4xl">
+              <span className="text-3xl">
                 {orderStatus === 'SERVED' ? '🍽️' : orderStatus === 'READY' ? '🛎️' : orderStatus === 'PLATING' ? '🥗' : '☕'}
               </span>
             </div>
 
             {/* Order Number & Table Badge */}
             <div>
-              <span className="px-3 py-1 bg-espresso text-white rounded-full font-mono text-xs font-bold">
-                Order {placedOrderNumber}
-              </span>
-              <h2 className="font-display text-2xl font-black text-espresso mt-3">
+              {!isCounterOnlyCafe && !isTakeaway && (
+                <span className="px-3 py-1 bg-espresso text-white rounded-full font-mono text-xs font-bold">
+                  Order {placedOrderNumber}
+                </span>
+              )}
+              <h2 className="font-display text-2xl font-black text-espresso mt-2">
                 {orderStatus === 'SERVED'
-                  ? 'Order Served! Enjoy your food ☕'
+                  ? (isCounterOnlyCafe || isTakeaway ? 'Order Collected! Enjoy ☕' : 'Order Served! Enjoy your food ☕')
                   : orderStatus === 'READY'
-                  ? 'Your Order is Ready!'
+                  ? (isCounterOnlyCafe || isTakeaway ? `🎉 TOKEN ${placedOrderNumber} IS READY!` : 'Your Order is Ready!')
                   : orderStatus === 'PLATING'
-                  ? 'Plating & Garnishing'
-                  : 'Brewing & Heating'}
+                  ? 'Packing & Garnishing'
+                  : 'Brewing & Preparing'}
               </h2>
               <p className="font-body text-xs text-espresso/70 mt-1 max-w-xs">
                 {orderStatus === 'SERVED'
-                  ? `Your order was delivered to Table ${selectedTable}. Need anything else? Just tap Add More Items below!`
+                  ? (isCounterOnlyCafe || isTakeaway
+                    ? 'Thank you for visiting! Tap below to start another order.'
+                    : `Your order was delivered to Table ${selectedTable}. Need anything else? Just tap Add More Items below!`)
                   : orderStatus === 'READY'
-                  ? isTakeaway
-                    ? 'Please collect your order at the counter pickup station!'
-                    : `Server is bringing your fresh order to Table ${selectedTable} now.`
+                  ? (isCounterOnlyCafe || isTakeaway
+                    ? 'Please collect your fresh parcel from the counter now!'
+                    : `Server is bringing your fresh order to Table ${selectedTable} now.`)
                   : `Barista is crafting your order. Average wait time remaining:`}
               </p>
             </div>
@@ -711,7 +774,11 @@ export default function TableQrOrderPage() {
             {paymentMode === 'PAY_LATER' ? (
               <div className="w-full bg-amber-100 text-amber-950 p-3 rounded-2xl border-2 border-espresso shadow-brutal-sm font-display text-xs font-bold flex items-center justify-center gap-2">
                 <span className="material-symbols-outlined text-amber-700 text-[18px]">payments</span>
-                <span>Dine-In Tab Active • Pay ₹{total} to your waiter or at the counter!</span>
+                <span>
+                  {isCounterOnlyCafe || isTakeaway
+                    ? `Counter Tab Active • Pay ₹${total} to cashier when collecting!`
+                    : `Dine-In Tab Active • Pay ₹${total} to your waiter or at the counter!`}
+                </span>
               </div>
             ) : (
               <div className="w-full bg-paros-mint text-emerald-950 p-3 rounded-2xl border-2 border-espresso shadow-brutal-sm font-display text-xs font-bold flex items-center justify-center gap-2">
@@ -724,13 +791,13 @@ export default function TableQrOrderPage() {
             <button
               onClick={() => {
                 setCart([]);
-                setStep(2); // Jump straight to Menu, preserving selectedTable!
+                setStep(2); // Jump straight to Menu!
                 setOrderStatus('BREWING');
                 setCountdownSeconds(480);
               }}
               className="mt-auto w-full py-3.5 bg-paros-orange text-white hover:bg-paros-orange/90 font-display font-black text-xs uppercase rounded-xl border-2 border-espresso shadow-brutal flex items-center justify-center gap-1.5"
             >
-              <span>+ Add More Items to Table {selectedTable}</span>
+              <span>{isCounterOnlyCafe || isTakeaway ? '+ Place Another Order' : `+ Add More Items to Table ${selectedTable}`}</span>
               <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
             </button>
           </div>

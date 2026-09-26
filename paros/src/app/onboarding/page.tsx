@@ -494,7 +494,9 @@ export default function OnboardingPage() {
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-paros-mint border-2 border-espresso shadow-brutal-sm mb-4">
               <span className="material-symbols-outlined text-paros-matcha text-[16px]">check_circle</span>
               <span className="font-display text-xs font-black uppercase text-espresso">
-                Setup Complete • All Terminals Online
+                {isCounterOnly
+                  ? '⚡ Express Counter & Token Mode Enabled • 0 Tables Needed'
+                  : 'Setup Complete • All Terminals Online'}
               </span>
             </div>
 
@@ -503,10 +505,12 @@ export default function OnboardingPage() {
             </div>
 
             <h1 className="font-display text-3xl sm:text-5xl font-black text-espresso tracking-tight text-center mb-2">
-              Your cafe is ready to take orders!
+              {isCounterOnly ? 'Your Express Counter is ready!' : 'Your cafe is ready to take orders!'}
             </h1>
             <p className="font-body text-base text-espresso/70 text-center max-w-lg mb-8">
-              We&apos;ve added 5 sample drinks and pastries to your menu so you can test punching a live order right away.
+              {isCounterOnly
+                ? 'We configured your outlet in Express Token Mode. Customer orders generate live pickup tokens, dispatch directly to Kitchen KDS, and prompt collection at the counter!'
+                : "We've added 5 sample drinks and pastries to your menu so you can test punching a live order right away."}
             </p>
 
             {/* Sample Menu Cards */}
@@ -562,8 +566,12 @@ export default function OnboardingPage() {
               <div className="flex items-center gap-2.5 bg-white p-3 rounded-xl border border-espresso shadow-brutal-sm">
                 <span className="w-2.5 h-2.5 rounded-full bg-paros-matcha" />
                 <div>
-                  <p className="font-display font-bold text-xs uppercase text-espresso">Counter POS</p>
-                  <p className="text-[11px] text-paros-matcha font-bold">Terminal #01 Active</p>
+                  <p className="font-display font-bold text-xs uppercase text-espresso">
+                    {isCounterOnly ? 'Express Token POS' : 'Counter POS'}
+                  </p>
+                  <p className="text-[11px] text-paros-matcha font-bold">
+                    {isCounterOnly ? 'Token Register Active' : 'Terminal #01 Active'}
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-2.5 bg-white p-3 rounded-xl border border-espresso shadow-brutal-sm">

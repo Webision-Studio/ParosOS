@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
     const { outletName, city, businessType, tableCount } = body;
 
     let targetCafeId = session?.cafeId || body.cafeId;
-    let updatedCafe;
+    let updatedCafe: any;
 
     if (!targetCafeId) {
       // Create new tenant if not already in session
@@ -67,30 +67,32 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const count = Number(tableCount) || 8;
+    const count = tableCount !== undefined && !isNaN(Number(tableCount)) ? Number(tableCount) : 8;
 
-    // Delete existing unused tables for this cafe so fresh table count takes effect
+    // Delete existing tables for this cafe so fresh table count takes effect
     await prisma.table.deleteMany({
-      where: { cafeId: targetCafeId, activeOrderId: null },
+      where: { cafeId: targetCafeId },
     }).catch(() => {});
 
     const tableCreations = [];
 
-    for (let i = 1; i <= count; i++) {
-      tableCreations.push(
-        prisma.table.create({
-          data: {
-            cafeId: targetCafeId,
-            zoneId: mainZone.id,
-            tableNumber: i.toString(),
-            capacity: 4,
-            currentStatus: 'AVAILABLE',
-          },
-        })
-      );
+    if (count > 0) {
+      for (let i = 1; i <= count; i++) {
+        tableCreations.push(
+          prisma.table.create({
+            data: {
+              cafeId: targetCafeId,
+              zoneId: mainZone.id,
+              tableNumber: i.toString(),
+              capacity: 4,
+              currentStatus: 'AVAILABLE',
+            },
+          })
+        );
+      }
     }
 
-    // Always include Takeaway / Counter
+    // Always include Takeaway / Counter station
     tableCreations.push(
       prisma.table.create({
         data: {
@@ -104,6 +106,19 @@ export async function POST(req: NextRequest) {
     );
 
     await Promise.all(tableCreations);
+
+    // Update tenant qrMode flag if counter only
+    if (count === 0) {
+      updatedCafe = await prisma.tenant.update({
+        where: { id: targetCafeId },
+        data: { qrMode: 'COUNTER_ONLY' },
+      }).catch(() => updatedCafe);
+    } else {
+      updatedCafe = await prisma.tenant.update({
+        where: { id: targetCafeId },
+        data: { qrMode: 'PER_TABLE' },
+      }).catch(() => updatedCafe);
+    }
 
     // 3. Preload Menu Items if empty
     const existingItems = await prisma.menuItem.count({ where: { cafeId: targetCafeId } });

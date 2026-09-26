@@ -91,8 +91,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, order: updated });
     }
 
-    // 3. Mark Ticket Ready
-    if (action === 'mark-ready') {
+    // 3. Mark Ticket Ready (support both mark-ready and ready-order)
+    if (action === 'mark-ready' || action === 'ready-order') {
       if (!orderId) {
         return NextResponse.json({ success: true, note: 'Mock ticket ready' });
       }
@@ -118,12 +118,15 @@ export async function POST(req: NextRequest) {
         data: { status: 'READY' },
       });
 
-      // Update table to READY_TO_SERVE on Floor Grid
+      // Update physical table to READY_TO_SERVE on Floor Grid (leave Takeaway available)
       if (order.tableId) {
-        await prisma.table.update({
-          where: { id: order.tableId },
-          data: { currentStatus: 'READY_TO_SERVE' },
-        }).catch(() => {});
+        const tbl = await prisma.table.findUnique({ where: { id: order.tableId } });
+        if (tbl && tbl.tableNumber.toLowerCase() !== 'takeaway' && tbl.tableNumber.toLowerCase() !== 'counter') {
+          await prisma.table.update({
+            where: { id: order.tableId },
+            data: { currentStatus: 'READY_TO_SERVE' },
+          }).catch(() => {});
+        }
       }
 
       return NextResponse.json({ success: true, order: updated });

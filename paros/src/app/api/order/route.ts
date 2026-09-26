@@ -115,8 +115,8 @@ export async function POST(req: NextRequest) {
       include: { items: true },
     });
 
-    // Update table status to OCCUPIED
-    if (table) {
+    // Update table status to OCCUPIED only if it is a physical dine-in table
+    if (table && table.tableNumber.toLowerCase() !== 'takeaway' && table.tableNumber.toLowerCase() !== 'counter') {
       await prisma.table.update({
         where: { id: table.id },
         data: { currentStatus: 'OCCUPIED', activeOrderId: order.id },

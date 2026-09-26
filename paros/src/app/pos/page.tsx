@@ -73,6 +73,12 @@ export default function PosRegisterPage() {
   const [currentTime, setCurrentTime] = useState('14:32:15');
   const [cafeName, setCafeName] = useState<string>('Artisan Roastery');
 
+  // Express Counter & Token Mode State (for no-table cafes and rush hours)
+  const [cafeQrMode, setCafeQrMode] = useState<string>('PER_TABLE');
+  const [posMode, setPosMode] = useState<'DINE_IN' | 'EXPRESS_COUNTER'>('DINE_IN');
+  const [expressOrderType, setExpressOrderType] = useState<'TAKEAWAY' | 'COUNTER' | 'DELIVERY'>('TAKEAWAY');
+  const [expressTokenSeq, setExpressTokenSeq] = useState<number>(101);
+
   // Customer metadata per table (starts completely clean)
   const [tableCustomers, setTableCustomers] = useState<Record<string, { name: string; phone: string }>>({});
 
@@ -152,6 +158,23 @@ export default function PosRegisterPage() {
   // Live tables (loaded dynamically from database)
   const [tables, setTables] = useState<TableNode[]>([]);
 
+  // Detect if this cafe has 0 physical seating tables (Counter Only Mode)
+  const isCounterOnlyCafe = useMemo(() => {
+    if (cafeQrMode === 'COUNTER_ONLY') return true;
+    const physicalTables = tables.filter(
+      (t) => t.tableNumber.toLowerCase() !== 'takeaway' && t.tableNumber.toLowerCase() !== 'counter'
+    );
+    return physicalTables.length === 0;
+  }, [cafeQrMode, tables]);
+
+  // When cafe is counter-only, automatically lock to Express Counter mode and select Takeaway station
+  useEffect(() => {
+    if (isCounterOnlyCafe) {
+      setPosMode('EXPRESS_COUNTER');
+      setSelectedTable('Takeaway');
+    }
+  }, [isCounterOnlyCafe]);
+
   // Live Orders in Expediter Queue (starts clean, loaded from real orders)
   const [liveOrders, setLiveOrders] = useState<LiveOrderQueue[]>([]);
   const [servedOrders, setServedOrders] = useState<LiveOrderQueue[]>([]);
@@ -181,7 +204,20 @@ export default function PosRegisterPage() {
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
           if (data?.cafe?.name) setCafeName(data.cafe.name);
+          if (data?.cafe?.qrMode) setCafeQrMode(data.cafe.qrMode);
           if (data?.menuItems?.length) setMenuItems(data.menuItems);
+
+          // Calculate next express token number from live orders
+          const allOrders = [...(data?.recentOrders || []), ...(data?.servedOrders || [])];
+          let maxToken = 100;
+          allOrders.forEach((o: any) => {
+            const m = String(o.orderNumber || '').match(/\d+/);
+            if (m) {
+              const val = parseInt(m[0], 10);
+              if (val >= maxToken && val < 90000) maxToken = val;
+            }
+          });
+          setExpressTokenSeq((prev) => Math.max(prev, maxToken + 1));
 
           // 1. Sync Floor Tables & Carts
           if (data?.tables?.length) {
@@ -444,10 +480,12 @@ export default function PosRegisterPage() {
       };
     });
 
-    // Mark current table occupied on floor
-    setTables((prev) =>
-      prev.map((t) => (t.tableNumber === selectedTable ? { ...t, currentStatus: 'OCCUPIED' } : t))
-    );
+    // Mark physical table occupied on floor (leave Takeaway available for parallel counter orders)
+    if (selectedTable.toLowerCase() !== 'takeaway' && selectedTable.toLowerCase() !== 'counter') {
+      setTables((prev) =>
+        prev.map((t) => (t.tableNumber === selectedTable ? { ...t, currentStatus: 'OCCUPIED' } : t))
+      );
+    }
   }
 
   // Update Quantity for Current Table Cart
@@ -488,26 +526,32 @@ export default function PosRegisterPage() {
     setTimeout(() => setToastMessage(null), 3200);
   }
 
-  // ═══ SETTLE BILL (Opens Settlement Modal for Selected Table) ═══
+  // ═══ SETTLE BILL (Opens Settlement Modal for Selected Table or Express Token) ═══
   function handleSettle(method: 'CASH' | 'UPI') {
-    if (currentCart.length === 0) {
-      showToast(`⚠️ Table ${selectedTable} cart is empty. Add items first!`);
+    const isExpress = posMode === 'EXPRESS_COUNTER' || isCounterOnlyCafe;
+    const currentTableId = isExpress ? 'Takeaway' : selectedTable;
+    const targetCart = tableCarts[currentTableId] || [];
+
+    if (targetCart.length === 0) {
+      showToast(isExpress ? `⚠️ Token #${expressTokenSeq} cart is empty. Add items first!` : `⚠️ Table ${selectedTable} cart is empty. Add items first!`);
       return;
     }
 
+    const orderNum = isExpress ? `#${expressTokenSeq}` : `#${Math.floor(1000 + Math.random() * 9000)}`;
+
     const billData: SettlementBill = {
       billNumber: `INV-${Math.floor(1000 + Math.random() * 9000)}`,
-      orderNumber: `#${Math.floor(1000 + Math.random() * 9000)}`,
-      tableNumber: selectedTable,
-      items: [...currentCart],
+      orderNumber: orderNum,
+      tableNumber: currentTableId,
+      items: [...targetCart],
       subtotal,
       discount: discountAmount,
       cgst,
       sgst,
       total: grandTotal,
       paymentMethod: method,
-      customerName: currentCustomer.name || `Guest Table ${selectedTable}`,
-      customerPhone: currentCustomer.phone || '+91 98450 00000',
+      customerName: currentCustomer.name || (isExpress ? `${expressOrderType === 'DELIVERY' ? 'Delivery Partner' : 'Express Guest'} (${orderNum})` : `Guest Table ${selectedTable}`),
+      customerPhone: currentCustomer.phone || (isExpress ? '' : '+91 98450 00000'),
       changeDue: Math.max(0, changeDue),
       time: currentTime,
     };
@@ -515,40 +559,50 @@ export default function PosRegisterPage() {
     setSettledBill(billData);
     setWhatsappSentStatus(false);
 
-    // Call backend API to record bill in Prisma DB
+    // Call backend API to record bill in Prisma DB and immediately dispatch to Kitchen KDS
     fetch('/api/pos', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         action: 'settle-bill',
-        tableId: selectedTable,
-        items: currentCart,
+        tableId: currentTableId,
+        tokenNumber: isExpress ? orderNum : undefined,
+        sendToKitchen: true,
+        specialNotes: isExpress ? `${expressOrderType} • TOKEN ${orderNum} • PREPAID` : undefined,
+        items: targetCart,
         subtotal,
         discount: discountAmount,
         cgst,
         sgst,
         total: grandTotal,
         paymentMethod: method,
-        customerName: currentCustomer.name || `Guest Table ${selectedTable}`,
-        customerPhone: currentCustomer.phone || '+91 98450 00000',
+        customerName: billData.customerName,
+        customerPhone: currentCustomer.phone || (isExpress ? null : '+91 98450 00000'),
       }),
     }).catch(() => {});
+
+    if (isExpress) {
+      setExpressTokenSeq((prev) => prev + 1);
+    }
   }
 
-  // Close Settlement Modal & Free ONLY this Table
+  // Close Settlement Modal & Free Table or Fast Reset Register for Next Token
   function handleCompleteAndFreeTable() {
-    const tableToFree = settledBill?.tableNumber || selectedTable;
+    const isExpress = posMode === 'EXPRESS_COUNTER' || isCounterOnlyCafe;
+    const tableToFree = settledBill?.tableNumber || (isExpress ? 'Takeaway' : selectedTable);
 
-    // Free Table on Floor Grid
-    setTables((prev) =>
-      prev.map((t) =>
-        t.tableNumber === tableToFree
-          ? { ...t, currentStatus: 'AVAILABLE', orderNumber: undefined, amount: undefined }
-          : t
-      )
-    );
+    // Free physical table on floor
+    if (tableToFree.toLowerCase() !== 'takeaway' && tableToFree.toLowerCase() !== 'counter') {
+      setTables((prev) =>
+        prev.map((t) =>
+          t.tableNumber === tableToFree
+            ? { ...t, currentStatus: 'AVAILABLE', orderNumber: undefined, amount: undefined }
+            : t
+        )
+      );
+    }
 
-    // Clear ONLY this table's cart
+    // Clear cart for this station
     setTableCarts((prev) => ({
       ...prev,
       [tableToFree]: [],
@@ -567,8 +621,16 @@ export default function PosRegisterPage() {
       return next;
     });
 
+    const settledToken = settledBill?.orderNumber;
     setSettledBill(null);
-    showToast(`✓ Table ${tableToFree} settled & freed for next guests!`);
+
+    if (isExpress) {
+      showToast(`✓ Token ${settledToken} sent to Kitchen KDS! Register ready for next customer.`);
+      const searchInput = document.getElementById('posSearchInput');
+      if (searchInput) (searchInput as HTMLInputElement).focus();
+    } else {
+      showToast(`✓ Table ${tableToFree} settled & freed for next guests!`);
+    }
   }
 
   // Toggle Flat 10% Discount for selected table
@@ -691,6 +753,42 @@ export default function PosRegisterPage() {
               <span className="w-2 h-2 rounded-full bg-paros-matcha animate-ping" />
               <span>{cafeName}</span>
             </div>
+
+            {isCounterOnlyCafe ? (
+              <span className="hidden lg:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-paros-mint border border-espresso font-display text-[10px] font-black uppercase text-emerald-950 shadow-xs">
+                ⚡ Express Token Mode (0 Tables)
+              </span>
+            ) : (
+              <div className="hidden lg:flex items-center p-0.5 bg-paros-cream border border-espresso rounded-xl shadow-xs">
+                <button
+                  onClick={() => {
+                    setPosMode('DINE_IN');
+                    const firstPhysical = tables.find((t) => t.tableNumber.toLowerCase() !== 'takeaway');
+                    if (firstPhysical) setSelectedTable(firstPhysical.tableNumber);
+                  }}
+                  className={`px-2 py-0.5 rounded-lg font-display text-[10px] font-black uppercase transition-all ${
+                    posMode === 'DINE_IN'
+                      ? 'bg-paros-orange text-white shadow-xs'
+                      : 'text-espresso/70 hover:text-espresso'
+                  }`}
+                >
+                  🪑 Dine-In
+                </button>
+                <button
+                  onClick={() => {
+                    setPosMode('EXPRESS_COUNTER');
+                    setSelectedTable('Takeaway');
+                  }}
+                  className={`px-2 py-0.5 rounded-lg font-display text-[10px] font-black uppercase transition-all ${
+                    posMode === 'EXPRESS_COUNTER'
+                      ? 'bg-paros-orange text-white shadow-xs'
+                      : 'text-espresso/70 hover:text-espresso'
+                  }`}
+                >
+                  ⚡ Counter Rush
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Quick Route Switches */}
@@ -706,10 +804,10 @@ export default function PosRegisterPage() {
               href="/order"
               target="_blank"
               className="px-2.5 sm:px-3 py-1.5 rounded-xl font-display text-[11px] sm:text-xs font-black uppercase bg-paros-mint hover:bg-paros-yellow text-espresso border-2 border-espresso shadow-brutal-sm flex items-center gap-1 shrink-0"
-              title="Open Customer QR Dine-in View in new tab"
+              title={isCounterOnlyCafe ? "Open Express Counter QR (Token Mode)" : "Open Customer QR Dine-in View in new tab"}
             >
               <span className="material-symbols-outlined text-[15px]">smartphone</span>
-              <span>Customer QR ↗</span>
+              <span>{isCounterOnlyCafe ? 'Token QR ↗' : 'Customer QR ↗'}</span>
             </Link>
             <Link
               href="/kds"
@@ -774,7 +872,9 @@ export default function PosRegisterPage() {
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="font-display font-black text-sm uppercase tracking-wide">
-                      KDS ALERT: Table {readyNotification.table} is READY for Service!
+                      {isCounterOnlyCafe || posMode === 'EXPRESS_COUNTER' || readyNotification.table.toLowerCase() === 'takeaway'
+                        ? `KDS ALERT: TOKEN ${readyNotification.orderNumber} IS READY AT PICKUP!`
+                        : `KDS ALERT: Table ${readyNotification.table} is READY for Service!`}
                     </span>
                     <span className="font-mono text-xs bg-white/20 px-2 py-0.5 rounded font-bold">
                       {readyNotification.orderNumber}
@@ -786,7 +886,7 @@ export default function PosRegisterPage() {
                     )}
                   </div>
                   <p className="font-body text-xs text-white/90 font-medium">
-                    {readyNotification.items} • Handover to table runner now.
+                    {readyNotification.items} • Call customer to pickup counter now.
                   </p>
                 </div>
               </div>
@@ -801,17 +901,17 @@ export default function PosRegisterPage() {
                       }).catch(() => {});
                     }
                     setReadyNotification(null);
-                    showToast(`✓ Order for Table ${readyNotification.table} marked served!`);
+                    showToast(`✓ Order ${readyNotification.orderNumber} marked handed over!`);
                   }}
                   className="brutal-btn px-3 py-1.5 bg-paros-matcha text-white font-display text-xs font-black uppercase rounded-xl border border-espresso shadow-brutal-sm"
                 >
-                  ✓ Mark Served
+                  ✓ Hand Over
                 </button>
                 <button
-                  onClick={() => setActiveView('orders')}
+                  onClick={() => setActiveView('floor')}
                   className="brutal-btn px-3 py-1.5 bg-white text-espresso font-display text-xs font-black uppercase rounded-xl border border-espresso shadow-brutal-sm"
                 >
-                  Queue
+                  Board
                 </button>
               </div>
             </div>
@@ -825,9 +925,11 @@ export default function PosRegisterPage() {
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="font-display text-sm font-black text-espresso">{cafeName} Counter</span>
+                  <span className="font-display text-sm font-black text-espresso">
+                    {cafeName} {isCounterOnlyCafe || posMode === 'EXPRESS_COUNTER' ? 'Express Counter' : 'Floor Register'}
+                  </span>
                   <span className="font-mono text-[10px] bg-paros-cream px-1.5 py-0.5 rounded border border-espresso font-bold">
-                    ACTIVE REGISTER
+                    {isCounterOnlyCafe || posMode === 'EXPRESS_COUNTER' ? 'TOKEN MODE' : 'ACTIVE REGISTER'}
                   </span>
                 </div>
                 <div className="flex items-center gap-2 font-display text-xs text-espresso/60 font-medium">
@@ -859,8 +961,10 @@ export default function PosRegisterPage() {
                     : 'text-espresso hover:bg-paros-yellow/40 border-2 border-transparent'
                 }`}
               >
-                <span className="material-symbols-outlined text-[16px]">table_bar</span>
-                Floor Grid
+                <span className="material-symbols-outlined text-[16px]">
+                  {isCounterOnlyCafe || posMode === 'EXPRESS_COUNTER' ? 'receipt_long' : 'table_bar'}
+                </span>
+                {isCounterOnlyCafe || posMode === 'EXPRESS_COUNTER' ? 'Token Board' : 'Floor Grid'}
               </button>
               <button
                 onClick={() => setActiveView('orders')}
@@ -876,85 +980,181 @@ export default function PosRegisterPage() {
             </div>
           </div>
 
-          {/* ═══ FLOOR GRID STATUS NODES STRIP (Every Table Has Separate Bill Amount) ═══ */}
-          <div className="bg-white p-3.5 rounded-2xl border-2 border-espresso shadow-brutal">
-            <div className="flex items-center justify-between pb-2 mb-2 border-b-2 border-dashed border-espresso/20">
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-paros-orange text-[18px]">table_restaurant</span>
-                <span className="font-display text-xs font-black uppercase text-espresso">
-                  Seating Floor Grid ({tables.length} Tables) — Click Table to Switch Tab
-                </span>
+          {/* ═══ TOP STRIP: SEATING GRID vs EXPRESS COUNTER MONITOR ═══ */}
+          {isCounterOnlyCafe || posMode === 'EXPRESS_COUNTER' ? (
+            /* ⚡ EXPRESS COUNTER & LIVE TOKEN MONITOR STRIP (For 0-table cafes & rush mode) */
+            <div className="bg-white p-3.5 rounded-2xl border-2 border-espresso shadow-brutal flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+              {/* Left: Live Kitchen & Counter Pass KPIs */}
+              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-paros-yellow/40 border-2 border-espresso shadow-brutal-sm">
+                  <span className="material-symbols-outlined text-espresso text-[16px]">soup_kitchen</span>
+                  <span className="font-display text-xs font-bold text-espresso">In Prep:</span>
+                  <span className="font-mono text-sm font-black text-espresso">
+                    {liveOrders.filter((o) => o.status !== 'READY_AT_PASS').length}
+                  </span>
+                </div>
+
+                <div
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-2 border-espresso shadow-brutal-sm ${
+                    liveOrders.filter((o) => o.status === 'READY_AT_PASS').length > 0
+                      ? 'bg-paros-mint text-emerald-900 border-emerald-600 animate-pulse'
+                      : 'bg-paros-cream text-espresso'
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-[16px]">notifications_active</span>
+                  <span className="font-display text-xs font-black uppercase">Ready at Pickup:</span>
+                  <span className="font-mono text-sm font-black">
+                    {liveOrders.filter((o) => o.status === 'READY_AT_PASS').length}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-paros-cream border-2 border-espresso shadow-brutal-sm">
+                  <span className="material-symbols-outlined text-espresso/60 text-[16px]">task_alt</span>
+                  <span className="font-display text-xs font-bold text-espresso/70">Served:</span>
+                  <span className="font-mono text-sm font-black text-espresso">
+                    {servedOrders.length}
+                  </span>
+                </div>
               </div>
-              <div className="flex items-center gap-3 text-xs font-display font-bold">
-                <span className="flex items-center gap-1 text-paros-matcha">
-                  <span className="w-2 h-2 rounded-full bg-paros-matcha" /> Free
-                </span>
-                <span className="flex items-center gap-1 text-amber-600">
-                  <span className="w-2 h-2 rounded-full bg-amber-500" /> Dine-In
-                </span>
-                <span className="flex items-center gap-1 text-emerald-700">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> Ready at Pass 🛎️
-                </span>
+
+              {/* Center: Express Order Type Selector */}
+              <div className="flex items-center gap-1 bg-paros-cream p-1 rounded-xl border-2 border-espresso shadow-brutal-sm shrink-0">
+                <button
+                  onClick={() => setExpressOrderType('TAKEAWAY')}
+                  className={`px-2.5 py-1 rounded-lg font-display text-[11px] font-black uppercase transition-all flex items-center gap-1 ${
+                    expressOrderType === 'TAKEAWAY'
+                      ? 'bg-paros-orange text-white shadow-brutal-sm'
+                      : 'text-espresso hover:bg-paros-yellow/40'
+                  }`}
+                >
+                  <span>🛍️ Takeaway</span>
+                </button>
+                <button
+                  onClick={() => setExpressOrderType('COUNTER')}
+                  className={`px-2.5 py-1 rounded-lg font-display text-[11px] font-black uppercase transition-all flex items-center gap-1 ${
+                    expressOrderType === 'COUNTER'
+                      ? 'bg-paros-orange text-white shadow-brutal-sm'
+                      : 'text-espresso hover:bg-paros-yellow/40'
+                  }`}
+                >
+                  <span>☕ Counter</span>
+                </button>
+                <button
+                  onClick={() => setExpressOrderType('DELIVERY')}
+                  className={`px-2.5 py-1 rounded-lg font-display text-[11px] font-black uppercase transition-all flex items-center gap-1 ${
+                    expressOrderType === 'DELIVERY'
+                      ? 'bg-paros-orange text-white shadow-brutal-sm'
+                      : 'text-espresso hover:bg-paros-yellow/40'
+                  }`}
+                >
+                  <span>🛵 Delivery</span>
+                </button>
+              </div>
+
+              {/* Right: Next Token Indicator & Quick Call */}
+              <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-1.5 px-3 py-1 bg-espresso text-white rounded-xl border-2 border-espresso shadow-brutal-sm">
+                  <span className="font-display text-[11px] font-bold text-white/70 uppercase">Next Token:</span>
+                  <span className="font-mono text-sm font-black text-paros-yellow">#{expressTokenSeq}</span>
+                </div>
+
+                {liveOrders.find((o) => o.status === 'READY_AT_PASS') && (
+                  <button
+                    onClick={() => {
+                      const topReady = liveOrders.find((o) => o.status === 'READY_AT_PASS');
+                      if (topReady) {
+                        handleMarkOrderServed(topReady.id, topReady.table.replace('Table ', ''));
+                      }
+                    }}
+                    className="brutal-btn px-3 py-1 bg-paros-matcha text-white font-display text-xs font-black uppercase rounded-xl border-2 border-espresso shadow-brutal-sm flex items-center gap-1 animate-bounce"
+                    title="1-tap Hand Over the oldest ready order"
+                  >
+                    <span>🛎️ Hand Over {liveOrders.find((o) => o.status === 'READY_AT_PASS')?.orderNumber}</span>
+                  </button>
+                )}
               </div>
             </div>
+          ) : (
+            /* 🪑 SEATING FLOOR GRID STRIP (For cafes with physical tables) */
+            <div className="bg-white p-3.5 rounded-2xl border-2 border-espresso shadow-brutal">
+              <div className="flex items-center justify-between pb-2 mb-2 border-b-2 border-dashed border-espresso/20">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-paros-orange text-[18px]">table_restaurant</span>
+                  <span className="font-display text-xs font-black uppercase text-espresso">
+                    Seating Floor Grid ({tables.length} Tables) — Click Table to Switch Tab
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 text-xs font-display font-bold">
+                  <span className="flex items-center gap-1 text-paros-matcha">
+                    <span className="w-2 h-2 rounded-full bg-paros-matcha" /> Free
+                  </span>
+                  <span className="flex items-center gap-1 text-amber-600">
+                    <span className="w-2 h-2 rounded-full bg-amber-500" /> Dine-In
+                  </span>
+                  <span className="flex items-center gap-1 text-emerald-700">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> Ready at Pass 🛎️
+                  </span>
+                </div>
+              </div>
 
-            <div className="grid grid-cols-4 sm:grid-cols-9 gap-2">
-              {tables.map((t) => {
-                const tableAmt = getTableAmount(t.tableNumber);
-                const hasItems = (tableCarts[t.tableNumber]?.length || 0) > 0;
-                const isReady = t.currentStatus === 'READY_TO_SERVE';
-                const isOccupied = hasItems || t.currentStatus === 'OCCUPIED';
-                const isSelected = selectedTable === t.tableNumber;
+              <div className="grid grid-cols-4 sm:grid-cols-9 gap-2">
+                {tables.map((t) => {
+                  const tableAmt = getTableAmount(t.tableNumber);
+                  const hasItems = (tableCarts[t.tableNumber]?.length || 0) > 0;
+                  const isReady = t.currentStatus === 'READY_TO_SERVE';
+                  const isOccupied = hasItems || t.currentStatus === 'OCCUPIED';
+                  const isSelected = selectedTable === t.tableNumber;
 
-                return (
-                  <button
-                    key={t.id}
-                    onClick={() => setSelectedTable(t.tableNumber)}
-                    className={`p-2 rounded-xl border-2 border-espresso transition-all text-center flex flex-col justify-between ${
-                      isSelected
-                        ? 'bg-paros-orange text-white shadow-brutal ring-2 ring-espresso scale-105'
-                        : isReady
-                        ? 'bg-paros-mint text-espresso border-2 border-emerald-600 shadow-brutal-sm ring-2 ring-emerald-400 animate-pulse'
-                        : isOccupied
-                        ? 'bg-paros-yellow text-espresso shadow-brutal-sm'
-                        : 'bg-paros-cream hover:bg-paros-mint text-espresso shadow-brutal-sm'
-                    }`}
-                  >
-                    <span className="font-display font-black text-sm">
-                      {t.tableNumber === 'Takeaway' ? '🥡 Out' : `T-${t.tableNumber}`}
-                    </span>
-                    <span
-                      className={`font-display text-[9px] uppercase font-bold mt-1 tabular-nums ${
+                  return (
+                    <button
+                      key={t.id}
+                      onClick={() => setSelectedTable(t.tableNumber)}
+                      className={`p-2 rounded-xl border-2 border-espresso transition-all text-center flex flex-col justify-between ${
                         isSelected
-                          ? 'text-white'
+                          ? 'bg-paros-orange text-white shadow-brutal ring-2 ring-espresso scale-105'
                           : isReady
-                          ? 'text-emerald-800 font-black'
+                          ? 'bg-paros-mint text-espresso border-2 border-emerald-600 shadow-brutal-sm ring-2 ring-emerald-400 animate-pulse'
                           : isOccupied
-                          ? 'text-amber-800 font-bold'
-                          : 'text-paros-matcha'
+                          ? 'bg-paros-yellow text-espresso shadow-brutal-sm'
+                          : 'bg-paros-cream hover:bg-paros-mint text-espresso shadow-brutal-sm'
                       }`}
                     >
-                      {isReady
-                        ? `🛎️ ₹${tableAmt}`
-                        : isOccupied
-                        ? `₹${tableAmt}`
-                        : 'Free'}
-                    </span>
-                    {t.paymentMode === 'UPI_PREPAID' && (
-                      <span className="text-[7.5px] font-black uppercase text-emerald-800 bg-white/90 rounded px-1 mt-0.5 border border-emerald-400">
-                        PAID UPI
+                      <span className="font-display font-black text-sm">
+                        {t.tableNumber === 'Takeaway' ? '🥡 Out' : `T-${t.tableNumber}`}
                       </span>
-                    )}
-                    {t.paymentMode === 'PAY_LATER' && (
-                      <span className="text-[7.5px] font-black uppercase text-amber-900 bg-amber-200/90 rounded px-1 mt-0.5 border border-amber-400">
-                        DUE
+                      <span
+                        className={`font-display text-[9px] uppercase font-bold mt-1 tabular-nums ${
+                          isSelected
+                            ? 'text-white'
+                            : isReady
+                            ? 'text-emerald-800 font-black'
+                            : isOccupied
+                            ? 'text-amber-800 font-bold'
+                            : 'text-paros-matcha'
+                        }`}
+                      >
+                        {isReady
+                          ? `🛎️ ₹${tableAmt}`
+                          : isOccupied
+                          ? `₹${tableAmt}`
+                          : 'Free'}
                       </span>
-                    )}
-                  </button>
-                );
-              })}
+                      {t.paymentMode === 'UPI_PREPAID' && (
+                        <span className="text-[7.5px] font-black uppercase text-emerald-800 bg-white/90 rounded px-1 mt-0.5 border border-emerald-400">
+                          PAID UPI
+                        </span>
+                      )}
+                      {t.paymentMode === 'PAY_LATER' && (
+                        <span className="text-[7.5px] font-black uppercase text-amber-900 bg-amber-200/90 rounded px-1 mt-0.5 border border-amber-400">
+                          DUE
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* ═══ VIEW MODE: EXPEDITER QUEUE ═══ */}
           {activeView === 'orders' ? (
@@ -1154,6 +1354,290 @@ export default function PosRegisterPage() {
                 </>
               )}
             </div>
+          ) : activeView === 'floor' ? (
+            /* ═══ VIEW MODE: TOKEN BOARD (Counter Mode) OR SEATING FLOOR GRID (Dine-In) ═══ */
+            isCounterOnlyCafe || posMode === 'EXPRESS_COUNTER' ? (
+              /* 📋 LIVE TOKEN PICKUP & DISPATCH BOARD */
+              <div className="bg-white p-5 rounded-2xl border-2 border-espresso shadow-brutal flex-1 flex flex-col gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b-2 border-espresso">
+                  <div className="flex items-center gap-2">
+                    <div className="w-9 h-9 rounded-xl bg-paros-orange text-white flex items-center justify-center font-display font-black text-sm border-2 border-espresso shadow-brutal-sm">
+                      ⚡
+                    </div>
+                    <div>
+                      <h2 className="font-display text-lg font-black text-espresso">
+                        Live Token Pickup & Dispatch Board
+                      </h2>
+                      <p className="font-body text-xs text-espresso/60">
+                        Kitchen Prep ➔ Ready at Counter ➔ 1-Tap Hand Over
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <div className="px-3 py-1 bg-paros-cream border border-espresso rounded-xl font-display text-xs font-bold">
+                      Next Token: <span className="font-mono font-black text-paros-orange">#{expressTokenSeq}</span>
+                    </div>
+                    <button
+                      onClick={() => setActiveView('menu')}
+                      className="brutal-btn px-3 py-1.5 bg-paros-orange text-white font-display text-xs font-black uppercase rounded-xl border border-espresso shadow-brutal-sm flex items-center gap-1"
+                    >
+                      <span className="material-symbols-outlined text-[15px]">add</span>
+                      <span>Punch Order</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* 3-Column Kanban Board */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-1">
+                  {/* Column 1: In Kitchen / Brewing */}
+                  <div className="bg-surface-container-low p-3.5 rounded-2xl border-2 border-espresso flex flex-col gap-2.5">
+                    <div className="flex items-center justify-between pb-2 border-b border-dashed border-espresso/20">
+                      <div className="flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-amber-700 text-[18px]">soup_kitchen</span>
+                        <span className="font-display text-xs font-black uppercase text-espresso">
+                          1. In Kitchen Prep
+                        </span>
+                      </div>
+                      <span className="font-mono text-xs font-black bg-white px-2 py-0.5 rounded border border-espresso">
+                        {liveOrders.filter((o) => o.status !== 'READY_AT_PASS').length}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col gap-2.5 overflow-y-auto max-h-[480px] pr-0.5">
+                      {liveOrders.filter((o) => o.status !== 'READY_AT_PASS').length === 0 ? (
+                        <div className="p-6 text-center text-espresso/50 font-display text-xs font-bold">
+                          No orders currently cooking in kitchen.
+                        </div>
+                      ) : (
+                        liveOrders
+                          .filter((o) => o.status !== 'READY_AT_PASS')
+                          .map((ord) => (
+                            <div
+                              key={ord.id}
+                              className="bg-white p-3 rounded-xl border-2 border-espresso shadow-brutal-sm flex flex-col gap-2"
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="font-mono text-sm font-black text-espresso bg-paros-cream px-2 py-0.5 rounded border border-espresso">
+                                  {ord.orderNumber}
+                                </span>
+                                <span className="text-[10px] font-mono text-espresso/60 font-bold">
+                                  {ord.elapsedTime}
+                                </span>
+                              </div>
+                              <div>
+                                <p className="font-body text-xs font-bold text-espresso">{ord.customerName}</p>
+                                <p className="font-body text-xs text-espresso/70 mt-0.5">{ord.itemsSummary}</p>
+                              </div>
+                              <div className="pt-2 border-t border-dashed border-espresso/15 flex items-center justify-between">
+                                <span className="text-[10px] font-display font-black text-amber-700 uppercase bg-amber-100 px-1.5 py-0.5 rounded">
+                                  Cooking ⏳
+                                </span>
+                                <button
+                                  onClick={() => {
+                                    fetch('/api/kds', {
+                                      method: 'POST',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({ action: 'ready-order', orderId: ord.id }),
+                                    }).catch(() => {});
+                                    setLiveOrders((prev) =>
+                                      prev.map((o) => (o.id === ord.id ? { ...o, status: 'READY_AT_PASS' } : o))
+                                    );
+                                    showToast(`✓ Token ${ord.orderNumber} marked Ready at Counter!`);
+                                  }}
+                                  className="text-[10px] px-2 py-1 bg-paros-mint hover:bg-paros-yellow text-espresso font-display font-black uppercase rounded border border-espresso shadow-xs"
+                                  title="Mark ready for customer pickup"
+                                >
+                                  Mark Ready 🛎️
+                                </button>
+                              </div>
+                            </div>
+                          ))
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Column 2: Ready at Counter (Call Customer) */}
+                  <div className="bg-emerald-50/60 p-3.5 rounded-2xl border-2 border-emerald-600 shadow-brutal flex flex-col gap-2.5">
+                    <div className="flex items-center justify-between pb-2 border-b border-dashed border-emerald-300">
+                      <div className="flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-emerald-800 text-[18px] animate-bounce">
+                          notifications_active
+                        </span>
+                        <span className="font-display text-xs font-black uppercase text-emerald-950">
+                          2. Ready at Counter 🛎️
+                        </span>
+                      </div>
+                      <span className="font-mono text-xs font-black bg-emerald-600 text-white px-2 py-0.5 rounded border border-emerald-700 animate-pulse">
+                        {liveOrders.filter((o) => o.status === 'READY_AT_PASS').length}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col gap-2.5 overflow-y-auto max-h-[480px] pr-0.5">
+                      {liveOrders.filter((o) => o.status === 'READY_AT_PASS').length === 0 ? (
+                        <div className="p-6 text-center text-emerald-800/60 font-display text-xs font-bold">
+                          No tokens waiting at counter.
+                        </div>
+                      ) : (
+                        liveOrders
+                          .filter((o) => o.status === 'READY_AT_PASS')
+                          .map((ord) => (
+                            <div
+                              key={ord.id}
+                              className="bg-white p-3.5 rounded-xl border-2 border-emerald-600 shadow-brutal flex flex-col gap-2 ring-1 ring-emerald-400"
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="font-mono text-base font-black text-espresso bg-paros-yellow px-2.5 py-0.5 rounded-lg border-2 border-espresso shadow-xs">
+                                  TOKEN {ord.orderNumber}
+                                </span>
+                                <span className="text-[10px] font-display font-black text-white bg-emerald-700 px-2 py-0.5 rounded uppercase animate-pulse">
+                                  Call Customer
+                                </span>
+                              </div>
+                              <div>
+                                <p className="font-body text-xs font-bold text-espresso">{ord.customerName}</p>
+                                <p className="font-body text-xs text-espresso/80 mt-0.5">{ord.itemsSummary}</p>
+                              </div>
+                              <div className="pt-2 border-t border-dashed border-espresso/15 flex flex-col gap-1.5">
+                                <button
+                                  onClick={() => handleMarkOrderServed(ord.id, ord.table.replace('Table ', ''))}
+                                  className="brutal-btn w-full py-2 bg-espresso text-white font-display text-xs font-black uppercase rounded-lg border border-espresso shadow-brutal-sm flex items-center justify-center gap-1.5"
+                                >
+                                  <span className="material-symbols-outlined text-[16px] text-paros-matcha">task_alt</span>
+                                  <span>✓ Hand Over (Clear)</span>
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    window.open(
+                                      `https://wa.me/?text=Hello%20${encodeURIComponent(ord.customerName || 'Guest')}!%20Your%20order%20(${encodeURIComponent(ord.orderNumber)})%20is%20ready%20at%20the%20pickup%20counter%20at%20${encodeURIComponent(cafeName)}.%20Please%20collect%20it%20with%20Token%20${encodeURIComponent(ord.orderNumber)}.`,
+                                      '_blank'
+                                    );
+                                    showToast(`📲 WhatsApp pickup ping prepared for ${ord.orderNumber}`);
+                                  }}
+                                  className="py-1 bg-paros-mint hover:bg-paros-yellow text-espresso font-display text-[10px] font-black uppercase rounded border border-espresso shadow-xs flex items-center justify-center gap-1"
+                                >
+                                  <span className="material-symbols-outlined text-[13px]">chat</span>
+                                  <span>WhatsApp "Order Ready"</span>
+                                </button>
+                              </div>
+                            </div>
+                          ))
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Column 3: Recently Handed Over */}
+                  <div className="bg-surface-container-low p-3.5 rounded-2xl border-2 border-espresso flex flex-col gap-2.5">
+                    <div className="flex items-center justify-between pb-2 border-b border-dashed border-espresso/20">
+                      <div className="flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-espresso/70 text-[18px]">done_all</span>
+                        <span className="font-display text-xs font-black uppercase text-espresso">
+                          3. Handed Over (Recent)
+                        </span>
+                      </div>
+                      <span className="font-mono text-xs font-black bg-white px-2 py-0.5 rounded border border-espresso">
+                        {servedOrders.length}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col gap-2 overflow-y-auto max-h-[480px] pr-0.5">
+                      {servedOrders.length === 0 ? (
+                        <div className="p-6 text-center text-espresso/50 font-display text-xs font-bold">
+                          No completed pickups yet today.
+                        </div>
+                      ) : (
+                        servedOrders.slice(0, 10).map((ord) => (
+                          <div
+                            key={ord.id}
+                            className="bg-white/80 p-2.5 rounded-xl border border-espresso flex flex-col gap-1 text-xs"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="font-mono font-bold text-espresso">{ord.orderNumber}</span>
+                              <span className="text-[10px] font-mono text-espresso/50">{ord.elapsedTime}</span>
+                            </div>
+                            <p className="text-espresso/70 truncate">{ord.itemsSummary}</p>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* 🪑 RESTAURANT SEATING FLOOR GRID (For Dine-In Cafes) */
+              <div className="bg-white p-5 rounded-2xl border-2 border-espresso shadow-brutal flex-1 flex flex-col gap-4">
+                <div className="flex items-center justify-between pb-3 border-b-2 border-espresso">
+                  <div>
+                    <h2 className="font-display text-lg font-black text-espresso">
+                      Restaurant Seating Floor Grid
+                    </h2>
+                    <p className="font-body text-xs text-espresso/60">
+                      Visual table floor layout — Select table to open tab or view occupancy
+                    </p>
+                  </div>
+                  <span className="font-display text-xs font-black uppercase bg-paros-yellow px-3 py-1 rounded-xl border border-espresso shadow-xs">
+                    {tables.length} Total Tables
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 flex-1 overflow-y-auto">
+                  {tables.map((t) => {
+                    const tableAmt = getTableAmount(t.tableNumber);
+                    const isReady = t.currentStatus === 'READY_TO_SERVE';
+                    const isOccupied = (tableCarts[t.tableNumber]?.length || 0) > 0 || t.currentStatus === 'OCCUPIED';
+                    const isSelected = selectedTable === t.tableNumber;
+
+                    return (
+                      <div
+                        key={t.id}
+                        onClick={() => {
+                          setSelectedTable(t.tableNumber);
+                          setActiveView('menu');
+                        }}
+                        className={`p-4 rounded-2xl border-2 border-espresso cursor-pointer transition-all flex flex-col justify-between ${
+                          isSelected
+                            ? 'bg-paros-orange text-white shadow-brutal ring-2 ring-espresso scale-102'
+                            : isReady
+                            ? 'bg-paros-mint text-espresso border-emerald-600 shadow-brutal-sm ring-2 ring-emerald-400 animate-pulse'
+                            : isOccupied
+                            ? 'bg-paros-yellow text-espresso shadow-brutal-sm'
+                            : 'bg-paros-cream hover:bg-white text-espresso shadow-brutal-sm'
+                        }`}
+                      >
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="font-display font-black text-lg">
+                              {t.tableNumber === 'Takeaway' ? '🥡 Takeaway' : `Table ${t.tableNumber}`}
+                            </span>
+                            <span className={`text-[10px] font-display font-black uppercase px-2 py-0.5 rounded border border-espresso ${
+                              isReady
+                                ? 'bg-emerald-600 text-white animate-pulse'
+                                : isOccupied
+                                ? 'bg-amber-600 text-white'
+                                : 'bg-white text-paros-matcha'
+                            }`}>
+                              {isReady ? 'Ready' : isOccupied ? 'Occupied' : 'Free'}
+                            </span>
+                          </div>
+                          <p className="text-xs opacity-75">
+                            Capacity: {t.capacity} Guests
+                          </p>
+                        </div>
+
+                        <div className="pt-3 border-t border-dashed border-espresso/20 flex items-center justify-between mt-3">
+                          <span className="font-mono text-sm font-black tabular-nums">
+                            {tableAmt > 0 ? `₹${tableAmt}` : '₹0'}
+                          </span>
+                          <span className="text-[11px] font-display font-bold underline">
+                            Open Tab ➔
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )
           ) : (
             /* ═══ VIEW MODE: MENU CATALOG ═══ */
             <div className="bg-white p-4 rounded-2xl border-2 border-espresso shadow-brutal flex-1 flex flex-col gap-3">
@@ -1237,7 +1721,11 @@ export default function PosRegisterPage() {
                         className="brutal-btn px-3 py-1 bg-paros-orange text-white font-display text-xs font-black uppercase rounded-lg border-2 border-espresso shadow-brutal-sm flex items-center gap-1"
                       >
                         <span className="material-symbols-outlined text-[14px]">add</span>
-                        Add to Table {selectedTable}
+                        <span>
+                          {isCounterOnlyCafe || posMode === 'EXPRESS_COUNTER'
+                            ? `Add to Token #${expressTokenSeq}`
+                            : `Add to Table ${selectedTable}`}
+                        </span>
                       </button>
                     </div>
                   </div>
@@ -1256,19 +1744,28 @@ export default function PosRegisterPage() {
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="material-symbols-outlined text-paros-orange text-[22px]">
-                      restaurant
+                      {isCounterOnlyCafe || posMode === 'EXPRESS_COUNTER' ? 'bolt' : 'restaurant'}
                     </span>
                     <span className="font-display text-xl font-black text-espresso">
-                      Table {selectedTable} Tab
+                      {isCounterOnlyCafe || posMode === 'EXPRESS_COUNTER'
+                        ? `Token #${expressTokenSeq} Tab`
+                        : `Table ${selectedTable} Tab`}
                     </span>
-                    <span className="px-2 py-0.5 rounded bg-paros-peach border border-espresso font-display text-[10px] font-black uppercase">
-                      {currentCart.length > 0 ? `${currentCart.length} Items` : 'Empty'}
+                    <span className="px-2 py-0.5 rounded bg-paros-mint border border-espresso font-display text-[10px] font-black uppercase">
+                      {isCounterOnlyCafe || posMode === 'EXPRESS_COUNTER'
+                        ? expressOrderType
+                        : (currentCart.length > 0 ? `${currentCart.length} Items` : 'Empty')}
                     </span>
+                    {!(isCounterOnlyCafe || posMode === 'EXPRESS_COUNTER') && currentCart.length > 0 && (
+                      <span className="px-2 py-0.5 rounded bg-paros-peach border border-espresso font-display text-[10px] font-black uppercase">
+                        {currentCart.length} Items
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center gap-2 mt-1">
                     <input
                       type="text"
-                      placeholder="Guest Name (optional)"
+                      placeholder={isCounterOnlyCafe || posMode === 'EXPRESS_COUNTER' ? "Customer (optional)" : "Guest Name (optional)"}
                       value={currentCustomer.name}
                       onChange={(e) =>
                         setTableCustomers((prev) => ({
@@ -1291,17 +1788,21 @@ export default function PosRegisterPage() {
                       className="px-2 py-0.5 bg-paros-cream border border-espresso rounded font-mono text-xs font-semibold text-espresso outline-none w-36"
                     />
                   </div>
-                  {/* Quick Customer Simulator Link for This Table */}
+                  {/* Quick Customer Simulator Link */}
                   <div className="mt-2 flex items-center gap-2">
                     <a
-                      href={`/order?table=${selectedTable}`}
+                      href={isCounterOnlyCafe || posMode === 'EXPRESS_COUNTER' ? "/order" : `/order?table=${selectedTable}`}
                       target="_blank"
                       rel="noreferrer"
                       className="brutal-btn inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-paros-mint hover:bg-paros-yellow text-espresso border border-espresso font-display text-[10px] font-black uppercase shadow-sm transition-all"
-                      title={`Open Customer Self-Order page for Table ${selectedTable} in new tab`}
+                      title={isCounterOnlyCafe || posMode === 'EXPRESS_COUNTER' ? "Open Express Counter Self-Order in new tab" : `Open Customer Self-Order page for Table ${selectedTable} in new tab`}
                     >
                       <span className="material-symbols-outlined text-[13px]">smartphone</span>
-                      <span>Test Guest QR (T-{selectedTable}) ↗</span>
+                      <span>
+                        {isCounterOnlyCafe || posMode === 'EXPRESS_COUNTER'
+                          ? 'Test Express Guest QR ↗'
+                          : `Test Guest QR (T-${selectedTable}) ↗`}
+                      </span>
                     </a>
                   </div>
 
@@ -1345,7 +1846,9 @@ export default function PosRegisterPage() {
                         currentCart.length > 0 ? 'bg-amber-500' : 'bg-paros-matcha'
                       }`}
                     />
-                    {currentCart.length > 0 ? 'Dine-In Occupied' : 'Table Available'}
+                    {isCounterOnlyCafe || posMode === 'EXPRESS_COUNTER'
+                      ? currentCart.length > 0 ? 'Order Active' : 'Ready for Order'
+                      : currentCart.length > 0 ? 'Dine-In Occupied' : 'Table Available'}
                   </div>
                 </div>
               </div>
@@ -1358,10 +1861,14 @@ export default function PosRegisterPage() {
                       shopping_bag
                     </span>
                     <p className="font-display text-sm font-black text-espresso/70">
-                      Table {selectedTable} Cart is Empty
+                      {isCounterOnlyCafe || posMode === 'EXPRESS_COUNTER'
+                        ? `Token #${expressTokenSeq} Cart is Empty`
+                        : `Table ${selectedTable} Cart is Empty`}
                     </p>
                     <p className="font-body text-xs text-espresso/50 max-w-xs">
-                      Tap any beverage or dish from the menu on the left to add items to this table.
+                      {isCounterOnlyCafe || posMode === 'EXPRESS_COUNTER'
+                        ? 'Tap any beverage or dish from the menu on the left to punch this express order.'
+                        : 'Tap any beverage or dish from the menu on the left to add items to this table.'}
                     </p>
                   </div>
                 ) : (
@@ -1521,14 +2028,22 @@ export default function PosRegisterPage() {
                   className="brutal-btn py-3.5 font-display font-black text-xs sm:text-sm uppercase rounded-xl border-2 border-espresso shadow-brutal flex items-center justify-center gap-1.5 bg-espresso text-white hover:bg-espresso/90 transition-all"
                 >
                   <span className="material-symbols-outlined text-[18px]">payments</span>
-                  <span>SETTLE CASH {grandTotal > 0 ? `₹${grandTotal}` : ''}</span>
+                  <span>
+                    {isCounterOnlyCafe || posMode === 'EXPRESS_COUNTER'
+                      ? `CASH & TOKEN #${expressTokenSeq}`
+                      : `SETTLE CASH ${grandTotal > 0 ? `₹${grandTotal}` : ''}`}
+                  </span>
                 </button>
                 <button
                   onClick={() => handleSettle('UPI')}
                   className="brutal-btn py-3.5 font-display font-black text-xs sm:text-sm uppercase rounded-xl border-2 border-espresso shadow-brutal flex items-center justify-center gap-1.5 bg-paros-matcha text-white hover:bg-emerald-700 transition-all"
                 >
                   <span className="material-symbols-outlined text-[18px]">qr_code_scanner</span>
-                  <span>CONFIRM UPI PAID</span>
+                  <span>
+                    {isCounterOnlyCafe || posMode === 'EXPRESS_COUNTER'
+                      ? `UPI & TOKEN #${expressTokenSeq}`
+                      : 'CONFIRM UPI PAID'}
+                  </span>
                 </button>
               </div>
 
@@ -1591,11 +2106,35 @@ export default function PosRegisterPage() {
               </span>
             </div>
 
+            {/* Express Token Callout Banner */}
+            {(isCounterOnlyCafe || posMode === 'EXPRESS_COUNTER' || settledBill.tableNumber.toLowerCase() === 'takeaway') && (
+              <div className="p-3 bg-paros-yellow/40 rounded-2xl border-2 border-espresso flex items-center justify-between">
+                <div>
+                  <span className="font-display text-[10px] font-black uppercase tracking-wider text-espresso/70 block">
+                    CUSTOMER PICKUP TOKEN
+                  </span>
+                  <span className="font-mono text-2xl font-black text-espresso">
+                    {settledBill.orderNumber}
+                  </span>
+                </div>
+                <div className="text-right">
+                  <span className="font-display text-[11px] font-black text-emerald-800 bg-paros-mint px-2 py-0.5 rounded-lg border border-espresso inline-block">
+                    ⚡ Sent to Kitchen KDS
+                  </span>
+                  <p className="font-body text-[10px] text-espresso/60 mt-0.5">
+                    Live ticket queued for preparation
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Bill Receipt Preview */}
             <div className="p-4 bg-paros-cream rounded-2xl border-2 border-espresso flex flex-col gap-2 font-mono text-xs">
               <div className="flex justify-between items-center pb-2 border-b border-dashed border-espresso/20">
                 <span className="font-display font-bold text-espresso">
-                  Table {settledBill.tableNumber} • {settledBill.orderNumber}
+                  {isCounterOnlyCafe || posMode === 'EXPRESS_COUNTER' || settledBill.tableNumber.toLowerCase() === 'takeaway'
+                    ? `TOKEN ${settledBill.orderNumber} • EXPRESS PICKUP`
+                    : `Table ${settledBill.tableNumber} • ${settledBill.orderNumber}`}
                 </span>
                 <span className="text-espresso/60">{settledBill.time}</span>
               </div>
@@ -1693,7 +2232,11 @@ export default function PosRegisterPage() {
                 onClick={handleCompleteAndFreeTable}
                 className="brutal-btn flex-1 py-3.5 bg-espresso text-white font-display font-black text-sm uppercase rounded-xl border-2 border-espresso shadow-brutal flex items-center justify-center gap-2"
               >
-                <span>Done • Free Table {settledBill.tableNumber} ➔</span>
+                <span>
+                  {isCounterOnlyCafe || posMode === 'EXPRESS_COUNTER' || settledBill.tableNumber.toLowerCase() === 'takeaway'
+                    ? 'Done • Next Customer (Fast Reset) ➔'
+                    : `Done • Free Table ${settledBill.tableNumber} ➔`}
+                </span>
               </button>
             </div>
           </div>
