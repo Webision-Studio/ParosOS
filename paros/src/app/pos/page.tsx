@@ -1074,7 +1074,7 @@ export default function PosRegisterPage() {
                 )}
               </div>
             </div>
-          ) : (
+          ) : activeView !== 'floor' ? (
             /* 🪑 SEATING FLOOR GRID STRIP (For cafes with physical tables) */
             <div className="bg-white p-3.5 rounded-2xl border-2 border-espresso shadow-brutal">
               <div className="flex items-center justify-between pb-2 mb-2 border-b-2 border-dashed border-espresso/20">
@@ -1154,7 +1154,7 @@ export default function PosRegisterPage() {
                 })}
               </div>
             </div>
-          )}
+          ) : null}
 
           {/* ═══ VIEW MODE: EXPEDITER QUEUE ═══ */}
           {activeView === 'orders' ? (
@@ -2051,16 +2051,28 @@ export default function PosRegisterPage() {
               <div className="grid grid-cols-2 gap-2">
                 <button
                   onClick={() => {
-                    const phoneClean = currentCustomer.phone.replace(/[^0-9]/g, '');
-                    if (!phoneClean) {
-                      showToast('⚠️ Enter guest phone number in tab header first!');
+                    const guestPhone = currentCustomer.phone;
+                    if (!guestPhone) {
+                      showToast('⚠️ Enter customer phone number first');
                       return;
                     }
-                    window.open(
-                      `https://wa.me/${phoneClean}?text=Hello%20${currentCustomer.name || 'Guest'}!%20Here%20is%20your%20bill%20for%20Table%20${selectedTable}%20(₹${grandTotal})%20at%20${cafeName}.%20Thank%20you%20for%20visiting!`,
-                      '_blank'
+                    const phone = guestPhone.replace(/[^0-9]/g, '');
+                    const phoneWithCountry = phone.startsWith('91') ? phone : `91${phone}`;
+                    
+                    const itemsList = currentCart.map(i => `${i.quantity}x ${i.name} — ₹${(i.price * i.quantity).toFixed(0)}`).join('\n');
+                    const text = encodeURIComponent(
+                      `🧾 *Receipt from ${cafeName}*\n` +
+                      `━━━━━━━━━━━━━━━━\n` +
+                      `${itemsList}\n` +
+                      `━━━━━━━━━━━━━━━━\n` +
+                      `Subtotal: ₹${subtotal.toFixed(2)}\n` +
+                      `GST (5%): ₹${(cgst + sgst).toFixed(2)}\n` +
+                      `*Total: ₹${grandTotal.toFixed(2)}*\n\n` +
+                      `Thank you for visiting! 🙏`
                     );
-                    showToast(`📲 WhatsApp bill dispatched to ${currentCustomer.phone}!`);
+                    
+                    window.open(`https://wa.me/${phoneWithCountry}?text=${text}`, '_blank');
+                    showToast(`📲 WhatsApp bill dispatched to ${guestPhone}!`);
                   }}
                   className="py-2 bg-white hover:bg-paros-cream border border-espresso rounded-xl font-display text-xs font-bold flex items-center justify-center gap-1.5 shadow-brutal-sm"
                 >

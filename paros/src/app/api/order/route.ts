@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
   try {
     const session = await getSession();
     const body = await req.json();
-    const { tableNumber, items, total, customerName, customerPhone, specialNotes, paymentMode, cafeId } = body;
+    const { tableNumber, items, total, customerName, customerPhone, customerEmail, whatsappOptIn, specialNotes, paymentMode, cafeId } = body;
 
     let cafe = null;
     if (session?.cafeId) {
@@ -101,6 +101,7 @@ export async function POST(req: NextRequest) {
         dynamicPrepMinutes: 10,
         customerName: customerName || `Table ${tableNumber} Guest`,
         customerPhone: customerPhone || '+91 98450 XXXXX',
+        customerEmail: customerEmail || null,
         specialNotes: specialNotes || (paymentMode === 'PAY_LATER' ? 'PAY LATER TO WAITER / COUNTER' : 'ONLINE PREPAID (UPI)'),
         items: {
           create: (items || []).map((i: { name: string; price: number; quantity: number; notes?: string; milk?: string }) => ({
@@ -120,6 +121,31 @@ export async function POST(req: NextRequest) {
       await prisma.table.update({
         where: { id: table.id },
         data: { currentStatus: 'OCCUPIED', activeOrderId: order.id },
+      });
+    }
+
+    // Upsert Customer record if phone is provided
+    if (customerPhone && customerPhone !== '+91 98450 XXXXX') {
+      await prisma.customer.upsert({
+        where: {
+          cafeId_phone: { cafeId: cafe.id, phone: customerPhone }
+        },
+        update: {
+          name: customerName || undefined,
+          email: customerEmail || undefined,
+          visitCount: { increment: 1 },
+          totalSpend: { increment: total || 0 },
+          lastVisitAt: new Date(),
+          isOptedInWhatsApp: whatsappOptIn !== false,
+        },
+        create: {
+          cafeId: cafe.id,
+          phone: customerPhone,
+          name: customerName || null,
+          email: customerEmail || null,
+          totalSpend: total || 0,
+          isOptedInWhatsApp: whatsappOptIn !== false,
+        },
       });
     }
 

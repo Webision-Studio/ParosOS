@@ -212,11 +212,55 @@ export async function POST(req: NextRequest) {
           description: description || 'Specialty creation',
           inStock: true,
           prepTimeMinutes: 5,
+          imageUrl: body.imageUrl || null,
         },
         include: { category: true },
       });
 
       return NextResponse.json({ success: true, menuItem });
+    }
+
+    // Edit Menu Item
+    if (action === 'edit-menu-item') {
+      const { itemId, name, price, categoryName, isVeg, description, imageUrl } = body;
+      const existingItem = await prisma.menuItem.findUnique({ where: { id: itemId } });
+      if (!existingItem) {
+        return NextResponse.json({ error: 'Item not found' }, { status: 404 });
+      }
+
+      let categoryId = existingItem.categoryId;
+      if (categoryName) {
+        let category = await prisma.category.findFirst({
+          where: { cafeId: targetCafeId, name: categoryName },
+        });
+        if (!category) {
+          category = await prisma.category.create({
+            data: { cafeId: targetCafeId, name: categoryName, sortOrder: 10 },
+          });
+        }
+        categoryId = category.id;
+      }
+
+      const updated = await prisma.menuItem.update({
+        where: { id: itemId },
+        data: {
+          name: name !== undefined ? name : existingItem.name,
+          price: price !== undefined ? Number(price) : existingItem.price,
+          categoryId,
+          isVeg: isVeg !== undefined ? isVeg : existingItem.isVeg,
+          description: description !== undefined ? description : existingItem.description,
+          imageUrl: imageUrl !== undefined ? imageUrl : existingItem.imageUrl,
+        },
+        include: { category: true },
+      });
+      return NextResponse.json({ success: true, item: updated });
+    }
+
+    // Delete Menu Item
+    if (action === 'delete-menu-item') {
+      const { itemId } = body;
+      await prisma.menuItem.delete({ where: { id: itemId } });
+      return NextResponse.json({ success: true });
     }
 
     // 4. Toggle Stock Status (86 Item)

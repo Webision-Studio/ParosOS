@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { subscribeToPush } from '@/lib/push-subscribe';
 
 interface OrderItem {
   id: string;
@@ -22,8 +23,14 @@ interface MenuItemData {
 }
 
 export default function TableQrOrderPage() {
-  // 4 Steps: 1 = Table Picker, 2 = Menu, 3 = Cart & UPI, 4 = Live ETA Tracker
-  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
+  // 5 Steps: 1 = Table Picker, 2 = Menu, 3 = Customer Details, 4 = Cart & UPI, 5 = Live ETA Tracker
+  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
+
+  // Customer Details
+  const [customerName, setCustomerName] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
+  const [customerEmail, setCustomerEmail] = useState('');
+  const [whatsappOptIn, setWhatsappOptIn] = useState(true);
 
   // Table selection
   const [selectedTable, setSelectedTable] = useState<string>('1');
@@ -110,9 +117,9 @@ export default function TableQrOrderPage() {
   const gst = Math.round(subtotal * 0.05);
   const total = subtotal + gst;
 
-  // Live ETA & Kitchen Status Synchronization in Step 4
+  // Live ETA & Kitchen Status Synchronization in Step 5
   useEffect(() => {
-    if (step !== 4) return;
+    if (step !== 5) return;
 
     // Local 1-second ticker for smooth visual countdown
     const localTicker = setInterval(() => {
@@ -227,7 +234,10 @@ export default function TableQrOrderPage() {
           items: cart,
           total,
           paymentMode,
-          customerName: `Guest Table ${selectedTable}`,
+          customerName: customerName || `Guest Table ${selectedTable}`,
+          customerPhone: customerPhone ? `+91 ${customerPhone}` : null,
+          customerEmail: customerEmail || null,
+          whatsappOptIn,
           specialNotes: paymentMode === 'PAY_LATER' ? 'PAY LATER TO WAITER / COUNTER' : 'ONLINE PREPAID (UPI)',
         }),
       });
@@ -244,7 +254,11 @@ export default function TableQrOrderPage() {
     } catch {
       // Offline fallback
     }
-    setStep(4);
+    setStep(5);
+
+    // Request push notification permission after order is placed
+    // This triggers the browser "Allow Notifications?" prompt
+    subscribeToPush().catch(() => {});
   }
 
   function formatTime(secs: number) {
@@ -500,8 +514,102 @@ export default function TableQrOrderPage() {
           </div>
         )}
 
-        {/* ══ STEP 3: CART CHECKOUT & UPI PAY ══ */}
+        {/* ══ STEP 3: CUSTOMER DETAILS ══ */}
         {step === 3 && (
+          <div className="p-4 flex flex-col gap-4 flex-1">
+            <div className="flex items-center justify-between">
+              <h2 className="font-display text-xl font-black text-espresso">Your Details</h2>
+              <button
+                onClick={() => setStep(2)}
+                className="text-xs font-display font-bold underline text-espresso/60"
+              >
+                Back to Menu
+              </button>
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl border-2 border-espresso shadow-brutal flex flex-col gap-4">
+              <div className="flex flex-col gap-1">
+                <h3 className="font-display font-black text-lg text-espresso flex items-center gap-2">
+                  <span>📋</span> Almost Done!
+                </h3>
+                <p className="font-body text-xs text-espresso/70">Help us serve you better</p>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="font-display font-bold text-sm text-espresso">Your Name *</label>
+                <input
+                  type="text"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  placeholder="e.g. Arjun"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-espresso bg-white font-body text-base focus:ring-2 focus:ring-paros-orange focus:border-paros-orange outline-none"
+                  required
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="font-display font-bold text-sm text-espresso">WhatsApp Number</label>
+                <div className="flex">
+                  <span className="inline-flex items-center px-4 rounded-l-xl border-2 border-r-0 border-espresso bg-paros-cream text-espresso font-body text-base">
+                    +91
+                  </span>
+                  <input
+                    type="tel"
+                    value={customerPhone}
+                    onChange={(e) => setCustomerPhone(e.target.value)}
+                    placeholder="9876543210"
+                    maxLength={10}
+                    className="w-full px-4 py-3 rounded-r-xl border-2 border-espresso bg-white font-body text-base focus:ring-2 focus:ring-paros-orange focus:border-paros-orange outline-none"
+                  />
+                </div>
+                <p className="font-body text-[10px] text-espresso/60 mt-1">Required for WhatsApp bill receipt</p>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="font-display font-bold text-sm text-espresso">Email (optional)</label>
+                <input
+                  type="email"
+                  value={customerEmail}
+                  onChange={(e) => setCustomerEmail(e.target.value)}
+                  placeholder="arjun@example.com"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-espresso bg-white font-body text-base focus:ring-2 focus:ring-paros-orange focus:border-paros-orange outline-none"
+                />
+              </div>
+
+              <label className="flex items-center gap-3 cursor-pointer mt-2">
+                <div className="relative flex items-center justify-center">
+                  <input
+                    type="checkbox"
+                    checked={whatsappOptIn}
+                    onChange={(e) => setWhatsappOptIn(e.target.checked)}
+                    className="appearance-none w-5 h-5 border-2 border-espresso rounded bg-white checked:bg-paros-orange checked:border-paros-orange focus:outline-none"
+                  />
+                  {whatsappOptIn && (
+                    <span className="absolute text-white pointer-events-none text-xs font-black">✓</span>
+                  )}
+                </div>
+                <span className="font-body text-sm text-espresso font-medium">Send me offers on WhatsApp</span>
+              </label>
+            </div>
+
+            <button
+              onClick={() => {
+                if (customerName.trim().length > 0) {
+                  setStep(4);
+                }
+              }}
+              disabled={!customerName.trim()}
+              className={`brutal-btn mt-auto w-full py-4 font-display font-black text-sm uppercase rounded-2xl border-2 border-espresso shadow-brutal flex items-center justify-center gap-2 ${
+                !customerName.trim() ? 'bg-espresso/40 text-white/60 cursor-not-allowed' : 'bg-paros-orange text-white hover:bg-[#c84c28]'
+              }`}
+            >
+              <span>Continue to Payment ➔</span>
+            </button>
+          </div>
+        )}
+
+        {/* ══ STEP 4: CART CHECKOUT & UPI PAY ══ */}
+        {step === 4 && (
           <div className="p-4 flex flex-col gap-4 flex-1">
             <div className="flex items-center justify-between">
               <h2 className="font-display text-xl font-black text-espresso">Order Summary</h2>
@@ -671,8 +779,8 @@ export default function TableQrOrderPage() {
           </div>
         )}
 
-        {/* ══ STEP 4: LIVE ETA TRACKER & COUNTDOWN ══ */}
-        {step === 4 && (
+        {/* ══ STEP 5: LIVE ETA TRACKER & COUNTDOWN ══ */}
+        {step === 5 && (
           <div className="p-4 flex flex-col gap-4 flex-1 items-center text-center justify-center">
             {/* Prominent Pickup Token Card for Counter / Takeaway */}
             {(isCounterOnlyCafe || isTakeaway) && (

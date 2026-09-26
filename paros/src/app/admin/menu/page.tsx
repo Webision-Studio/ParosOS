@@ -11,79 +11,31 @@ interface CatalogItem {
   inStock: boolean;
   isVeg: boolean;
   desc: string;
+  imageUrl?: string;
 }
 
 export default function MenuCatalogPage() {
   const [isImportOpen, setIsImportOpen] = useState(false);
-  const [activeImportTab, setActiveImportTab] = useState<'scan' | 'csv' | 'url'>('scan');
+  const [csvData, setCsvData] = useState('');
+  
   const [search, setSearch] = useState('');
   const [selectedCat, setSelectedCat] = useState('All');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Quick Add Item Modal State
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [newItemName, setNewItemName] = useState('');
-  const [newItemPrice, setNewItemPrice] = useState('');
-  const [newItemCat, setNewItemCat] = useState('Hot Coffee');
-  const [newItemVeg, setNewItemVeg] = useState(true);
+  // Modal State for Add / Edit
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  
+  const [formName, setFormName] = useState('');
+  const [formPrice, setFormPrice] = useState('');
+  const [formCat, setFormCat] = useState('Hot Coffee');
+  const [formVeg, setFormVeg] = useState(true);
+  const [formDesc, setFormDesc] = useState('Handcrafted in-house specialty');
+  const [formImageUrl, setFormImageUrl] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
 
   // Items State
-  const [items, setItems] = useState<CatalogItem[]>([
-    {
-      id: '1',
-      name: 'Flat White (Oat Milk)',
-      category: 'Hot Coffee',
-      price: 260,
-      inStock: true,
-      isVeg: true,
-      desc: 'Double ristretto espresso, velvety textured oat milk',
-    },
-    {
-      id: '2',
-      name: 'Specialty Pour Over (Ratnagiri)',
-      category: 'Hot Coffee',
-      price: 260,
-      inStock: true,
-      isVeg: true,
-      desc: 'Single-origin light roast brewed on Hario V60',
-    },
-    {
-      id: '3',
-      name: 'French Butter Croissant',
-      category: 'Bakery & Hearth',
-      price: 180,
-      inStock: true,
-      isVeg: true,
-      desc: '27-layer laminated all-butter flaky pastry',
-    },
-    {
-      id: '4',
-      name: 'Wild Herb Sourdough Toast',
-      category: 'Artisanal Toast',
-      price: 160,
-      inStock: true,
-      isVeg: true,
-      desc: 'Artisanal sourdough with hand-churned salted herb butter',
-    },
-    {
-      id: '5',
-      name: 'Cold Brew Tonic',
-      category: 'Iced Brews',
-      price: 220,
-      inStock: true,
-      isVeg: true,
-      desc: '18-hour cold steep with botanical tonic and charred orange',
-    },
-    {
-      id: '6',
-      name: 'Avocado & Danish Feta Toast',
-      category: 'Artisanal Toast',
-      price: 280,
-      inStock: true,
-      isVeg: true,
-      desc: 'Hass avocado mash, crumbled feta, chili flakes',
-    },
-  ]);
+  const [items, setItems] = useState<CatalogItem[]>([]);
 
   // Load menu items from database
   useEffect(() => {
@@ -92,7 +44,7 @@ export default function MenuCatalogPage() {
       .then((data) => {
         if (data?.menuItems?.length) {
           setItems(
-            data.menuItems.map((m: { id: string; name: string; price: number; inStock: boolean; isVeg: boolean; description?: string; category?: { name: string } }) => ({
+            data.menuItems.map((m: any) => ({
               id: m.id,
               name: m.name,
               category: m.category?.name || 'Specials',
@@ -100,6 +52,7 @@ export default function MenuCatalogPage() {
               inStock: m.inStock,
               isVeg: m.isVeg,
               desc: m.description || 'Specialty creation',
+              imageUrl: m.imageUrl,
             }))
           );
         }
@@ -127,45 +80,166 @@ export default function MenuCatalogPage() {
     fetch('/api/admin', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'toggle-stock',
-        itemId: id,
-      }),
+      body: JSON.stringify({ action: 'toggle-stock', itemId: id }),
     }).catch(() => {});
   }
 
-  function handleAddItem(e: React.FormEvent) {
+  function handleDelete(id: string, name: string) {
+    if (!confirm(`Are you sure you want to delete ${name}?`)) return;
+    
+    setItems((prev) => prev.filter((i) => i.id !== id));
+    showToast(`Deleted ${name}`);
+    
+    fetch('/api/admin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete-menu-item', itemId: id }),
+    }).catch(() => {});
+  }
+
+  function openAddModal() {
+    setEditingItemId(null);
+    setFormName('');
+    setFormPrice('');
+    setFormCat('Hot Coffee');
+    setFormVeg(true);
+    setFormDesc('Handcrafted in-house specialty');
+    setFormImageUrl('');
+    setIsModalOpen(true);
+  }
+
+  function openEditModal(item: CatalogItem) {
+    setEditingItemId(item.id);
+    setFormName(item.name);
+    setFormPrice(item.price.toString());
+    setFormCat(item.category);
+    setFormVeg(item.isVeg);
+    setFormDesc(item.desc);
+    setFormImageUrl(item.imageUrl || '');
+    setIsModalOpen(true);
+  }
+
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.url) {
+        setFormImageUrl(data.url);
+      } else {
+        showToast('Upload failed');
+      }
+    } catch (err) {
+      showToast('Upload failed');
+    } finally {
+      setIsUploading(false);
+    }
+  }
+
+  function handleSaveItem(e: React.FormEvent) {
     e.preventDefault();
-    if (!newItemName || !newItemPrice) return;
+    if (!formName || !formPrice) return;
 
-    const newItem: CatalogItem = {
-      id: `m-${Date.now()}`,
-      name: newItemName,
-      price: Number(newItemPrice),
-      category: newItemCat,
-      isVeg: newItemVeg,
-      inStock: true,
-      desc: 'Handcrafted in-house specialty',
+    const isEdit = !!editingItemId;
+
+    const payload = {
+      action: isEdit ? 'edit-menu-item' : 'add-menu-item',
+      itemId: editingItemId,
+      name: formName,
+      price: Number(formPrice),
+      categoryName: formCat,
+      isVeg: formVeg,
+      description: formDesc,
+      imageUrl: formImageUrl || undefined,
     };
-
-    setItems([newItem, ...items]);
-    setIsAddModalOpen(false);
-    showToast(`✓ Added ${newItemName} (₹${newItemPrice}) to Live Menu`);
-
-    setNewItemName('');
-    setNewItemPrice('');
 
     fetch('/api/admin', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'add-menu-item',
-        name: newItem.name,
-        price: newItem.price,
-        categoryName: newItem.category,
-        isVeg: newItem.isVeg,
-      }),
-    }).catch(() => {});
+      body: JSON.stringify(payload),
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          const m = isEdit ? data.item : data.menuItem;
+          const newItem: CatalogItem = {
+            id: m.id,
+            name: m.name,
+            price: m.price,
+            category: m.category?.name || formCat,
+            isVeg: m.isVeg,
+            inStock: m.inStock,
+            desc: m.description,
+            imageUrl: m.imageUrl,
+          };
+
+          if (isEdit) {
+            setItems(prev => prev.map(i => i.id === m.id ? newItem : i));
+            showToast(`✓ Updated ${newItem.name}`);
+          } else {
+            setItems(prev => [newItem, ...prev]);
+            showToast(`✓ Added ${newItem.name}`);
+          }
+          setIsModalOpen(false);
+        }
+      })
+      .catch(() => showToast('Failed to save item'));
+  }
+
+  async function handleImportCSV() {
+    if (!csvData.trim()) return;
+    const lines = csvData.split('\n').filter(l => l.trim() !== '');
+    let successCount = 0;
+    
+    for (const line of lines) {
+      const parts = line.split(',').map(p => p.trim());
+      if (parts.length >= 3) {
+        const [name, price, category, isVegStr] = parts;
+        const isVeg = isVegStr ? isVegStr.toLowerCase() === 'true' : true;
+        
+        try {
+          const res = await fetch('/api/admin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'add-menu-item',
+              name,
+              price: Number(price),
+              categoryName: category,
+              isVeg,
+            }),
+          });
+          const data = await res.json();
+          if (data.success) {
+            successCount++;
+            const m = data.menuItem;
+            const newItem: CatalogItem = {
+              id: m.id,
+              name: m.name,
+              price: m.price,
+              category: m.category?.name || category,
+              isVeg: m.isVeg,
+              inStock: m.inStock,
+              desc: m.description,
+              imageUrl: m.imageUrl,
+            };
+            setItems(prev => [newItem, ...prev]);
+          }
+        } catch(e) {}
+      }
+    }
+    showToast(`✓ Imported ${successCount} items`);
+    setIsImportOpen(false);
+    setCsvData('');
   }
 
   const filteredItems = items.filter((item) => {
@@ -226,7 +300,7 @@ export default function MenuCatalogPage() {
         </div>
       </aside>
 
-      {/* ── Main Catalog Workspace (offset 64) ── */}
+      {/* ── Main Catalog Workspace ── */}
       <div className="pl-64 flex-1 flex flex-col min-h-screen">
         <header className="sticky top-0 bg-white/95 backdrop-blur-md h-16 border-b-2 border-espresso z-40 px-6 flex items-center justify-between shadow-brutal-sm">
           <div className="flex items-center gap-3">
@@ -242,33 +316,33 @@ export default function MenuCatalogPage() {
               className="brutal-btn px-4 py-2 bg-white text-espresso font-display text-xs font-black uppercase rounded-xl border-2 border-espresso shadow-brutal-sm flex items-center gap-1.5"
             >
               <span className="material-symbols-outlined text-[16px] text-paros-orange">document_scanner</span>
-              <span>AI Menu Digitizer</span>
+              <span>Import CSV</span>
             </button>
             <button
-              onClick={() => setIsAddModalOpen(true)}
+              onClick={openAddModal}
               className="brutal-btn px-4 py-2 bg-paros-orange text-white font-display text-xs font-black uppercase rounded-xl border-2 border-espresso shadow-brutal-sm flex items-center gap-1.5"
             >
               <span className="material-symbols-outlined text-[16px]">add_circle</span>
-              <span>Quick Add Item</span>
+              <span>Add New Item</span>
             </button>
           </div>
         </header>
 
         <main className="p-6 max-w-[1400px] w-full mx-auto flex flex-col gap-6">
-          {/* ══ AI DIGITIZER & IMPORT DRAWER ══ */}
+          {/* CSV Import Drawer */}
           {isImportOpen && (
             <div className="bg-white rounded-3xl border-2 border-espresso shadow-brutal-xl overflow-hidden p-6 animate-in slide-in-from-top-4">
               <div className="flex justify-between items-center pb-4 border-b-2 border-espresso mb-4">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-paros-yellow border-2 border-espresso flex items-center justify-center">
-                    <span className="material-symbols-outlined text-espresso text-[22px]">auto_awesome</span>
+                    <span className="material-symbols-outlined text-espresso text-[22px]">table_chart</span>
                   </div>
                   <div>
                     <h3 className="font-display text-base font-black text-espresso">
-                      Instant AI Menu Digitizer
+                      Bulk Import Menu Items
                     </h3>
                     <p className="font-body text-xs text-espresso/70">
-                      Snap a photo of your paper menu or drop your Swiggy/Zomato PDF
+                      Paste CSV format: name, price, category, isVeg (true/false)
                     </p>
                   </div>
                 </div>
@@ -279,40 +353,18 @@ export default function MenuCatalogPage() {
                   ✕
                 </button>
               </div>
-
-              {/* Tabs */}
-              <div className="flex gap-2 mb-4">
-                {[
-                  { id: 'scan', label: 'Photo / PDF OCR' },
-                  { id: 'csv', label: 'CSV / Excel Upload' },
-                  { id: 'url', label: 'Swiggy / Zomato URL' },
-                ].map((t) => (
-                  <button
-                    key={t.id}
-                    onClick={() => setActiveImportTab(t.id as 'scan' | 'csv' | 'url')}
-                    className={`px-3 py-1.5 rounded-xl font-display text-xs font-bold border border-espresso transition-all ${
-                      activeImportTab === t.id
-                        ? 'bg-espresso text-white shadow-sm'
-                        : 'bg-paros-cream hover:bg-paros-yellow text-espresso'
-                    }`}
-                  >
-                    {t.label}
-                  </button>
-                ))}
-              </div>
-
-              {/* Upload Dropzone */}
-              <div className="border-2 border-dashed border-espresso rounded-2xl p-8 bg-paros-cream/50 flex flex-col items-center justify-center text-center gap-2 cursor-pointer hover:bg-paros-yellow/20 transition-colors">
-                <div className="w-12 h-12 rounded-2xl bg-white border border-espresso flex items-center justify-center shadow-sm">
-                  <span className="material-symbols-outlined text-paros-orange text-[26px]">upload_file</span>
-                </div>
-                <p className="font-display text-sm font-black text-espresso">
-                  Drag & Drop Menu Image (JPG, PNG) or Click to Browse
-                </p>
-                <p className="font-body text-xs text-espresso/60 max-w-xs">
-                  AI will parse names, prices, categories, and dietary tags in ~4 seconds
-                </p>
-              </div>
+              <textarea
+                value={csvData}
+                onChange={(e) => setCsvData(e.target.value)}
+                placeholder="Flat White, 260, Hot Coffee, true&#10;Butter Croissant, 180, Bakery & Hearth, false"
+                className="w-full h-32 p-3 bg-paros-cream border-2 border-espresso rounded-xl font-mono text-xs text-espresso outline-none resize-none mb-3"
+              />
+              <button
+                onClick={handleImportCSV}
+                className="brutal-btn w-full py-2 bg-espresso text-white font-display font-black text-xs uppercase rounded-xl"
+              >
+                Process & Import CSV
+              </button>
             </div>
           )}
 
@@ -366,13 +418,21 @@ export default function MenuCatalogPage() {
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <span
-                      className={`w-3 h-3 rounded-full border border-espresso ${
-                        item.isVeg ? 'bg-paros-matcha' : 'bg-red-500'
-                      }`}
-                    />
+                    {item.imageUrl ? (
+                      <img src={item.imageUrl} alt={item.name} className="w-12 h-12 rounded-xl object-cover border border-espresso" />
+                    ) : (
+                      <div className="w-12 h-12 rounded-xl bg-paros-cream border border-espresso flex items-center justify-center text-xl">
+                        🍽️
+                      </div>
+                    )}
+                    
                     <div>
                       <div className="flex items-center gap-2">
+                        <span
+                          className={`w-3 h-3 rounded-full border border-espresso ${
+                            item.isVeg ? 'bg-paros-matcha' : 'bg-red-500'
+                          }`}
+                        />
                         <p className="font-display text-sm font-black text-espresso">{item.name}</p>
                         <span className="px-2 py-0.5 rounded bg-paros-cream border border-espresso font-mono text-[10px] font-bold">
                           {item.category}
@@ -383,7 +443,7 @@ export default function MenuCatalogPage() {
                   </div>
 
                   <div className="flex items-center gap-4 shrink-0">
-                    <span className="font-display text-base font-black text-espresso tabular-nums">
+                    <span className="font-display text-base font-black text-espresso tabular-nums mr-2">
                       ₹{item.price}
                     </span>
 
@@ -398,6 +458,21 @@ export default function MenuCatalogPage() {
                     >
                       {item.inStock ? 'In Stock' : '86 / Sold Out'}
                     </button>
+                    
+                    <button
+                      onClick={() => openEditModal(item)}
+                      className="w-8 h-8 rounded-full bg-paros-yellow border border-espresso flex items-center justify-center text-espresso hover:bg-paros-orange hover:text-white transition-colors"
+                      title="Edit Item"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">edit</span>
+                    </button>
+                    <button
+                      onClick={() => handleDelete(item.id, item.name)}
+                      className="w-8 h-8 rounded-full bg-paros-cream border border-espresso flex items-center justify-center text-red-600 hover:bg-red-600 hover:text-white transition-colors"
+                      title="Delete Item"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">delete</span>
+                    </button>
                   </div>
                 </div>
               ))}
@@ -406,30 +481,32 @@ export default function MenuCatalogPage() {
         </main>
       </div>
 
-      {/* ── Quick Add Item Modal ── */}
-      {isAddModalOpen && (
+      {/* ── Add / Edit Modal ── */}
+      {isModalOpen && (
         <div className="fixed inset-0 bg-espresso/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl border-2 border-espresso shadow-brutal-xl p-6 w-full max-w-md animate-in zoom-in-95">
+          <div className="bg-white rounded-3xl border-2 border-espresso shadow-brutal-xl p-6 w-full max-w-md animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center pb-3 border-b-2 border-espresso mb-4">
-              <h3 className="font-display text-lg font-black text-espresso">Add Menu Item</h3>
+              <h3 className="font-display text-lg font-black text-espresso">
+                {editingItemId ? 'Edit Item' : 'Add New Item'}
+              </h3>
               <button
-                onClick={() => setIsAddModalOpen(false)}
+                onClick={() => setIsModalOpen(false)}
                 className="w-7 h-7 rounded-full bg-paros-cream border border-espresso flex items-center justify-center font-black text-xs"
               >
                 ✕
               </button>
             </div>
 
-            <form onSubmit={handleAddItem} className="flex flex-col gap-4">
+            <form onSubmit={handleSaveItem} className="flex flex-col gap-4">
               <div>
                 <label className="font-display text-xs font-black uppercase text-espresso block mb-1">
                   Dish / Beverage Name:
                 </label>
                 <input
                   type="text"
-                  value={newItemName}
-                  onChange={(e) => setNewItemName(e.target.value)}
-                  placeholder="e.g. Cinnamon Roll, Tonic Cold Brew"
+                  value={formName}
+                  onChange={(e) => setFormName(e.target.value)}
+                  placeholder="e.g. Cinnamon Roll"
                   required
                   className="w-full p-2.5 bg-paros-cream border-2 border-espresso rounded-xl font-display text-sm font-bold text-espresso outline-none"
                 />
@@ -441,11 +518,23 @@ export default function MenuCatalogPage() {
                 </label>
                 <input
                   type="number"
-                  value={newItemPrice}
-                  onChange={(e) => setNewItemPrice(e.target.value)}
+                  value={formPrice}
+                  onChange={(e) => setFormPrice(e.target.value)}
                   placeholder="240"
                   required
                   className="w-full p-2.5 bg-paros-cream border-2 border-espresso rounded-xl font-mono text-xl font-black text-espresso outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="font-display text-xs font-black uppercase text-espresso block mb-1">
+                  Description:
+                </label>
+                <input
+                  type="text"
+                  value={formDesc}
+                  onChange={(e) => setFormDesc(e.target.value)}
+                  className="w-full p-2.5 bg-paros-cream border-2 border-espresso rounded-xl font-body text-sm text-espresso outline-none"
                 />
               </div>
 
@@ -455,8 +544,8 @@ export default function MenuCatalogPage() {
                     Category:
                   </label>
                   <select
-                    value={newItemCat}
-                    onChange={(e) => setNewItemCat(e.target.value)}
+                    value={formCat}
+                    onChange={(e) => setFormCat(e.target.value)}
                     className="w-full p-2.5 bg-paros-cream border-2 border-espresso rounded-xl font-display text-xs font-bold text-espresso outline-none"
                   >
                     <option value="Hot Coffee">Hot Coffee</option>
@@ -472,8 +561,8 @@ export default function MenuCatalogPage() {
                     Dietary:
                   </label>
                   <select
-                    value={newItemVeg ? 'veg' : 'nonveg'}
-                    onChange={(e) => setNewItemVeg(e.target.value === 'veg')}
+                    value={formVeg ? 'veg' : 'nonveg'}
+                    onChange={(e) => setFormVeg(e.target.value === 'veg')}
                     className="w-full p-2.5 bg-paros-cream border-2 border-espresso rounded-xl font-display text-xs font-bold text-espresso outline-none"
                   >
                     <option value="veg">Vegetarian (🟢)</option>
@@ -482,11 +571,50 @@ export default function MenuCatalogPage() {
                 </div>
               </div>
 
+              <div>
+                <label className="font-display text-xs font-black uppercase text-espresso block mb-1">
+                  Image Upload:
+                </label>
+                <div className="border-2 border-dashed border-espresso rounded-xl p-4 bg-paros-cream/50 flex flex-col items-center justify-center text-center gap-2 relative">
+                  {formImageUrl ? (
+                    <div className="relative w-full">
+                      <img src={formImageUrl} alt="Preview" className="w-full h-32 object-cover rounded-lg border border-espresso" />
+                      <button 
+                        type="button" 
+                        onClick={() => setFormImageUrl('')} 
+                        className="absolute top-1 right-1 w-6 h-6 bg-white border border-espresso rounded-full text-xs"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <span className="material-symbols-outlined text-paros-orange text-2xl">
+                        {isUploading ? 'cloud_sync' : 'add_photo_alternate'}
+                      </span>
+                      <span className="font-display text-xs font-bold">
+                        {isUploading ? 'Uploading...' : 'Click or Drag Image'}
+                      </span>
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        onChange={handleImageUpload}
+                        disabled={isUploading}
+                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                      />
+                    </>
+                  )}
+                </div>
+              </div>
+
               <button
                 type="submit"
-                className="brutal-btn w-full py-3.5 bg-paros-orange text-white font-display font-black text-sm uppercase rounded-xl border-2 border-espresso shadow-brutal mt-2"
+                disabled={isUploading}
+                className={`brutal-btn w-full py-3.5 text-white font-display font-black text-sm uppercase rounded-xl border-2 border-espresso shadow-brutal mt-2 ${
+                  isUploading ? 'bg-gray-400' : 'bg-paros-orange'
+                }`}
               >
-                Add Item to Live Catalog ➔
+                {editingItemId ? 'Save Changes ➔' : 'Add Item to Catalog ➔'}
               </button>
             </form>
           </div>

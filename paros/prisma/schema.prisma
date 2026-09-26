@@ -98,6 +98,7 @@ model MenuItem {
   name            String
   description     String?
   price           Float
+  imageUrl        String?     // Supabase Storage URL for item photo
   isVeg           Boolean     @default(true)
   inStock         Boolean     @default(true) // 86 Sold-out toggle
   prepTimeMinutes Int         @default(8)
@@ -119,6 +120,7 @@ model Order {
   readyAt             DateTime?
   customerName        String?
   customerPhone       String?
+  customerEmail       String?
   specialNotes        String?
   createdAt           DateTime    @default(now())
   updatedAt           DateTime    @updatedAt
@@ -154,8 +156,11 @@ model Bill {
   total           Float
   paymentMethod   String    @default("UPI") // CASH, UPI, CARD
   paymentStatus   String    @default("PAID") // PENDING, PAID
+  customerName    String?
   customerPhone   String?
+  customerEmail   String?
   whatsappSent    Boolean   @default(false)
+  emailSent       Boolean   @default(false)
   createdAt       DateTime  @default(now())
 }
 
@@ -199,9 +204,22 @@ model Customer {
   cafe                Tenant    @relation(fields: [cafeId], references: [id], onDelete: Cascade)
   phone               String
   name                String?
+  email               String?
   visitCount          Int       @default(1)
   totalSpend          Float     @default(0)
   lastVisitAt         DateTime  @default(now())
   isOptedInWhatsApp   Boolean   @default(true)
   ratingScore         Int?
+  createdAt           DateTime  @default(now())
+
+  @@unique([cafeId, phone]) // One customer record per phone per cafe
+}
+
+model PushSubscription {
+  id          String    @id @default(cuid())
+  cafeId      String
+  endpoint    String    @unique // Browser push endpoint URL
+  p256dh      String    // Public key for encryption
+  auth        String    // Auth secret
+  createdAt   DateTime  @default(now())
 }

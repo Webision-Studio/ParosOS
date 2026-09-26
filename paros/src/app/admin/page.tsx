@@ -16,6 +16,7 @@ export default function AdminFinancialDashboard() {
   const [activeDateTab, setActiveDateTab] = useState('today');
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
   const [isShiftModalOpen, setIsShiftModalOpen] = useState(false);
+  const [isOfferModalOpen, setIsOfferModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Dynamic Cafe Metadata
@@ -44,6 +45,12 @@ export default function AdminFinancialDashboard() {
   // Live Expenses State (starts clean)
   const [expenses, setExpenses] = useState<ExpenseItem[]>([]);
   const [expenseFilterCategory, setExpenseFilterCategory] = useState<string>('ALL');
+
+  // Push Notification / Offers state
+  const [offerTitle, setOfferTitle] = useState('');
+  const [offerBody, setOfferBody] = useState('');
+  const [offerSending, setOfferSending] = useState(false);
+  const [subscriberCount, setSubscriberCount] = useState(0);
 
   const categoryTotals = useMemo(() => {
     return {
@@ -221,6 +228,36 @@ export default function AdminFinancialDashboard() {
     }).catch(() => {});
   }
 
+  // Handle Send Push Notification Offer
+  async function handleSendOffer(e: React.FormEvent) {
+    e.preventDefault();
+    if (!offerTitle || !offerBody) return;
+    setOfferSending(true);
+
+    try {
+      const res = await fetch('/api/push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'send-notification',
+          title: offerTitle,
+          body: offerBody,
+          url: '/order',
+        }),
+      });
+      const data = await res.json();
+      setIsOfferModalOpen(false);
+      setOfferTitle('');
+      setOfferBody('');
+      showToast(`🔔 Offer sent to ${data.sent || 0} customers! (${data.failed || 0} failed)`);
+      setSubscriberCount(data.totalSubscribers || 0);
+    } catch {
+      showToast('⚠️ Failed to send notification');
+    } finally {
+      setOfferSending(false);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-paros-cream text-espresso font-body flex antialiased select-none">
       {/* ── Left Sidebar Navigation ── */}
@@ -297,6 +334,13 @@ export default function AdminFinancialDashboard() {
             >
               <span className="material-symbols-outlined text-[20px]">payments</span>
               <span>Cash Drawer & Audit</span>
+            </button>
+            <button
+              onClick={() => setIsOfferModalOpen(true)}
+              className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-paros-yellow/40 transition-colors text-espresso text-left"
+            >
+              <span className="material-symbols-outlined text-[20px]">campaign</span>
+              <span>📢 Send Offers</span>
             </button>
           </nav>
         </div>
@@ -833,6 +877,85 @@ export default function AdminFinancialDashboard() {
                 className="brutal-btn w-full py-3.5 bg-espresso text-white font-display font-black text-sm uppercase rounded-xl border-2 border-espresso shadow-brutal"
               >
                 Sign Off & Generate Day-End Report
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── Send Offers Modal ── */}
+      {isOfferModalOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-espresso/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl border-2 border-espresso shadow-brutal-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between px-5 py-4 border-b-2 border-espresso">
+              <h3 className="font-display text-lg font-black text-espresso flex items-center gap-2">
+                <span className="material-symbols-outlined text-paros-orange">campaign</span>
+                📢 Send Push Notification
+              </h3>
+              <button onClick={() => setIsOfferModalOpen(false)} className="text-espresso/70 hover:text-espresso">
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            <form onSubmit={handleSendOffer} className="p-5 flex flex-col gap-4">
+              <div className="p-3 bg-paros-mint/30 rounded-xl border border-espresso/20 text-sm font-body text-espresso/80">
+                <span className="font-bold">🔔 How it works:</span> This sends a browser push notification to every customer who scanned your QR menu and clicked &quot;Allow Notifications&quot;. No phone number needed!
+              </div>
+
+              <div>
+                <label className="font-display text-xs font-black uppercase text-espresso block mb-1">
+                  Notification Title *
+                </label>
+                <input
+                  type="text"
+                  value={offerTitle}
+                  onChange={(e) => setOfferTitle(e.target.value)}
+                  placeholder="e.g. ☕ Weekend Special!"
+                  required
+                  className="w-full px-4 py-3 rounded-xl border-2 border-espresso bg-paros-cream font-body text-sm focus:ring-2 focus:ring-paros-orange outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="font-display text-xs font-black uppercase text-espresso block mb-1">
+                  Message *
+                </label>
+                <textarea
+                  value={offerBody}
+                  onChange={(e) => setOfferBody(e.target.value)}
+                  placeholder="e.g. Flat 20% off on all cold brews this Saturday & Sunday! Walk in or order via QR."
+                  required
+                  rows={3}
+                  className="w-full px-4 py-3 rounded-xl border-2 border-espresso bg-paros-cream font-body text-sm focus:ring-2 focus:ring-paros-orange outline-none resize-none"
+                />
+              </div>
+
+              {/* Quick Templates */}
+              <div>
+                <p className="font-display text-xs font-black uppercase text-espresso/60 mb-2">Quick Templates:</p>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { title: '☕ Weekend Special!', body: 'Flat 20% off on all cold brews this weekend! Walk in or scan QR.' },
+                    { title: '🎉 Happy Hours', body: 'Buy 1 Get 1 on all drinks from 3-6 PM today only!' },
+                    { title: '🆕 New on Menu', body: 'Try our brand new Matcha Latte — freshly added to the menu!' },
+                  ].map((t) => (
+                    <button
+                      key={t.title}
+                      type="button"
+                      onClick={() => { setOfferTitle(t.title); setOfferBody(t.body); }}
+                      className="text-xs font-display font-bold px-3 py-1.5 rounded-lg border-2 border-espresso/30 bg-paros-yellow/30 hover:bg-paros-yellow/60 transition-colors"
+                    >
+                      {t.title}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={offerSending}
+                className="brutal-btn w-full py-3.5 bg-paros-orange text-white font-display font-black text-sm uppercase rounded-xl border-2 border-espresso shadow-brutal disabled:opacity-50"
+              >
+                {offerSending ? '📡 Sending...' : `🔔 Send to All Subscribers`}
               </button>
             </form>
           </div>

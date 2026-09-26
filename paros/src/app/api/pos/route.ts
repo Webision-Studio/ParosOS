@@ -117,6 +117,7 @@ export async function POST(req: NextRequest) {
         paymentMethod,
         customerPhone,
         customerName,
+        customerEmail,
       } = body;
 
       // Find table by id or tableNumber (case-insensitive & handles 'T4' vs '4')
@@ -224,9 +225,32 @@ export async function POST(req: NextRequest) {
           paymentMethod: paymentMethod || 'UPI',
           paymentStatus: 'PAID',
           customerPhone: customerPhone || null,
-          whatsappSent: true,
+          customerName: customerName || null,
+          customerEmail: customerEmail || null,
+          whatsappSent: false,
+          emailSent: false,
         },
       });
+
+      if (customerPhone) {
+        await prisma.customer.upsert({
+          where: { cafeId_phone: { cafeId: targetCafeId, phone: customerPhone } },
+          update: {
+            name: customerName || undefined,
+            email: customerEmail || undefined,
+            visitCount: { increment: 1 },
+            totalSpend: { increment: Number(total) },
+            lastVisitAt: new Date(),
+          },
+          create: {
+            cafeId: targetCafeId,
+            phone: customerPhone,
+            name: customerName || null,
+            email: customerEmail || null,
+            totalSpend: Number(total),
+          },
+        });
+      }
 
       // If there are other unbilled orders for this table, close them with bills as part of this table tab
       const otherUnbilled = activeOrders.filter((o) => o.id !== primaryOrder.id);
