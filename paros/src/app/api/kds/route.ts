@@ -83,13 +83,15 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true, note: 'Mock ticket ready' });
       }
 
-      const order = await prisma.order.findUnique({ where: { id: orderId } });
+      const order = await prisma.order.findFirst({
+        where: { OR: [{ id: orderId }, { orderNumber: orderId }] },
+      });
       if (!order) {
         return NextResponse.json({ success: true, note: 'Order not found in DB, client state updated' });
       }
 
       const updated = await prisma.order.update({
-        where: { id: orderId },
+        where: { id: order.id },
         data: {
           status: 'READY',
           readyAt: new Date(),
@@ -98,7 +100,7 @@ export async function POST(req: NextRequest) {
 
       // Mark all items ready
       await prisma.orderItem.updateMany({
-        where: { orderId },
+        where: { orderId: order.id },
         data: { status: 'READY' },
       });
 
@@ -119,10 +121,12 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true });
       }
 
-      const order = await prisma.order.findUnique({ where: { id: orderId } });
+      const order = await prisma.order.findFirst({
+        where: { OR: [{ id: orderId }, { orderNumber: orderId }] },
+      });
       if (order) {
         await prisma.order.update({
-          where: { id: orderId },
+          where: { id: order.id },
           data: { status: 'SERVED' },
         });
 

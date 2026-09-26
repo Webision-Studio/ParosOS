@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
   try {
     const session = await getSession();
     const body = await req.json();
-    const { tableNumber, items, total, customerName, customerPhone, specialNotes, cafeId } = body;
+    const { tableNumber, items, total, customerName, customerPhone, specialNotes, paymentMode, cafeId } = body;
 
     let cafe = null;
     if (session?.cafeId) {
@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
         dynamicPrepMinutes: 10,
         customerName: customerName || `Table ${tableNumber} Guest`,
         customerPhone: customerPhone || '+91 98450 XXXXX',
-        specialNotes: specialNotes || '',
+        specialNotes: specialNotes || (paymentMode === 'PAY_LATER' ? 'PAY LATER TO WAITER / COUNTER' : 'ONLINE PREPAID (UPI)'),
         items: {
           create: (items || []).map((i: { name: string; price: number; quantity: number; notes?: string; milk?: string }) => ({
             name: i.name,

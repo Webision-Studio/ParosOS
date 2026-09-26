@@ -20,6 +20,8 @@ interface TableNode {
   currentStatus: 'AVAILABLE' | 'OCCUPIED' | 'READY_TO_SERVE';
   orderNumber?: string;
   amount?: number;
+  paymentMode?: 'UPI_PREPAID' | 'PAY_LATER' | null;
+  specialNotes?: string;
 }
 
 interface MenuItemData {
@@ -88,6 +90,7 @@ export default function PosRegisterPage() {
     table: string;
     orderNumber: string;
     items: string;
+    count?: number;
   } | null>(null);
   const lastNotifiedReadyId = useRef<string | null>(null);
 
@@ -168,14 +171,24 @@ export default function PosRegisterPage() {
                 (sum: number, it: any) => sum + (it.price || 0) * (it.quantity || 1),
                 0
               );
+              const isOrderReady = activeOrder?.status === 'READY';
+              const pMode = activeOrder?.specialNotes?.includes('PREPAID') || activeOrder?.specialNotes?.includes('UPI')
+                ? 'UPI_PREPAID'
+                : activeOrder?.specialNotes?.includes('PAY LATER')
+                ? 'PAY_LATER'
+                : null;
 
               return {
                 id: t.id,
                 tableNumber: t.tableNumber,
                 capacity: t.capacity || 4,
-                currentStatus: (t.currentStatus as 'AVAILABLE' | 'OCCUPIED' | 'READY_TO_SERVE') || 'AVAILABLE',
+                currentStatus: isOrderReady
+                  ? 'READY_TO_SERVE'
+                  : (t.currentStatus as 'AVAILABLE' | 'OCCUPIED' | 'READY_TO_SERVE') || 'AVAILABLE',
                 orderNumber: activeOrder?.orderNumber,
                 amount: tableAmount > 0 ? Math.round(tableAmount * 1.05) : undefined,
+                paymentMode: pMode,
+                specialNotes: activeOrder?.specialNotes,
               };
             });
 
@@ -246,19 +259,21 @@ export default function PosRegisterPage() {
             }));
             setLiveOrders(mappedOrders);
 
-            // 3. Detect Ready Order for Audio Chime & Banner
-            const readyOrder = data.recentOrders.find((o: any) => o.status === 'READY');
-            if (readyOrder) {
+            // 3. Detect Ready Orders for Audio Chime & Banner (supports multiple orders)
+            const readyOrders = (data.recentOrders || []).filter((o: any) => o.status === 'READY');
+            if (readyOrders.length > 0) {
+              const topReady = readyOrders[0];
               setReadyNotification({
-                id: readyOrder.id,
-                table: readyOrder.table?.tableNumber || 'Takeaway',
-                orderNumber: readyOrder.orderNumber,
-                items: (readyOrder.items || []).map((it: any) => `${it.quantity}x ${it.name}`).join(' + '),
+                id: topReady.id,
+                table: topReady.table?.tableNumber || 'Takeaway',
+                orderNumber: topReady.orderNumber,
+                items: (topReady.items || []).map((it: any) => `${it.quantity}x ${it.name}`).join(' + '),
+                count: readyOrders.length,
               });
 
               // Ring chime if this is a newly ready order
-              if (lastNotifiedReadyId.current !== readyOrder.id) {
-                lastNotifiedReadyId.current = readyOrder.id;
+              if (lastNotifiedReadyId.current !== topReady.id) {
+                lastNotifiedReadyId.current = topReady.id;
                 playReadyChime();
               }
             } else {
@@ -270,7 +285,7 @@ export default function PosRegisterPage() {
     }
 
     loadPosData();
-    const pollInterval = setInterval(loadPosData, 3000);
+    const pollInterval = setInterval(loadPosData, 1500);
 
     // Keyboard shortcut '/'
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -482,7 +497,14 @@ export default function PosRegisterPage() {
       )
     );
     setReadyNotification(null);
-    showToast(`✓ Order ${orderId} served to ${tableNum}!`);
+    showToast(`✓ Order served to ${tableNum}!`);
+
+    // Persist to Supabase DB
+    fetch('/api/kds', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'bump-order', orderId }),
+    }).catch(() => {});
   }
 
   // Park Order
@@ -611,6 +633,11 @@ export default function PosRegisterPage() {
                     <span className="font-mono text-xs bg-white/20 px-2 py-0.5 rounded font-bold">
                       {readyNotification.orderNumber}
                     </span>
+                    {readyNotification.count && readyNotification.count > 1 && (
+                      <span className="font-display text-[10px] bg-paros-yellow text-espresso px-2 py-0.5 rounded-full font-black uppercase border border-espresso animate-pulse">
+                        +{readyNotification.count - 1} MORE READY
+                      </span>
+                    )}
                   </div>
                   <p className="font-body text-xs text-white/90 font-medium">
                     {readyNotification.items} • Handover to table runner now.
@@ -767,6 +794,16 @@ export default function PosRegisterPage() {
                         ? `₹${tableAmt}`
                         : 'Free'}
                     </span>
+                    {t.paymentMode === 'UPI_PREPAID' && (
+                      <span className="text-[7.5px] font-black uppercase text-emerald-800 bg-white/90 rounded px-1 mt-0.5 border border-emerald-400">
+                        PAID UPI
+                      </span>
+                    )}
+                    {t.paymentMode === 'PAY_LATER' && (
+                      <span className="text-[7.5px] font-black uppercase text-amber-900 bg-amber-200/90 rounded px-1 mt-0.5 border border-amber-400">
+                        DUE
+                      </span>
+                    )}
                   </button>
                 );
               })}
@@ -991,6 +1028,38 @@ export default function PosRegisterPage() {
                       <span>Test Guest QR (T-{selectedTable}) ↗</span>
                     </a>
                   </div>
+
+                  {/* Payment Status Badge for Current Table */}
+                  {(() => {
+                    const currentTableNode = tables.find((t) => t.tableNumber === selectedTable);
+                    if (currentTableNode?.paymentMode === 'UPI_PREPAID') {
+                      return (
+                        <div className="mt-2 bg-emerald-100 text-emerald-950 border border-emerald-400 px-2.5 py-1 rounded-xl font-display text-[11px] font-black flex items-center justify-between shadow-sm">
+                          <div className="flex items-center gap-1.5">
+                            <span className="material-symbols-outlined text-[16px] text-emerald-700">verified</span>
+                            <span>PAID ONLINE VIA UPI</span>
+                          </div>
+                          <span className="bg-emerald-600 text-white text-[9px] px-1.5 py-0.5 rounded font-black uppercase">
+                            NO PAYMENT NEEDED
+                          </span>
+                        </div>
+                      );
+                    }
+                    if (currentTableNode?.paymentMode === 'PAY_LATER') {
+                      return (
+                        <div className="mt-2 bg-amber-100 text-amber-950 border border-amber-400 px-2.5 py-1 rounded-xl font-display text-[11px] font-black flex items-center justify-between shadow-sm">
+                          <div className="flex items-center gap-1.5">
+                            <span className="material-symbols-outlined text-[16px] text-amber-700">pending</span>
+                            <span>PAY LATER TAB: COLLECT AT COUNTER</span>
+                          </div>
+                          <span className="bg-amber-500 text-white text-[9px] px-1.5 py-0.5 rounded font-black uppercase">
+                            COLLECT DUE
+                          </span>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
                 </div>
                 <div className="text-right">
                   <span className="font-mono text-xs font-bold text-espresso">{currentTime}</span>

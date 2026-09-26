@@ -59,6 +59,7 @@ export default function TableQrOrderPage() {
   const [countdownSeconds, setCountdownSeconds] = useState(480); // 8 minutes
   const [orderStatus, setOrderStatus] = useState<'BREWING' | 'PLATING' | 'READY'>('BREWING');
   const [chefAddedEtaMessage, setChefAddedEtaMessage] = useState<string | null>(null);
+  const [paymentMode, setPaymentMode] = useState<'UPI_NOW' | 'PAY_LATER'>('UPI_NOW');
 
   // Fetch live menu and tables from backend
   useEffect(() => {
@@ -214,7 +215,9 @@ export default function TableQrOrderPage() {
           tableNumber: isTakeaway ? 'Takeaway' : selectedTable,
           items: cart,
           total,
+          paymentMode,
           customerName: `Guest Table ${selectedTable}`,
+          specialNotes: paymentMode === 'PAY_LATER' ? 'PAY LATER TO WAITER / COUNTER' : 'ONLINE PREPAID (UPI)',
         }),
       });
       const data = await res.json();
@@ -495,20 +498,103 @@ export default function TableQrOrderPage() {
               </div>
             </div>
 
-            {/* UPI Payment Info */}
-            <div className="bg-paros-mint/40 p-4 rounded-2xl border-2 border-espresso shadow-brutal-sm flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white border border-espresso flex items-center justify-center font-black text-sm">
-                  UPI
+            {/* ── Payment Mode Selector (UPI Now vs Pay Later) ── */}
+            <div className="flex flex-col gap-2.5">
+              <p className="font-display text-xs font-black uppercase text-espresso tracking-wide">
+                Choose Payment Option:
+              </p>
+
+              {/* Option 1: Pay via UPI Now */}
+              <button
+                type="button"
+                onClick={() => setPaymentMode('UPI_NOW')}
+                className={`p-3.5 rounded-2xl border-2 border-espresso text-left transition-all flex items-center justify-between ${
+                  paymentMode === 'UPI_NOW'
+                    ? 'bg-paros-mint shadow-brutal ring-2 ring-espresso scale-[1.01]'
+                    : 'bg-white hover:bg-paros-cream shadow-brutal-sm opacity-85'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-xl bg-white border-2 border-espresso flex items-center justify-center font-black text-lg text-emerald-800 shadow-sm shrink-0">
+                    📱
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-display font-black text-sm text-espresso">
+                        Pay via UPI Now
+                      </span>
+                      <span className="text-[10px] font-mono font-bold bg-white text-emerald-800 px-1.5 py-0.5 rounded border border-emerald-400">
+                        0% Surcharge
+                      </span>
+                    </div>
+                    <p className="font-mono text-[11px] text-espresso/70 mt-0.5">
+                      GPay • PhonePe • Paytm • CRED
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-display font-bold text-xs text-espresso">0% Gateway Surcharge</p>
-                  <p className="font-mono text-[10px] text-espresso/60">GPay, PhonePe, Paytm, CRED</p>
+                <div
+                  className={`w-6 h-6 rounded-full border-2 border-espresso flex items-center justify-center shrink-0 ${
+                    paymentMode === 'UPI_NOW' ? 'bg-emerald-600 text-white' : 'bg-white'
+                  }`}
+                >
+                  {paymentMode === 'UPI_NOW' && <span className="text-[12px] font-black">✓</span>}
                 </div>
-              </div>
-              <span className="text-xs font-mono font-bold text-emerald-800 bg-white px-2 py-1 rounded border border-emerald-400">
-                Verified
-              </span>
+              </button>
+
+              {/* UPI Quick App Link / ID (shown when UPI selected) */}
+              {paymentMode === 'UPI_NOW' && (
+                <div className="bg-white p-3 rounded-xl border-2 border-dashed border-emerald-600 flex items-center justify-between text-xs animate-in slide-in-from-top-1">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
+                    <span className="font-mono text-espresso font-semibold">
+                      UPI ID: <span className="font-bold text-emerald-850">artisan@okhdfcbank</span>
+                    </span>
+                  </div>
+                  <a
+                    href={`upi://pay?pa=artisan@okhdfcbank&pn=ArtisanRoastery&am=${total}&cu=INR`}
+                    className="px-2.5 py-1 bg-emerald-600 text-white font-display text-[10px] font-black uppercase rounded-lg border border-espresso hover:bg-emerald-700"
+                  >
+                    Open UPI App ↗
+                  </a>
+                </div>
+              )}
+
+              {/* Option 2: Order Now & Pay Later */}
+              <button
+                type="button"
+                onClick={() => setPaymentMode('PAY_LATER')}
+                className={`p-3.5 rounded-2xl border-2 border-espresso text-left transition-all flex items-center justify-between ${
+                  paymentMode === 'PAY_LATER'
+                    ? 'bg-paros-yellow shadow-brutal ring-2 ring-espresso scale-[1.01]'
+                    : 'bg-white hover:bg-paros-cream shadow-brutal-sm opacity-85'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-xl bg-white border-2 border-espresso flex items-center justify-center font-black text-lg text-amber-900 shadow-sm shrink-0">
+                    🍽️
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-display font-black text-sm text-espresso">
+                        Order Now & Pay Later
+                      </span>
+                      <span className="text-[10px] font-mono font-bold bg-white text-amber-900 px-1.5 py-0.5 rounded border border-amber-400">
+                        Dine-In Tab
+                      </span>
+                    </div>
+                    <p className="font-mono text-[11px] text-espresso/70 mt-0.5">
+                      Pay waiter at table or cashier before leaving
+                    </p>
+                  </div>
+                </div>
+                <div
+                  className={`w-6 h-6 rounded-full border-2 border-espresso flex items-center justify-center shrink-0 ${
+                    paymentMode === 'PAY_LATER' ? 'bg-amber-600 text-white' : 'bg-white'
+                  }`}
+                >
+                  {paymentMode === 'PAY_LATER' && <span className="text-[12px] font-black">✓</span>}
+                </div>
+              </button>
             </div>
 
             {/* Confirm & Place Order */}
@@ -518,10 +604,22 @@ export default function TableQrOrderPage() {
               className={`brutal-btn mt-auto w-full py-4 font-display font-black text-sm uppercase rounded-2xl border-2 border-espresso shadow-brutal flex items-center justify-center gap-2 ${
                 cart.length === 0
                   ? 'bg-espresso/40 text-white/60 cursor-not-allowed'
-                  : 'bg-paros-matcha text-white hover:bg-emerald-700'
+                  : paymentMode === 'UPI_NOW'
+                  ? 'bg-paros-matcha text-white hover:bg-emerald-700'
+                  : 'bg-paros-orange text-white hover:bg-[#c84c28]'
               }`}
             >
-              <span>Pay & Fire to Kitchen (₹{total}) ➔</span>
+              {paymentMode === 'UPI_NOW' ? (
+                <>
+                  <span className="material-symbols-outlined text-[20px]">payments</span>
+                  <span>Pay ₹{total} via UPI & Fire to Kitchen ➔</span>
+                </>
+              ) : (
+                <>
+                  <span className="material-symbols-outlined text-[20px]">restaurant</span>
+                  <span>Fire to Kitchen (Pay Later ₹{total}) ➔</span>
+                </>
+              )}
             </button>
           </div>
         )}
@@ -593,10 +691,25 @@ export default function TableQrOrderPage() {
                 </div>
               ))}
               <div className="pt-2 mt-2 border-t border-dashed border-espresso/20 flex justify-between font-bold text-espresso">
-                <span>Total Paid via UPI:</span>
-                <span>₹{total}</span>
+                <span>{paymentMode === 'UPI_NOW' ? 'Paid via UPI:' : 'Due to Waiter / Counter:'}</span>
+                <span className={paymentMode === 'UPI_NOW' ? 'text-emerald-700 font-black' : 'text-amber-700 font-black'}>
+                  ₹{total}
+                </span>
               </div>
             </div>
+
+            {/* Payment Mode Status Pill */}
+            {paymentMode === 'PAY_LATER' ? (
+              <div className="w-full bg-amber-100 text-amber-950 p-3 rounded-2xl border-2 border-espresso shadow-brutal-sm font-display text-xs font-bold flex items-center justify-center gap-2">
+                <span className="material-symbols-outlined text-amber-700 text-[18px]">payments</span>
+                <span>Dine-In Tab Active • Pay ₹{total} to your waiter or at the counter!</span>
+              </div>
+            ) : (
+              <div className="w-full bg-paros-mint text-emerald-950 p-3 rounded-2xl border-2 border-espresso shadow-brutal-sm font-display text-xs font-bold flex items-center justify-center gap-2">
+                <span className="material-symbols-outlined text-emerald-700 text-[18px]">verified</span>
+                <span>UPI Payment Received (₹{total}) • 0% Surcharge Applied!</span>
+              </div>
+            )}
 
             {/* Start New Order */}
             <button

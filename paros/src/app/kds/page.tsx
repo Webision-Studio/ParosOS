@@ -163,7 +163,7 @@ export default function KdsStudioPage() {
     }
 
     loadKdsOrders();
-    const interval = setInterval(loadKdsOrders, 4000);
+    const interval = setInterval(loadKdsOrders, 1500);
     return () => clearInterval(interval);
   }, []);
 
@@ -460,11 +460,36 @@ export default function KdsStudioPage() {
                     </div>
                   </div>
 
-                  {/* Special Note */}
+                  {/* Special Note / Payment Badge */}
                   {t.specialNote && (
-                    <div className="bg-amber-100 px-4 py-2 border-b-2 border-dashed border-espresso/20 flex items-center gap-1.5 font-body text-xs font-bold text-amber-900">
-                      <span className="material-symbols-outlined text-[16px]">campaign</span>
-                      <span>{t.specialNote}</span>
+                    <div
+                      className={`px-4 py-2 border-b-2 border-dashed border-espresso/20 flex items-center justify-between font-display text-xs font-black ${
+                        t.specialNote.includes('PAY LATER')
+                          ? 'bg-amber-100 text-amber-950'
+                          : t.specialNote.includes('PREPAID') || t.specialNote.includes('UPI')
+                          ? 'bg-emerald-100 text-emerald-950'
+                          : 'bg-amber-100 text-amber-900'
+                      }`}
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-[16px]">
+                          {t.specialNote.includes('PAY LATER')
+                            ? 'payments'
+                            : t.specialNote.includes('PREPAID') || t.specialNote.includes('UPI')
+                            ? 'verified'
+                            : 'campaign'}
+                        </span>
+                        <span>{t.specialNote}</span>
+                      </div>
+                      <span
+                        className={`text-[9px] uppercase px-1.5 py-0.5 rounded border border-espresso font-black ${
+                          t.specialNote.includes('PAY LATER')
+                            ? 'bg-amber-300 text-amber-950'
+                            : 'bg-emerald-300 text-emerald-950'
+                        }`}
+                      >
+                        {t.specialNote.includes('PAY LATER') ? 'DUE AT COUNTER' : 'PAID ONLINE'}
+                      </span>
                     </div>
                   )}
 
