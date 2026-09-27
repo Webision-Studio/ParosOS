@@ -211,6 +211,15 @@ export async function POST(req: NextRequest) {
         });
       }
 
+      // Normalize customer phone number for consistent CRM profiles
+      let normalizedPhone: string | null = null;
+      if (customerPhone) {
+        const digits = String(customerPhone).replace(/[^0-9]/g, '');
+        if (digits.length >= 10) {
+          normalizedPhone = `+91 ${digits.slice(-10)}`;
+        }
+      }
+
       // Create Bill attached to primaryOrder.id
       const bill = await prisma.bill.create({
         data: {
@@ -224,7 +233,7 @@ export async function POST(req: NextRequest) {
           total: Number(total),
           paymentMethod: paymentMethod || 'UPI',
           paymentStatus: 'PAID',
-          customerPhone: customerPhone || null,
+          customerPhone: normalizedPhone || customerPhone || null,
           customerName: customerName || null,
           customerEmail: customerEmail || null,
           whatsappSent: false,
@@ -232,9 +241,9 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      if (customerPhone) {
+      if (normalizedPhone) {
         await prisma.customer.upsert({
-          where: { cafeId_phone: { cafeId: targetCafeId, phone: customerPhone } },
+          where: { cafeId_phone: { cafeId: targetCafeId, phone: normalizedPhone } },
           update: {
             name: customerName || undefined,
             email: customerEmail || undefined,
@@ -244,7 +253,7 @@ export async function POST(req: NextRequest) {
           },
           create: {
             cafeId: targetCafeId,
-            phone: customerPhone,
+            phone: normalizedPhone,
             name: customerName || null,
             email: customerEmail || null,
             totalSpend: Number(total),

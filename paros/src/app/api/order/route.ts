@@ -89,7 +89,38 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // Phone number normalization to avoid CRM duplicates
+    let normalizedPhone: string | null = null;
+    if (customerPhone) {
+      const digits = customerPhone.replace(/[^0-9]/g, '');
+      if (digits.length >= 10) {
+        normalizedPhone = `+91 ${digits.slice(-10)}`;
+      }
+    }
+
+    // Verify item prices from DB catalog to prevent client price tampering
+    const catalog = await prisma.menuItem.findMany({
+      where: { cafeId: cafe.id },
+      select: { id: true, name: true, price: true },
+    });
+    const catalogMap = new Map(catalog.map((m) => [m.name.toLowerCase().trim(), m.price]));
+
     const orderNumber = `#${Math.floor(1000 + Math.random() * 9000)}`;
+
+    const verifiedItems = (items || []).map((i: { name: string; price: number; quantity: number; notes?: string; milk?: string }) => {
+      const basePrice = catalogMap.get((i.name || '').toLowerCase().trim()) ?? Number(i.price);
+      const milkSurcharge = i.milk && i.milk.toLowerCase().includes('oat') ? 40 : 0;
+      return {
+        name: i.name,
+        price: basePrice + milkSurcharge,
+        quantity: Math.max(1, Number(i.quantity || 1)),
+        status: 'PENDING' as const,
+        notes: [i.notes, i.milk].filter(Boolean).join(' • '),
+      };
+    });
+
+    const calculatedSubtotal = verifiedItems.reduce((acc: number, item: { price: number; quantity: number }) => acc + item.price * item.quantity, 0);
+    const calculatedTotal = calculatedSubtotal + Math.round(calculatedSubtotal * 0.05);
 
     const order = await prisma.order.create({
       data: {
@@ -100,17 +131,11 @@ export async function POST(req: NextRequest) {
         status: 'PLACED',
         dynamicPrepMinutes: 10,
         customerName: customerName || `Table ${tableNumber} Guest`,
-        customerPhone: customerPhone || '+91 98450 XXXXX',
+        customerPhone: normalizedPhone || '+91 98450 XXXXX',
         customerEmail: customerEmail || null,
         specialNotes: specialNotes || (paymentMode === 'PAY_LATER' ? 'PAY LATER TO WAITER / COUNTER' : 'ONLINE PREPAID (UPI)'),
         items: {
-          create: (items || []).map((i: { name: string; price: number; quantity: number; notes?: string; milk?: string }) => ({
-            name: i.name,
-            price: Number(i.price),
-            quantity: Number(i.quantity || 1),
-            status: 'PENDING',
-            notes: [i.notes, i.milk].filter(Boolean).join(' • '),
-          })),
+          create: verifiedItems,
         },
       },
       include: { items: true },
@@ -125,25 +150,25 @@ export async function POST(req: NextRequest) {
     }
 
     // Upsert Customer record if phone is provided
-    if (customerPhone && customerPhone !== '+91 98450 XXXXX') {
+    if (normalizedPhone) {
       await prisma.customer.upsert({
         where: {
-          cafeId_phone: { cafeId: cafe.id, phone: customerPhone }
+          cafeId_phone: { cafeId: cafe.id, phone: normalizedPhone }
         },
         update: {
           name: customerName || undefined,
           email: customerEmail || undefined,
           visitCount: { increment: 1 },
-          totalSpend: { increment: total || 0 },
+          totalSpend: { increment: calculatedTotal },
           lastVisitAt: new Date(),
           isOptedInWhatsApp: whatsappOptIn !== false,
         },
         create: {
           cafeId: cafe.id,
-          phone: customerPhone,
+          phone: normalizedPhone,
           name: customerName || null,
           email: customerEmail || null,
-          totalSpend: total || 0,
+          totalSpend: calculatedTotal,
           isOptedInWhatsApp: whatsappOptIn !== false,
         },
       });

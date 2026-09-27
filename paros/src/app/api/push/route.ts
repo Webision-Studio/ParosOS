@@ -65,15 +65,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, message: 'Subscribed to notifications' });
     }
 
-    // 2. Send notification to all subscribers of a cafe
+    // 2. Send notification to all subscribers of a cafe (MUST be authenticated)
     if (action === 'send-notification') {
       const session = await getSession();
-      const { cafeId, title, body: messageBody, url } = body;
-      const targetCafeId = session?.cafeId || cafeId;
-
-      if (!targetCafeId) {
-        return NextResponse.json({ error: 'Cafe ID required' }, { status: 400 });
+      if (!session?.cafeId) {
+        return NextResponse.json(
+          { error: 'Unauthorized. Only logged-in cafe owners can broadcast push notifications.' },
+          { status: 401 }
+        );
       }
+
+      const targetCafeId = session.cafeId;
+      const { title, body: messageBody, url } = body;
 
       const subscriptions = await prisma.pushSubscription.findMany({
         where: { cafeId: targetCafeId },

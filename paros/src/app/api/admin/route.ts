@@ -23,8 +23,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Cafe not found' }, { status: 404 });
     }
 
-    // Fetch active shift, expenses, bills, and customers
-    const [activeShift, expenses, bills, customers, menuItems] = await Promise.all([
+    // Fetch active shift, expenses, customers, menu items, and aggregate financial totals
+    const [activeShift, expenses, customers, menuItems, totalSalesAgg, upiSalesAgg, cashSalesAgg] = await Promise.all([
       prisma.cashShift.findFirst({
         where: { cafeId: cafe.id, status: 'OPEN' },
         include: { expenses: { orderBy: { createdAt: 'desc' } } },
@@ -33,10 +33,6 @@ export async function GET(req: NextRequest) {
         where: { cafeId: cafe.id },
         orderBy: { createdAt: 'desc' },
         take: 20,
-      }),
-      prisma.bill.findMany({
-        where: { cafeId: cafe.id, paymentStatus: 'PAID' },
-        orderBy: { createdAt: 'desc' },
       }),
       prisma.customer.findMany({
         where: { cafeId: cafe.id },
@@ -48,14 +44,28 @@ export async function GET(req: NextRequest) {
         include: { category: true },
         orderBy: { name: 'asc' },
       }),
+      prisma.bill.aggregate({
+        where: { cafeId: cafe.id, paymentStatus: 'PAID' },
+        _sum: { total: true },
+        _count: true,
+      }),
+      prisma.bill.aggregate({
+        where: { cafeId: cafe.id, paymentStatus: 'PAID', paymentMethod: 'UPI' },
+        _sum: { total: true },
+      }),
+      prisma.bill.aggregate({
+        where: { cafeId: cafe.id, paymentStatus: 'PAID', paymentMethod: 'CASH' },
+        _sum: { total: true },
+      }),
     ]);
 
     // Financial totals
-    const grossSales = bills.reduce((sum, b) => sum + b.total, 0);
-    const upiSales = bills.filter((b) => b.paymentMethod === 'UPI').reduce((sum, b) => sum + b.total, 0);
-    const cashSales = bills.filter((b) => b.paymentMethod === 'CASH').reduce((sum, b) => sum + b.total, 0);
+    const grossSales = totalSalesAgg._sum.total || 0;
+    const upiSales = upiSalesAgg._sum.total || 0;
+    const cashSales = cashSalesAgg._sum.total || 0;
     const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
     const netCashFlow = grossSales - totalExpenses;
+    const completedTickets = totalSalesAgg._count || 0;
 
     const openingFloat = activeShift?.openingCash || 2000;
     const currentDrawerCash = openingFloat + (activeShift?.cashSales || 0) - (activeShift?.pettyExpenses || 0);
@@ -70,8 +80,8 @@ export async function GET(req: NextRequest) {
         netCashFlow,
         currentDrawerCash,
         openingFloat,
-        completedTickets: bills.length,
-        averageTicket: bills.length > 0 ? Math.round(grossSales / bills.length) : 0,
+        completedTickets,
+        averageTicket: completedTickets > 0 ? Math.round(grossSales / completedTickets) : 0,
       },
       activeShift,
       expenses,
@@ -228,6 +238,10 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Item not found' }, { status: 404 });
       }
 
+      if (existingItem.cafeId !== targetCafeId) {
+        return NextResponse.json({ error: 'Unauthorized to edit this item' }, { status: 403 });
+      }
+
       let categoryId = existingItem.categoryId;
       if (categoryName) {
         let category = await prisma.category.findFirst({
@@ -259,6 +273,18 @@ export async function POST(req: NextRequest) {
     // Delete Menu Item
     if (action === 'delete-menu-item') {
       const { itemId } = body;
+      const item = await prisma.menuItem.findUnique({ where: { id: itemId } });
+      if (!item) return NextResponse.json({ error: 'Item not found' }, { status: 404 });
+      if (item.cafeId !== targetCafeId) {
+        return NextResponse.json({ error: 'Unauthorized to delete this item' }, { status: 403 });
+      }
+
+      // Detach from past order items to prevent Foreign Key constraint crash (P2003)
+      await prisma.orderItem.updateMany({
+        where: { menuItemId: itemId },
+        data: { menuItemId: null },
+      });
+
       await prisma.menuItem.delete({ where: { id: itemId } });
       return NextResponse.json({ success: true });
     }

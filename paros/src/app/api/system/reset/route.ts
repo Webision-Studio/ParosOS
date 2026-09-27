@@ -4,6 +4,18 @@ import { clearSession } from '@/lib/auth-session';
 
 export async function POST(req: NextRequest) {
   try {
+    // Security check: Only allow reset in local development OR with valid ADMIN_RESET_SECRET header
+    const resetSecret = process.env.ADMIN_RESET_SECRET || 'paros-dev-reset-key';
+    const authHeader = req.headers.get('x-reset-secret');
+    const isLocalDev = process.env.NODE_ENV !== 'production';
+
+    if (!isLocalDev && authHeader !== resetSecret) {
+      return NextResponse.json(
+        { error: 'Forbidden. Database reset is disabled in production unless authorized with x-reset-secret header.' },
+        { status: 403 }
+      );
+    }
+
     // 1. Delete all relational data in proper order
     await prisma.bill.deleteMany();
     await prisma.orderItem.deleteMany();

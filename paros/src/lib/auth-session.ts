@@ -1,4 +1,5 @@
 import { cookies } from 'next/headers';
+import crypto from 'crypto';
 
 export interface SessionUser {
   userId: string;
@@ -9,10 +10,17 @@ export interface SessionUser {
 }
 
 const SESSION_COOKIE_NAME = 'paros_session';
+const SECRET_KEY = process.env.AUTH_SECRET || 'paros-super-secret-jwt-key-development-2026';
+
+function signPayload(payload: string): string {
+  return crypto.createHmac('sha256', SECRET_KEY).update(payload).digest('base64url');
+}
 
 export async function createSession(user: SessionUser) {
   const cookieStore = await cookies();
-  const token = Buffer.from(JSON.stringify(user)).toString('base64');
+  const payload = Buffer.from(JSON.stringify(user)).toString('base64url');
+  const signature = signPayload(payload);
+  const token = `${payload}.${signature}`;
   
   cookieStore.set(SESSION_COOKIE_NAME, token, {
     httpOnly: true,
@@ -28,7 +36,22 @@ export async function getSession(): Promise<SessionUser | null> {
     const cookieStore = await cookies();
     const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
     if (!token) return null;
-    
+
+    // Check if token has signature format: payload.signature
+    if (token.includes('.')) {
+      const [payload, signature] = token.split('.');
+      if (!payload || !signature) return null;
+
+      const expectedSig = signPayload(payload);
+      if (signature.length !== expectedSig.length || !crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSig))) {
+        return null; // Tampered or invalid signature
+      }
+
+      const decoded = Buffer.from(payload, 'base64url').toString('utf-8');
+      return JSON.parse(decoded) as SessionUser;
+    }
+
+    // Backwards-compatibility fallback for legacy base64 dev cookies
     const decoded = Buffer.from(token, 'base64').toString('utf-8');
     return JSON.parse(decoded) as SessionUser;
   } catch {
