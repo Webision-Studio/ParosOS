@@ -1,585 +1,1345 @@
 <!DOCTYPE html>
 
-<html class="light" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: 'class', theme: { extend: { colors: { 'on-surface': '#1e1b19', 'error-container': '#ffdad6', 'surface-container-lowest': '#ffffff', 'tertiary-fixed-dim': '#ffb77d', 'on-tertiary-fixed-variant': '#6e3900', 'outline-variant': '#e0bfb7', 'surface-container-low': '#faf2ee', 'tertiary-container': '#b15f00', 'surface': '#fff8f5', 'tertiary': '#8d4b00', 'inverse-surface': '#33302d', 'on-tertiary-fixed': '#2f1500', 'on-secondary-fixed-variant': '#005323', 'inverse-on-surface': '#f7efeb', 'on-background': '#1e1b19', 'on-primary-fixed-variant': '#872000', 'surface-tint': '#aa3614', 'primary-fixed': '#ffdbd1', 'secondary': '#006d30', 'secondary-fixed': '#95f8a7', 'surface-variant': '#e9e1dd', 'primary-fixed-dim': '#ffb5a0', 'on-surface-variant': '#58413b', 'on-primary-fixed': '#3b0900', 'primary-container': '#c84c28', 'primary': '#a63412', 'outline': '#8c716a', 'surface-dim': '#e0d8d5', 'on-secondary': '#ffffff', 'error': '#ba1a1a', 'tertiary-fixed': '#ffdcc3', 'background': '#fff8f5', 'on-secondary-fixed': '#00210a', 'surface-bright': '#fff8f5', 'on-primary-container': '#fffbff', 'surface-container': '#f4ece8', 'inverse-primary': '#ffb5a0', 'on-tertiary': '#ffffff', 'on-error-container': '#93000a', 'surface-container-high': '#eee7e3', 'secondary-fixed-dim': '#79db8d', 'surface-container-highest': '#e9e1dd', 'on-tertiary-container': '#fffbff', 'on-secondary-container': '#007233', 'on-error': '#ffffff', 'secondary-container': '#92f5a4', 'on-primary': '#ffffff' }, borderRadius: { 'DEFAULT': '0.25rem', 'lg': '0.5rem', 'xl': '0.75rem', 'full': '9999px' }, spacing: { 'space-sm': '0.5rem', 'space-lg': '1.5rem', 'gutter': '1.5rem', 'space-md': '1rem', 'space-xs': '0.25rem', 'space-xl': '2.5rem', 'margin-mobile': '1.25rem', 'margin': '2rem', 'gutter-mobile': '1rem' }, fontFamily: { 'body-sm': ['Plus Jakarta Sans'], 'display-hero-mobile': ['Plus Jakarta Sans'], 'headline-lg': ['Plus Jakarta Sans'], 'body-md': ['Plus Jakarta Sans'], 'headline-lg-mobile': ['Plus Jakarta Sans'], 'body-lg': ['Plus Jakarta Sans'], 'label-sm': ['Plus Jakarta Sans'], 'label-md': ['Plus Jakarta Sans'], 'headline-sm': ['Plus Jakarta Sans'], 'headline-md': ['Plus Jakarta Sans'], 'display-hero': ['Plus Jakarta Sans'], 'metric-display': ['Plus Jakarta Sans'] }, fontSize: { 'body-sm': ['13px', { lineHeight: '20px', fontWeight: '400' }], 'display-hero-mobile': ['40px', { lineHeight: '48px', letterSpacing: '-0.025em', fontWeight: '800' }], 'headline-lg': ['44px', { lineHeight: '52px', letterSpacing: '-0.02em', fontWeight: '700' }], 'body-md': ['15px', { lineHeight: '24px', fontWeight: '400' }], 'headline-lg-mobile': ['32px', { lineHeight: '40px', letterSpacing: '-0.015em', fontWeight: '700' }], 'body-lg': ['18px', { lineHeight: '28px', letterSpacing: '-0.005em', fontWeight: '400' }], 'label-sm': ['11px', { lineHeight: '16px', letterSpacing: '0.04em', fontWeight: '700' }], 'label-md': ['14px', { lineHeight: '20px', letterSpacing: '0.01em', fontWeight: '600' }], 'headline-sm': ['20px', { lineHeight: '28px', letterSpacing: '-0.01em', fontWeight: '600' }], 'headline-md': ['28px', { lineHeight: '36px', letterSpacing: '-0.015em', fontWeight: '600' }], 'display-hero': ['64px', { lineHeight: '72px', letterSpacing: '-0.03em', fontWeight: '800' }], 'metric-display': ['36px', { lineHeight: '44px', letterSpacing: '-0.02em', fontWeight: '700' }] } } } };</script><style>@layer base{html,body{width:100vw;margin:0;padding:0;}body{overscroll-behavior-y:none;-webkit-tap-highlight-color:transparent;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style></head><body class="bg-surface text-on-surface font-body-md text-body-md flex flex-col min-h-screen"><header class="fixed top-0 w-full z-50 pt-safe bg-surface/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(28,25,23,0.04)]"><div class="h-16 px-gutter-mobile flex items-center justify-between gap-space-xs"><div class="flex items-center gap-2 min-w-0"><img alt="Brand logo. - Primary color: #e05d38
-- Font: plusJakartaSans
-- Mode: light
-- Roundness: rounded-md
-" class="h-8 w-auto object-contain flex-shrink-0" src="https://lh3.googleusercontent.com/aida/AEtjO1WqxmRE0Nng2UV8YyeG2HA8UbT0Ul8KC8sGV4_F_r5NIYmMrEnApEFh4o_CMOPmBAndX2JadrtB42Gdwy2e0TPgGcBf_Op25c8UbSR0zAJPQDzmSxcwLe_2uE9ZcqYjIh5LNqBFk2B-Kv_sJ1Ja_uzuuKhS5v-XGcyoJSkrdWfsubwQUsWvxM0rgixjuexwoyaLCY0c03VqI5U49IWcc2pq5ROcg9lbizcm9xNEazZJDMQj-sW1xrng2sg"/><div class="flex flex-col min-w-0"><div class="flex items-center gap-1.5"><span class="font-headline-sm text-headline-sm text-on-surface font-bold tracking-tight truncate">Paros</span><span class="hidden sm:inline-block font-label-sm text-label-sm text-on-surface-variant font-medium">/</span><span class="text-xs font-label-sm font-semibold text-primary truncate hidden xs:inline">Landing</span></div><div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span><span class="font-label-sm text-label-sm uppercase tracking-wider text-secondary font-bold text-[10px] leading-none">Offline PWA</span></div></div></div><div class="flex items-center gap-2 flex-shrink-0"><a class="h-9 px-3.5 rounded-lg bg-primary text-on-primary font-label-md text-label-md flex items-center justify-center transition-transform active:scale-95 shadow-[0_2px_8px_rgba(166,52,18,0.18)]" data-path="sign-up" href="#"><span class="material-symbols-outlined text-[16px] mr-1">bolt</span>Try Free</a><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0 shadow-sm"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="flex-1 flex flex-col relative w-full pt-16 pb-20 bg-surface min-h-screen"><div class="flex flex-col w-full px-margin-mobile pb-space-xl gap-y-space-xl">
-<!-- HERO SECTION -->
-<section class="flex flex-col pt-space-md gap-y-space-md">
-<!-- Floating Badges Stack -->
-<div class="flex flex-wrap gap-1.5 items-center">
-<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-secondary-fixed text-on-secondary-fixed text-[11px] font-label-sm font-bold tracking-tight shadow-sm">
-<span class="material-symbols-outlined text-[13px]">bolt</span> Zero Hardware Lock-In
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100vw;margin:0;padding:0;background-color:#fff8f5;scroll-behavior:smooth;}body{overscroll-behavior:none;-webkit-tap-highlight-color:transparent;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "surface-bright": "#fff8f5", "on-background": "#1e1b19", "on-secondary": "#ffffff", "outline": "#8c716a", "tertiary-fixed-dim": "#ffb77d", "on-secondary-container": "#007233", "secondary-container": "#92f5a4", "surface-container-lowest": "#ffffff", "background": "#fff8f5", "on-tertiary": "#ffffff", "surface-tint": "#aa3614", "secondary-fixed": "#95f8a7", "inverse-primary": "#ffb5a0", "error-container": "#ffdad6", "on-primary-container": "#fffbff", "primary-container": "#c84c28", "surface-container-highest": "#e9e1dd", "on-primary-fixed": "#3b0900", "on-tertiary-container": "#fffbff", "surface-dim": "#e0d8d5", "outline-variant": "#e0bfb7", "surface": "#fff8f5", "on-secondary-fixed": "#00210a", "primary-fixed-dim": "#ffb5a0", "on-error-container": "#93000a", "surface-container-high": "#eee7e3", "on-primary-fixed-variant": "#872000", "on-error": "#ffffff", "secondary-fixed-dim": "#79db8d", "surface-variant": "#e9e1dd", "error": "#ba1a1a", "on-secondary-fixed-variant": "#005323", "tertiary-container": "#b15f00", "surface-container": "#f4ece8", "tertiary-fixed": "#ffdcc3", "on-surface": "#1e1b19", "primary": "#a63412", "on-tertiary-fixed-variant": "#6e3900", "primary-fixed": "#ffdbd1", "surface-container-low": "#faf2ee", "on-tertiary-fixed": "#2f1500", "inverse-on-surface": "#f7efeb", "inverse-surface": "#33302d", "on-primary": "#ffffff", "tertiary": "#8d4b00", "secondary": "#006d30", "on-surface-variant": "#58413b" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "space-sm": "0.5rem", "margin-mobile": "1.25rem", "space-lg": "1.5rem", "margin": "2rem", "gutter-mobile": "1rem", "space-md": "1rem", "space-xl": "2.5rem", "space-xs": "0.25rem", "gutter": "1.5rem" }, fontFamily: { "headline-md": ["Plus Jakarta Sans"], "display-hero": ["Plus Jakarta Sans"], "headline-sm": ["Plus Jakarta Sans"], "body-md": ["Plus Jakarta Sans"], "metric-display": ["Plus Jakarta Sans"], "body-sm": ["Plus Jakarta Sans"], "label-md": ["Plus Jakarta Sans"], "label-sm": ["Plus Jakarta Sans"], "display-hero-mobile": ["Plus Jakarta Sans"], "headline-lg": ["Plus Jakarta Sans"], "headline-lg-mobile": ["Plus Jakarta Sans"], "body-lg": ["Plus Jakarta Sans"] }, fontSize: { "headline-md": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.015em", "fontWeight": "600" }], "display-hero": ["64px", { "lineHeight": "72px", "letterSpacing": "-0.03em", "fontWeight": "800" }], "headline-sm": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "body-md": ["15px", { "lineHeight": "24px", "fontWeight": "400" }], "metric-display": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "body-sm": ["13px", { "lineHeight": "20px", "fontWeight": "400" }], "label-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }], "label-sm": ["11px", { "lineHeight": "16px", "letterSpacing": "0.04em", "fontWeight": "700" }], "display-hero-mobile": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.025em", "fontWeight": "800" }], "headline-lg": ["44px", { "lineHeight": "52px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "headline-lg-mobile": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.015em", "fontWeight": "700" }], "body-lg": ["18px", { "lineHeight": "28px", "letterSpacing": "-0.005em", "fontWeight": "400" }] } } } };</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+    .retro-shadow-sm {
+      box-shadow: 2px 2px 0px #1c1917;
+    }
+    .retro-shadow {
+      box-shadow: 3.5px 3.5px 0px #1c1917;
+    }
+    .retro-shadow-lg {
+      box-shadow: 5px 5px 0px #1c1917;
+    }
+    .neo-press {
+      transition: transform 0.08s ease, box-shadow 0.08s ease;
+    }
+    .neo-press:active {
+      transform: translate(2px, 2px);
+      box-shadow: 0px 0px 0px #1c1917 !important;
+    }
+    @keyframes marquee {
+      0% { transform: translate3d(0, 0, 0); }
+      100% { transform: translate3d(-50%, 0, 0); }
+    }
+    .animate-marquee {
+      display: inline-flex;
+      width: max-content;
+      animation: marquee 24s linear infinite;
+      will-change: transform;
+    }
+    .animate-marquee:hover {
+      animation-play-state: paused;
+    }
+    @keyframes bounce-scale {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.03); }
+    }
+    .scale-pop {
+      animation: bounce-scale 0.35s ease-out;
+    }
+    @keyframes flash-in {
+      0% { background-color: #ffdbd1; }
+      100% { background-color: transparent; }
+    }
+    .item-flash {
+      animation: flash-in 0.6s ease-out;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .animate-marquee { animation: none; }
+      .neo-press:active { transform: none; }
+      .scale-pop { animation: none; }
+      * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+    }
+  </style></head><body class="bg-surface font-body-md text-on-surface flex flex-col min-h-screen relative"><header class="fixed top-0 w-full z-50 pt-safe bg-surface/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] border-b border-black/10"><div class="h-16 px-margin-mobile flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-sm min-w-0"><img alt="Brand logo. - Primary color: #e05d38 - Font: plusJakartaSans - Mode: light - Roundness: rounded-md" class="h-8 w-auto object-contain flex-shrink-0" src="https://lh3.googleusercontent.com/aida/AEtjO1W8nFGF9b9sQZs3er7maIbg5qfX5sd9zU7d3cZLihypv-R_D7aehjDD5mPn1jRzOWM2UVFS__1PCKUf2OL5D8A9zSTswvJGwq8Bx6iWiLmSAQuSDQCc4LADuh1bSkCZ8qPT55E2P073mbNZT1o05AKhfCZrobPW9PPY4RIZkflvpvW41U2iScnAOD9vM76BpNCOAgrv7wjAXoVzFCCrfGBaplaGuNGAgItQNWITuIsoMV_MGfCB0wmQp5Q"/><div class="flex flex-col min-w-0"><div class="flex items-center gap-1.5"><span class="font-headline-sm text-headline-sm text-on-surface tracking-tight truncate">Paros</span><span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-[10px] uppercase font-bold leading-none border border-black/20"><span class="w-1.5 h-1.5 rounded-full bg-secondary animate-ping inline-block"></span><span class="w-1.5 h-1.5 rounded-full bg-secondary inline-block -ml-2.5"></span>PWA READY</span></div><span class="font-label-sm text-[11px] text-on-surface-variant truncate uppercase tracking-wider font-semibold">Home • v2.4 Live</span></div></div><div class="flex items-center gap-space-xs flex-shrink-0"><button class="h-9 px-3 rounded-lg bg-primary text-on-primary font-label-md text-label-md inline-flex items-center justify-center neo-press retro-shadow-sm border-2 border-black whitespace-nowrap active:scale-95" onclick="showToast('⚡ Instant 180s setup trial initialized!')">Try Free</button><div class="w-8 h-8 rounded-full bg-primary border-2 border-black flex items-center justify-center flex-shrink-0 cursor-pointer neo-press" onclick="showToast('👤 Rohan logged into Espresso Station 1')"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="flex flex-col relative w-full pt-16 pb-24 bg-surface min-h-screen"><div class="flex flex-col w-full text-on-surface">
+<!-- 1. TOP TICKER / MARQUEE BANNER -->
+<div class="w-full bg-[#1c1917] text-white py-2 overflow-hidden border-b-2 border-black flex items-center select-none shadow-sm">
+<div class="flex items-center gap-6 whitespace-nowrap animate-marquee font-label-md tracking-wider text-xs font-bold uppercase">
+<span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span> ZERO HARDWARE MANDATE</span>
+<span class="text-[#f97316]">•</span>
+<span>📱 WHATSAPP GST BILLING IN &lt; 1 SEC</span>
+<span class="text-[#22c55e]">•</span>
+<span>0% UPI TRANSACTION TAX</span>
+<span class="text-[#f97316]">•</span>
+<span>🚀 PETPOOJA KILLER: RUN FOR ₹499/MO</span>
+<span class="text-[#22c55e]">•</span>
+<span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span> ZERO HARDWARE MANDATE</span>
+<span class="text-[#f97316]">•</span>
+<span>📱 WHATSAPP GST BILLING IN &lt; 1 SEC</span>
+<span class="text-[#22c55e]">•</span>
+<span>0% UPI TRANSACTION TAX</span>
+<span class="text-[#f97316]">•</span>
+<span>🚀 PETPOOJA KILLER: RUN FOR ₹499/MO</span>
+<span class="text-[#22c55e]">•</span>
+<span>⚡ ZERO HARDWARE MANDATE</span>
+<span class="text-[#f97316]">•</span>
+<span>📱 WHATSAPP GST BILLING IN &lt; 1 SEC</span>
+</div>
+</div>
+<!-- 2. HERO SECTION -->
+<section class="px-margin-mobile pt-6 pb-8 flex flex-col gap-5">
+<!-- Badges Row -->
+<div class="flex flex-wrap items-center gap-2">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-high border-2 border-black text-on-surface font-label-sm uppercase tracking-wider retro-shadow-sm font-bold">
+<span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-primary"></span></span>
+        Made for Indian Cafe Hustlers
       </span>
-<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-tertiary-fixed text-on-tertiary-fixed text-[11px] font-label-sm font-bold tracking-tight shadow-sm">
-<span class="material-symbols-outlined text-[13px]">chat</span> 100% WhatsApp Bills
-      </span>
-<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface-variant text-[11px] font-label-sm font-bold tracking-tight shadow-sm">
-        🇮🇳 For Indian Cafe Hustlers
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary-container border-2 border-black text-on-secondary-container font-label-sm uppercase tracking-wider retro-shadow-sm font-bold">
+<span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+        ⚡ Zero Hardware Lock-in
       </span>
 </div>
 <!-- Main Headline -->
-<div class="flex flex-col gap-y-2 mt-1">
-<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface font-extrabold tracking-tight leading-[1.15]">
-        Stop paying <span class="line-through decoration-primary decoration-4 text-on-surface-variant/70">₹40,000/yr</span> to bulky old-school POS.
-      </h1>
-<!-- Impact Container -->
-<div class="bg-primary text-on-primary rounded-xl p-3.5 shadow-md flex items-center justify-between gap-2">
-<div class="flex flex-col">
-<span class="text-[11px] uppercase tracking-wider font-label-sm font-semibold opacity-90">Micro-Roaster Freedom</span>
-<span class="font-headline-sm text-headline-sm font-black tracking-tight text-white">Run your cafe for ₹499/mo.</span>
-</div>
-<div class="w-10 h-10 rounded-lg bg-surface-container-lowest/20 flex items-center justify-center flex-shrink-0">
-<span class="material-symbols-outlined text-white text-[24px]">coffee</span>
-</div>
-</div>
-<p class="font-body-md text-body-md text-on-surface-variant mt-1 leading-relaxed">
-        Throw away clunky Windows towers, paper rolls, and lost KOT tickets. Turn any mobile phone, iPad, or cheap laptop into a blazing-fast register in 90 seconds.
-      </p>
-</div>
-<!-- Mobile CTAs -->
-<div class="flex flex-col gap-2.5 mt-1">
-<a class="h-14 w-full rounded-xl bg-primary text-on-primary font-label-md text-label-md flex items-center justify-center gap-2 shadow-md active:scale-[0.98] transition-transform" data-path="sign-up" href="#">
-<span class="font-bold text-[16px]">Launch Cafe in 2 Mins 🚀</span>
-</a>
-<a class="h-12 w-full rounded-xl bg-surface-container-low text-on-surface font-label-md text-label-md flex items-center justify-center gap-2 shadow-sm active:scale-[0.98] transition-transform" href="#simulator">
-<span class="material-symbols-outlined text-primary text-[18px]">bolt</span>
-<span class="font-bold">Test Live Interactive Demo</span>
-</a>
-</div>
-<!-- Trust Guarantees -->
-<div class="flex flex-wrap items-center justify-between gap-y-1.5 px-1 pt-1 text-on-surface-variant text-[11px] font-label-sm">
-<span class="flex items-center gap-1 font-semibold text-secondary">
-<span class="material-symbols-outlined text-[15px]">check_circle</span> No Card Required
-      </span>
-<span class="flex items-center gap-1 font-semibold">
-<span class="material-symbols-outlined text-[15px] text-secondary">verified</span> 14-Day Free Trial
-      </span>
-<span class="flex items-center gap-1 font-semibold">
-<span class="material-symbols-outlined text-[15px] text-secondary">timer</span> Setup in 180s
-      </span>
-</div>
-<!-- Key Metrics Grid -->
-<div class="grid grid-cols-2 gap-2 mt-2">
-<div class="bg-surface-container-lowest p-3 rounded-xl shadow-sm flex flex-col justify-between">
-<div class="flex items-center justify-between">
-<span class="font-metric-display text-[22px] font-extrabold text-on-surface leading-none">₹0</span>
-<span class="material-symbols-outlined text-secondary text-[20px]">devices_off</span>
-</div>
-<span class="text-[12px] font-label-sm font-bold text-on-surface-variant mt-2 leading-tight">Hardware Investment</span>
-</div>
-<div class="bg-surface-container-lowest p-3 rounded-xl shadow-sm flex flex-col justify-between">
-<div class="flex items-center justify-between">
-<span class="font-metric-display text-[22px] font-extrabold text-on-surface leading-none">&lt; 1s</span>
-<span class="material-symbols-outlined text-tertiary text-[20px]">send_time_extension</span>
-</div>
-<span class="text-[12px] font-label-sm font-bold text-on-surface-variant mt-2 leading-tight">WhatsApp Bill Speed</span>
-</div>
-<div class="bg-surface-container-lowest p-3 rounded-xl shadow-sm flex flex-col justify-between">
-<div class="flex items-center justify-between">
-<span class="font-metric-display text-[22px] font-extrabold text-secondary leading-none">0%</span>
-<span class="material-symbols-outlined text-secondary text-[20px]">currency_rupee</span>
-</div>
-<span class="text-[12px] font-label-sm font-bold text-on-surface-variant mt-2 leading-tight">UPI MDR Cut / Tax</span>
-</div>
-<div class="bg-surface-container-lowest p-3 rounded-xl shadow-sm flex flex-col justify-between">
-<div class="flex items-center justify-between">
-<span class="font-metric-display text-[22px] font-extrabold text-primary leading-none">100%</span>
-<span class="material-symbols-outlined text-primary text-[20px]">cloud_off</span>
-</div>
-<span class="text-[12px] font-label-sm font-bold text-on-surface-variant mt-2 leading-tight">Offline PWA Sync</span>
-</div>
-</div>
-</section>
-<!-- TRUSTED BY SECTION -->
-<section class="flex flex-col gap-y-2.5">
-<div class="flex items-center gap-2">
-<span class="w-2 h-2 rounded-full bg-secondary"></span>
-<h3 class="text-[11px] font-label-sm font-extrabold tracking-wider uppercase text-on-surface-variant">
-        Trusted by 150+ Indie Cafes &amp; Roasters
-      </h3>
-</div>
-<div class="flex overflow-x-auto gap-2 pb-1 -mx-margin-mobile px-margin-mobile no-scrollbar">
-<div class="flex-shrink-0 bg-surface-container-lowest px-3.5 py-2 rounded-full shadow-sm flex items-center gap-2">
-<span class="text-base">☕</span>
-<span class="text-xs font-label-md font-bold text-on-surface">RoastCraft</span>
-<span class="text-[10px] font-label-sm text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-full">Indiranagar</span>
-</div>
-<div class="flex-shrink-0 bg-surface-container-lowest px-3.5 py-2 rounded-full shadow-sm flex items-center gap-2">
-<span class="text-base">🥐</span>
-<span class="text-xs font-label-md font-bold text-on-surface">Sourdough Co.</span>
-<span class="text-[10px] font-label-sm text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-full">Bandra</span>
-</div>
-<div class="flex-shrink-0 bg-surface-container-lowest px-3.5 py-2 rounded-full shadow-sm flex items-center gap-2">
-<span class="text-base">🌴</span>
-<span class="text-xs font-label-md font-bold text-on-surface">Blue Palm Brew</span>
-<span class="text-[10px] font-label-sm text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-full">Goa</span>
-</div>
-<div class="flex-shrink-0 bg-surface-container-lowest px-3.5 py-2 rounded-full shadow-sm flex items-center gap-2">
-<span class="text-base">⚡</span>
-<span class="text-xs font-label-md font-bold text-on-surface">Third Wave Lab</span>
-<span class="text-[10px] font-label-sm text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-full">Delhi</span>
-</div>
-</div>
-</section>
-<!-- INTERACTIVE SIMULATOR PREVIEW -->
-<section class="flex flex-col gap-y-3" id="simulator">
-<div class="flex items-center justify-between">
-<div>
-<span class="text-[11px] font-label-sm font-bold text-primary uppercase tracking-wider">Live Simulator</span>
-<h2 class="font-headline-sm text-headline-sm font-bold text-on-surface">One OS. Three Realities.</h2>
-</div>
-<span class="px-2 py-0.5 rounded bg-secondary-fixed text-on-secondary-fixed text-[10px] font-label-sm font-black uppercase">Active</span>
-</div>
-<!-- Perspectives Switcher -->
-<div class="grid grid-cols-3 gap-1 p-1 bg-surface-container rounded-xl shadow-inner text-center">
-<button class="py-2 rounded-lg bg-surface-container-lowest shadow-sm text-primary font-label-sm text-xs font-bold transition-all" id="tab-counter" onclick="switchSimulatorTab('counter')">
-        1. Counter
-      </button>
-<button class="py-2 rounded-lg text-on-surface-variant font-label-sm text-xs font-semibold transition-all" id="tab-kds" onclick="switchSimulatorTab('kds')">
-        2. KDS
-      </button>
-<button class="py-2 rounded-lg text-on-surface-variant font-label-sm text-xs font-semibold transition-all" id="tab-qr" onclick="switchSimulatorTab('qr')">
-        3. Table QR
-      </button>
-</div>
-<!-- Simulator Screen Container -->
-<div class="bg-surface-container-lowest rounded-2xl p-4 shadow-md flex flex-col gap-3">
-<!-- Screen Header -->
-<div class="flex items-center justify-between bg-surface-container-low px-3 py-2 rounded-xl">
-<div class="flex items-center gap-2">
-<div class="w-2.5 h-2.5 rounded-full bg-secondary animate-ping"></div>
-<span class="text-xs font-label-sm font-bold text-on-surface tracking-tight" id="sim-station-label">Morning Brew Station #01</span>
-</div>
-<span class="text-[11px] font-label-sm font-bold bg-primary-fixed text-on-primary-fixed px-2 py-0.5 rounded-md" id="sim-table-badge">Table 04 (Dine-In)</span>
-</div>
-<!-- Live Order Items List -->
-<div class="flex flex-col gap-2 py-1" id="sim-order-list">
-<div class="flex items-center justify-between text-xs">
-<div class="flex items-center gap-2">
-<span class="w-5 h-5 rounded bg-primary-fixed text-primary font-bold flex items-center justify-center text-[10px]">1x</span>
-<span class="font-body-md font-semibold text-on-surface">Oat Flat White</span>
-</div>
-<span class="font-body-md font-bold text-on-surface">₹220.00</span>
-</div>
-<div class="flex items-center justify-between text-xs">
-<div class="flex items-center gap-2">
-<span class="w-5 h-5 rounded bg-primary-fixed text-primary font-bold flex items-center justify-center text-[10px]">1x</span>
-<span class="font-body-md font-semibold text-on-surface">Specialty Pour Over (Ratnagiri)</span>
-</div>
-<span class="font-body-md font-bold text-on-surface">₹260.00</span>
-</div>
-<div class="flex items-center justify-between text-xs">
-<div class="flex items-center gap-2">
-<span class="w-5 h-5 rounded bg-primary-fixed text-primary font-bold flex items-center justify-center text-[10px]">1x</span>
-<span class="font-body-md font-semibold text-on-surface">Almond Butter Croissant</span>
-</div>
-<span class="font-body-md font-bold text-on-surface">₹180.00</span>
-</div>
-</div>
-<!-- Bill Breakdown Box -->
-<div class="bg-surface-container p-3 rounded-xl flex flex-col gap-1.5 text-xs">
-<div class="flex justify-between text-on-surface-variant font-body-sm">
-<span>Subtotal (3 items)</span>
-<span>₹660.00</span>
-</div>
-<div class="flex justify-between text-on-surface-variant font-body-sm">
-<span>Restaurant GST (5%)</span>
-<span>₹33.00</span>
-</div>
-<div class="flex justify-between text-on-surface-variant font-body-sm">
-<span>Service Packaging</span>
-<span>₹42.00</span>
-</div>
-<div class="flex justify-between items-center pt-2 font-headline-sm text-headline-sm font-extrabold text-on-surface">
-<span>Grand Total</span>
-<span class="text-primary" id="sim-total-price">₹735.00</span>
-</div>
-</div>
-<!-- Simulator Action Button -->
-<button class="h-12 w-full rounded-xl bg-secondary text-on-secondary font-label-md text-label-md font-bold flex items-center justify-center gap-2 shadow-sm active:scale-[0.98] transition-transform" id="sim-send-bill-btn" onclick="triggerWhatsAppModal()">
-<span class="material-symbols-outlined text-[19px]">chat</span>
-<span id="sim-btn-text">Send WhatsApp GST Bill</span>
-</button>
-<div class="hidden text-center text-xs font-bold text-secondary bg-secondary-fixed/50 py-1.5 rounded-lg animate-pulse" id="sim-status-banner">
-        ✓ WhatsApp Tax Bill dispatched in 0.8s!
-      </div>
-</div>
-</section>
-<!-- THE LEGACY POS TAX VS PAROS -->
-<section class="flex flex-col gap-y-3">
-<div class="flex flex-col">
-<span class="text-[11px] font-label-sm font-bold text-error uppercase tracking-wider">Unfiltered Cost Reality</span>
-<h2 class="font-headline-sm text-headline-sm font-bold text-on-surface">The Legacy Windows POS Tax vs. Paros</h2>
-<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Calculate real annual cash bleed on thermal paper, gateway commissions, and AMC renewals.</p>
-</div>
-<!-- Daily Orders Calculator Widget -->
-<div class="bg-surface-container-lowest p-4 rounded-2xl shadow-sm flex flex-col gap-2.5">
-<div class="flex items-center justify-between">
-<span class="text-xs font-label-md font-bold text-on-surface">Simulated Volume:</span>
-<span class="text-xs font-label-md font-extrabold text-primary bg-primary-fixed px-2.5 py-1 rounded-md" id="calc-volume-label">80 orders / day (12 tables)</span>
-</div>
-<input class="w-full accent-primary h-2 bg-surface-container rounded-lg cursor-pointer" id="order-slider" max="250" min="30" oninput="updateCostComparison(this.value)" step="10" type="range" value="80"/>
-<div class="flex justify-between text-[10px] text-on-surface-variant font-bold">
-<span>30 / day (Cozy)</span>
-<span>120 / day (Busy)</span>
-<span>250+ / day (Rush)</span>
-</div>
-</div>
-<!-- Side-by-side or Stacked Cost Cards -->
-<div class="flex flex-col gap-3">
-<!-- Old School Card -->
-<div class="bg-surface-container-lowest p-4 rounded-2xl shadow-sm flex flex-col gap-2.5 opacity-90">
-<div class="flex items-center justify-between pb-1">
-<div class="flex items-center gap-1.5">
-<span class="material-symbols-outlined text-error text-[18px]">desktop_access_disabled</span>
-<span class="font-label-md font-bold text-on-surface text-sm">Old-School Windows POS</span>
-</div>
-<span class="text-[10px] font-label-sm font-extrabold text-error bg-error-container px-2 py-0.5 rounded-full uppercase">Capital Trap</span>
-</div>
-<div class="flex flex-col gap-1.5 text-xs text-on-surface-variant">
-<div class="flex justify-between"><span>Annual Software Lock-in</span><span class="font-semibold text-on-surface">₹20,000</span></div>
-<div class="flex justify-between"><span>Desktop Tower + Touch Screen</span><span class="font-semibold text-on-surface">₹35,000</span></div>
-<div class="flex justify-between"><span>Thermal Paper Rolls (BPA Toxic)</span><span class="font-semibold text-error" id="legacy-paper-cost">₹32,850</span></div>
-<div class="flex justify-between"><span>Aggregator Cut (1.5% MDR)</span><span class="font-semibold text-error" id="legacy-mdr-cost">₹1,22,640</span></div>
-<div class="flex justify-between"><span>Mandatory Local Technician AMC</span><span class="font-semibold text-on-surface">₹4,500</span></div>
-</div>
-<div class="pt-2 bg-surface-container-low p-2.5 rounded-xl flex items-center justify-between">
-<span class="font-label-sm font-bold text-xs text-on-surface">Total Year 1 Bleed:</span>
-<span class="font-headline-sm text-headline-sm font-black text-error" id="legacy-total-cost">₹2,14,990</span>
-</div>
-</div>
-<!-- Paros Card -->
-<div class="bg-surface-container-lowest p-4 rounded-2xl shadow-md flex flex-col gap-2.5">
-<div class="flex items-center justify-between pb-1">
-<div class="flex items-center gap-1.5">
-<span class="material-symbols-outlined text-secondary text-[20px]">verified</span>
-<span class="font-label-md font-extrabold text-on-surface text-base">Paros Cafe OS</span>
-</div>
-<span class="text-[10px] font-label-sm font-extrabold text-secondary bg-secondary-fixed px-2 py-0.5 rounded-full uppercase">Pure Delight</span>
-</div>
-<div class="flex flex-col gap-1.5 text-xs text-on-surface-variant">
-<div class="flex justify-between"><span>Unlimited Cloud OS (Annual)</span><span class="font-semibold text-on-surface">₹4,999</span></div>
-<div class="flex justify-between"><span>Hardware Terminal</span><span class="font-bold text-secondary">₹0 (Use phone/tablet)</span></div>
-<div class="flex justify-between"><span>Thermal Paper Paper Rolls</span><span class="font-bold text-secondary">₹0 (WhatsApp Direct)</span></div>
-<div class="flex justify-between"><span>Direct UPI QR Processing</span><span class="font-bold text-secondary">₹0 (0% MDR direct)</span></div>
-<div class="flex justify-between"><span>Maintenance &amp; Upgrades</span><span class="font-bold text-secondary">₹0 Included Lifetime</span></div>
-</div>
-<div class="pt-2 bg-secondary-fixed/40 p-2.5 rounded-xl flex items-center justify-between">
-<span class="font-label-sm font-bold text-xs text-on-secondary-fixed">Total Year 1 Cost:</span>
-<span class="font-headline-sm text-headline-sm font-black text-secondary">₹4,999</span>
-</div>
-</div>
-<!-- Highlight Savings Banner -->
-<div class="bg-secondary p-3.5 rounded-xl text-on-secondary shadow-md flex items-center justify-between gap-2">
-<div class="flex flex-col">
-<span class="text-[11px] font-label-sm font-semibold uppercase opacity-90">First Year ROI</span>
-<span class="font-headline-sm text-headline-sm font-black" id="net-savings-label">Save ₹2,09,991 / yr</span>
-</div>
-<a class="h-10 px-3 bg-surface-container-lowest text-on-surface rounded-lg font-label-sm text-xs font-bold flex items-center justify-center gap-1 shadow-sm active:scale-95" data-path="sign-up" href="#">
-          Switch Now <span class="material-symbols-outlined text-[15px]">arrow_forward</span>
-</a>
-</div>
-</div>
-</section>
-<!-- SUNDAY BRUSH RUSHES (FEATURE GRID) -->
-<section class="flex flex-col gap-y-3">
-<div class="flex flex-col">
-<span class="text-[11px] font-label-sm font-bold text-primary uppercase tracking-wider">Chaos-Proof Engineering</span>
-<h2 class="font-headline-sm text-headline-sm font-bold text-on-surface">Engineered for Sunday Brunch Rushes</h2>
-<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Designed inside real noisy kitchens, not in comfortable design studios.</p>
-</div>
-<div class="flex flex-col gap-3">
-<!-- Feature Card 1 -->
-<div class="bg-surface-container-lowest p-4 rounded-2xl shadow-sm flex flex-col gap-2">
-<div class="w-10 h-10 rounded-xl bg-primary-fixed text-primary flex items-center justify-center">
-<span class="material-symbols-outlined text-[22px]">qr_code_2</span>
-</div>
-<h3 class="font-label-md text-base font-bold text-on-surface">Universal Single Table QR</h3>
-<p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
-          Print exactly 1 single QR artwork for your entire cafe. Guests scan and pick table number or counter takeaway. Zero sticker-swapping fraud, zero table reprogramming hassles.
-        </p>
-</div>
-<!-- Feature Card 2 -->
-<div class="bg-surface-container-lowest p-4 rounded-2xl shadow-sm flex flex-col gap-2">
-<div class="w-10 h-10 rounded-xl bg-tertiary-fixed text-tertiary flex items-center justify-center">
-<span class="material-symbols-outlined text-[22px]">timer</span>
-</div>
-<h3 class="font-label-md text-base font-bold text-on-surface">1-Tap Chef ETA Countdowns</h3>
-<p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
-          Barista running 8 minutes behind on pour-overs? Tap "+5m" directly on the KDS tablet. Diners instantly see live live status timers on their phone, completely ending aggressive hand-waving.
-        </p>
-</div>
-<!-- Feature Card 3 -->
-<div class="bg-surface-container-lowest p-4 rounded-2xl shadow-sm flex flex-col gap-2">
-<div class="w-10 h-10 rounded-xl bg-secondary-fixed text-secondary flex items-center justify-center">
-<span class="material-symbols-outlined text-[22px]">receipt_long</span>
-</div>
-<h3 class="font-label-md text-base font-bold text-on-surface">100% Paperless WhatsApp Bills</h3>
-<p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
-          Official GST-compliant tax invoices pinged straight to the customer's WhatsApp chat. Eliminates ₹3,000/mo toxic thermal roll waste while automatically gathering opt-in repeat visit CRM data.
-        </p>
-</div>
-<!-- Feature Card 4 -->
-<div class="bg-surface-container-lowest p-4 rounded-2xl shadow-sm flex flex-col gap-2">
-<div class="w-10 h-10 rounded-xl bg-surface-container-high text-on-surface flex items-center justify-center">
-<span class="material-symbols-outlined text-[22px]">payments</span>
-</div>
-<h3 class="font-label-md text-base font-bold text-on-surface">Shift Cash Lock &amp; Petty Cash</h3>
-<p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
-          Conduct flawless blind cash audits at day end. Staff log emergency fresh milk and ice runs in 2 fast taps so your till balances penny-perfect every midnight.
-        </p>
-</div>
-</div>
-</section>
-<!-- INDIE FRIENDLY PRICING -->
-<section class="flex flex-col gap-y-3">
-<div class="text-center flex flex-col items-center">
-<span class="text-[11px] font-label-sm font-bold text-primary uppercase tracking-wider">Transparent Fair Pricing</span>
-<h2 class="font-headline-sm text-headline-sm font-bold text-on-surface">Simple, Honest Cafe Plans</h2>
-<p class="font-body-sm text-body-sm text-on-surface-variant mt-1 max-w-xs">Never pay per-terminal license fees again.</p>
-</div>
-<!-- Billing Interval Toggle -->
-<div class="flex items-center justify-center gap-1 p-1 bg-surface-container rounded-xl mx-auto shadow-inner">
-<button class="px-4 py-1.5 rounded-lg text-xs font-label-sm font-semibold text-on-surface-variant transition-all" id="price-btn-monthly" onclick="switchPricing('monthly')">Monthly</button>
-<button class="px-4 py-1.5 rounded-lg text-xs font-label-sm font-bold bg-surface-container-lowest text-primary shadow-sm transition-all flex items-center gap-1" id="price-btn-annual" onclick="switchPricing('annual')">
-        Annual (2 Mo Free) ★
-      </button>
-</div>
-<!-- Main Hero Pricing Card -->
-<div class="bg-surface-container-lowest rounded-2xl p-5 shadow-lg flex flex-col gap-4 relative overflow-hidden">
-<!-- Decorative Accent Bar -->
-<div class="absolute top-0 left-0 right-0 h-1.5 bg-primary"></div>
-<div class="flex items-start justify-between pt-1">
-<div>
-<span class="text-[10px] font-label-sm font-black uppercase tracking-wider text-primary bg-primary-fixed px-2 py-0.5 rounded">Barista Favorite</span>
-<h3 class="font-headline-sm text-lg font-extrabold text-on-surface mt-1">Full Dine-In &amp; Brewpub</h3>
-<p class="text-xs text-on-surface-variant">Unlimited orders, tables &amp; kitchen screens</p>
-</div>
-</div>
-<!-- Price Output -->
-<div class="flex items-baseline gap-1">
-<span class="font-metric-display text-4xl font-extrabold text-on-surface tracking-tight" id="pricing-amt">₹8,499</span>
-<span class="text-xs font-label-md text-on-surface-variant font-semibold" id="pricing-period">/ year (Effective ₹708/mo)</span>
-</div>
-<!-- Features Checkmarks -->
-<div class="flex flex-col gap-2 pt-2 text-xs font-body-sm text-on-surface">
-<div class="flex items-center gap-2">
-<span class="material-symbols-outlined text-secondary text-[18px]">check_circle</span>
-<span>Universal Single Table QR Dine-In &amp; Ordering</span>
-</div>
-<div class="flex items-center gap-2">
-<span class="material-symbols-outlined text-secondary text-[18px]">check_circle</span>
-<span>Barista Kitchen Display System (KDS) with ETA timers</span>
-</div>
-<div class="flex items-center gap-2">
-<span class="material-symbols-outlined text-secondary text-[18px]">check_circle</span>
-<span>Direct WhatsApp Automated GST Invoicing</span>
-</div>
-<div class="flex items-center gap-2">
-<span class="material-symbols-outlined text-secondary text-[18px]">check_circle</span>
-<span>Multi-Device Real-Time Cloud Sync (iOS, Android, Mac)</span>
-</div>
-<div class="flex items-center gap-2">
-<span class="material-symbols-outlined text-secondary text-[18px]">check_circle</span>
-<span>Automatic Google Reviews Booster on bill payment</span>
-</div>
-<div class="flex items-center gap-2">
-<span class="material-symbols-outlined text-secondary text-[18px]">check_circle</span>
-<span>Priority WhatsApp VIP On-Call Support</span>
-</div>
-</div>
-<!-- CTA -->
-<a class="h-14 w-full rounded-xl bg-primary text-on-primary font-label-md text-label-md font-bold flex items-center justify-center gap-2 shadow-md active:scale-[0.98] transition-transform mt-1" data-path="sign-up" href="#">
-        Start 14-Day Free Trial <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
-</a>
-<!-- Guarantees Pills -->
-<div class="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] font-label-sm text-on-surface-variant pt-1 text-center">
-<span>✓ Zero Hardware Lock-In</span>
-<span>✓ 0% UPI Commission</span>
-<span>✓ Instant 1-Click Cancel</span>
-</div>
-</div>
-</section>
-<!-- TESTIMONIAL QUOTE CARD -->
-<section class="bg-surface-container-lowest p-5 rounded-2xl shadow-sm flex flex-col gap-3">
-<div class="flex items-center gap-1 text-tertiary">
-<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
-<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
-<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
-<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
-<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span>
-</div>
-<blockquote class="font-headline-sm text-headline-sm font-extrabold text-on-surface leading-snug">
-      “We threw our Windows thermal terminal in the recycling bin on day 4.”
-    </blockquote>
-<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">
-      “We were burning over ₹3,000 every single month on toxic paper rolls alone. Paros WhatsApp digital bills paid for the entire yearly software subscription within the very first 7 days of running morning crowds.”
-    </p>
-<div class="flex items-center gap-3 pt-2">
-<div class="w-11 h-11 rounded-full bg-primary-fixed flex items-center justify-center text-primary font-black text-sm">
-        AK
-      </div>
-<div class="flex flex-col min-w-0">
-<span class="font-label-md font-bold text-on-surface text-sm">Arjun Kulkarni</span>
-<span class="text-xs text-on-surface-variant font-medium truncate">Founder &amp; Head Roaster, RoastCraft (Indiranagar)</span>
-</div>
-</div>
-</section>
-<!-- FINAL CTA & FAQ -->
-<section class="flex flex-col gap-y-4">
-<!-- Bottom High Impact CTA Banner -->
-<div class="bg-primary text-on-primary p-5 rounded-2xl shadow-lg flex flex-col gap-3 text-center">
-<h3 class="font-headline-sm text-headline-sm font-extrabold text-white">
-        Dump your bulky POS tower once and for all.
-      </h3>
-<p class="text-xs text-white/90 leading-relaxed max-w-xs mx-auto">
-        Join 150+ contemporary roasters who switched to zero-hardware operations. 3-minute setup today.
-      </p>
-<a class="h-12 w-full rounded-xl bg-surface-container-lowest text-primary font-label-md text-label-md font-bold flex items-center justify-center gap-1 shadow-md active:scale-95 transition-transform mt-1" data-path="sign-up" href="#">
-        Start 14-Day Free Trial
-        <span class="material-symbols-outlined text-[17px]">bolt</span>
-</a>
-</div>
-<!-- Compact FAQ Accordion -->
 <div class="flex flex-col gap-2">
-<h4 class="font-label-md text-xs font-extrabold uppercase tracking-wider text-on-surface-variant px-1">Common Questions</h4>
-<!-- FAQ 1 -->
-<div class="bg-surface-container-lowest rounded-xl p-3.5 shadow-sm flex flex-col gap-1 cursor-pointer" onclick="toggleFaq('faq-1')">
-<div class="flex items-center justify-between">
-<span class="font-label-md font-bold text-xs text-on-surface">Do UPI payments go directly to our bank?</span>
-<span class="material-symbols-outlined text-on-surface-variant text-[18px]" id="faq-1-icon">expand_more</span>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile tracking-tight text-on-surface font-black leading-tight">
+        Stop paying <span class="line-through decoration-primary decoration-4 text-outline">₹40,000/yr</span> to bulky old-school POS.
+      </h1>
+<!-- Callout Box (Terracotta) -->
+<div class="p-4 rounded-xl bg-primary text-on-primary border-2 border-black retro-shadow flex items-center justify-between gap-3 neo-press cursor-pointer" onclick="showToast('⚡ Everything included: Cloud register, KDS &amp; QR dine-in')">
+<div class="flex flex-col">
+<span class="font-label-sm uppercase tracking-widest text-primary-fixed-dim font-bold">All-in-One Cloud Engine</span>
+<span class="font-headline-sm text-headline-sm font-black text-white">Run your entire cafe for ₹499/mo.</span>
 </div>
-<p class="font-body-sm text-xs text-on-surface-variant hidden pt-1" id="faq-1">
-          Yes! 100% direct bank settlement into your existing current account via your personal or business UPI VPA. Paros never holds your cash and charges 0% gateway commission.
+<div class="w-10 h-10 rounded-lg bg-black/20 flex items-center justify-center shrink-0 border border-white/20">
+<span class="material-symbols-outlined text-white text-2xl">local_cafe</span>
+</div>
+</div>
+</div>
+<!-- Subhead -->
+<p class="font-body-md text-on-surface-variant leading-relaxed">
+      Throw away clunky Windows desktop towers, loud thermal paper printers, and missing paper KOTs. Turn any phone, iPad, or laptop into a blisteringly fast billing counter, digital barista KDS, and table QR dine-in system.
+    </p>
+<!-- CTAs -->
+<div class="flex flex-col gap-3 pt-1">
+<button class="w-full py-4 px-6 rounded-xl bg-primary text-on-primary border-2 border-black retro-shadow font-label-md text-base font-extrabold flex items-center justify-center gap-2 neo-press" onclick="document.getElementById('pricing-section').scrollIntoView({behavior: 'smooth'})">
+<span>Launch Cafe in 2 Mins</span>
+<span class="text-lg">🚀</span>
+</button>
+<button class="w-full py-3.5 px-6 rounded-xl bg-surface-container-lowest text-on-surface border-2 border-black retro-shadow-sm font-label-md text-label-md font-bold flex items-center justify-center gap-2 neo-press" onclick="document.getElementById('os-interactive-demo').scrollIntoView({behavior: 'smooth'})">
+<span class="material-symbols-outlined text-primary text-xl">play_circle</span>
+<span>⚡ Test Live Simulator</span>
+</button>
+</div>
+<!-- Trust Micro-Bar -->
+<div class="flex items-center justify-center gap-2 text-center text-on-surface-variant font-label-sm text-xs py-1">
+<span>No Credit Card Required</span>
+<span>•</span>
+<span>14-Day Free Trial</span>
+<span>•</span>
+<span>Instant 180s Setup</span>
+</div>
+<!-- 4-Metric Grid (2x2) -->
+<div class="grid grid-cols-2 gap-3 pt-2">
+<div class="p-3.5 rounded-xl bg-surface-container-lowest border-2 border-black retro-shadow-sm flex flex-col neo-press cursor-pointer" onclick="showToast('Zero hardware mandate: runs on Android, iOS, Windows, Mac &amp; Web')">
+<span class="font-headline-md text-2xl font-black text-primary leading-none">₹0</span>
+<span class="font-label-sm text-on-surface-variant mt-1.5 uppercase font-bold tracking-tight">Hardware Required</span>
+</div>
+<div class="p-3.5 rounded-xl bg-surface-container-lowest border-2 border-black retro-shadow-sm flex flex-col neo-press cursor-pointer" onclick="showToast('⚡ Instant WhatsApp API sends PDF invoices in &lt;1 second')">
+<span class="font-headline-md text-2xl font-black text-secondary leading-none">&lt; 1s</span>
+<span class="font-label-sm text-on-surface-variant mt-1.5 uppercase font-bold tracking-tight">WhatsApp Bill Dispatch</span>
+</div>
+<div class="p-3.5 rounded-xl bg-surface-container-lowest border-2 border-black retro-shadow-sm flex flex-col neo-press cursor-pointer" onclick="showToast('Direct merchant bank QR integration with 0% intermediary commission')">
+<span class="font-headline-md text-2xl font-black text-on-surface leading-none">0%</span>
+<span class="font-label-sm text-on-surface-variant mt-1.5 uppercase font-bold tracking-tight">Direct UPI MDR / Tax</span>
+</div>
+<div class="p-3.5 rounded-xl bg-surface-container-lowest border-2 border-black retro-shadow-sm flex flex-col neo-press cursor-pointer" onclick="showToast('Offline cache stores last 10,000 orders even during Wi-Fi dropouts')">
+<span class="font-headline-md text-2xl font-black text-tertiary leading-none">100%</span>
+<span class="font-label-sm text-on-surface-variant mt-1.5 uppercase font-bold tracking-tight">Offline PWA Local Engine</span>
+</div>
+</div>
+<!-- Trusted Roasters Strip -->
+<div class="mt-2 pt-4 border-t-2 border-dashed border-outline-variant flex flex-col gap-2.5">
+<span class="font-label-sm uppercase tracking-widest text-on-surface-variant text-center font-bold text-[10px]">
+        Trusted daily by specialty coffee pioneers:
+      </span>
+<div class="flex flex-wrap items-center justify-center gap-2">
+<span class="px-2.5 py-1 rounded-md bg-surface-container border border-black/20 font-label-sm text-xs font-semibold cursor-pointer hover:border-black transition-colors" onclick="showToast('☕ RoastCraft Indiranagar processed 14,200 orders with Paros')">☕ RoastCraft Indiranagar</span>
+<span class="px-2.5 py-1 rounded-md bg-surface-container border border-black/20 font-label-sm text-xs font-semibold cursor-pointer hover:border-black transition-colors" onclick="showToast('🥐 Sourdough Co. saved ₹38k on thermal paper rolls')">🥐 Sourdough Co. Bandra</span>
+<span class="px-2.5 py-1 rounded-md bg-surface-container border border-black/20 font-label-sm text-xs font-semibold cursor-pointer hover:border-black transition-colors" onclick="showToast('🌿 Blue Palm runs 3 counter iPads on Silver Plan')">🌿 Blue Palm Jaipur</span>
+<span class="px-2.5 py-1 rounded-md bg-surface-container border border-black/20 font-label-sm text-xs font-semibold cursor-pointer hover:border-black transition-colors" onclick="showToast('⚡ Third Wave Lab reduced customer ticket delay by 65%')">⚡ Third Wave Lab Hauz Khas</span>
+</div>
+</div>
+</section>
+<!-- 3. INTERACTIVE OS DEMO (THREE PERSPECTIVES) -->
+<section class="px-margin-mobile py-8 bg-surface-container-low border-y-2 border-black flex flex-col gap-5" id="os-interactive-demo">
+<div class="flex flex-col gap-1.5">
+<div class="inline-flex items-center gap-1.5 self-start px-2.5 py-0.5 rounded-md bg-tertiary-fixed text-on-tertiary-fixed border border-black font-label-sm uppercase font-bold text-[10px]">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary animate-ping inline-block"></span>
+        Live Hardware Simulator
+      </div>
+<h2 class="font-headline-md text-headline-sm font-black text-on-surface">
+        One Operating System. Three Live Perspectives.
+      </h2>
+<p class="font-body-sm text-on-surface-variant">
+        Tap tabs to observe instant real-time sync across your billing register, barista KDS, and table QR ordering.
+      </p>
+</div>
+<!-- Interactive Tab Pill Switcher -->
+<div class="grid grid-cols-3 p-1 rounded-xl bg-surface-container-highest border-2 border-black retro-shadow-sm gap-1">
+<button class="py-2 px-1 rounded-lg bg-black text-white font-label-sm text-[11px] font-bold tracking-tight text-center transition-all flex flex-col items-center neo-press" id="tab-btn-1" onclick="switchOsTab(1)">
+<span>1. Counter POS</span>
+<span class="text-[9px] opacity-75 font-normal">Register</span>
+</button>
+<button class="py-2 px-1 rounded-lg bg-transparent text-on-surface font-label-sm text-[11px] font-bold tracking-tight text-center transition-all flex flex-col items-center neo-press" id="tab-btn-2" onclick="switchOsTab(2)">
+<span>2. Barista KDS</span>
+<span class="text-[9px] opacity-75 font-normal">Kitchen</span>
+</button>
+<button class="py-2 px-1 rounded-lg bg-transparent text-on-surface font-label-sm text-[11px] font-bold tracking-tight text-center transition-all flex flex-col items-center neo-press" id="tab-btn-3" onclick="switchOsTab(3)">
+<span>3. Diner QR</span>
+<span class="text-[9px] opacity-75 font-normal">Customer</span>
+</button>
+</div>
+<!-- Frame Container for Perspectives -->
+<div class="rounded-2xl border-2 border-black bg-surface-container-lowest p-3.5 retro-shadow flex flex-col gap-3 min-h-[410px] relative overflow-hidden transition-all duration-300">
+<!-- ================= VIEW 1: COUNTER POS ================= -->
+<div class="flex flex-col gap-3 transition-opacity duration-200" id="view-os-1">
+<!-- Terminal Header -->
+<div class="flex items-center justify-between pb-2 border-b-2 border-dashed border-outline-variant">
+<div class="flex items-center gap-2">
+<span class="relative flex h-2.5 w-2.5"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75"></span><span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-secondary"></span></span>
+<span class="font-label-sm font-bold text-xs uppercase text-on-surface">Station #01 • Espresso Bar</span>
+</div>
+<span class="px-2 py-0.5 rounded bg-surface-container-high text-on-surface font-label-sm text-[10px] border border-black/10 font-bold">
+            Cashier: Rohan
+          </span>
+</div>
+<!-- Quick Item Tap Chips -->
+<div class="flex flex-col gap-1.5">
+<div class="flex justify-between items-center">
+<span class="font-label-sm text-[11px] text-on-surface-variant font-bold uppercase tracking-wider">Fast Taps (1-Click Add):</span>
+<span class="text-[10px] text-primary font-bold">Tap to add</span>
+</div>
+<div class="grid grid-cols-2 gap-2">
+<button class="p-2 rounded-lg bg-surface-container-low border border-black text-left flex justify-between items-center neo-press active:scale-95 transition-all" onclick="addPosItem('Flat White', 220)">
+<span class="font-label-md text-xs font-bold text-on-surface">Flat White</span>
+<span class="font-label-sm text-xs font-extrabold text-primary">₹220</span>
+</button>
+<button class="p-2 rounded-lg bg-surface-container-low border border-black text-left flex justify-between items-center neo-press active:scale-95 transition-all" onclick="addPosItem('Pour Over', 260)">
+<span class="font-label-md text-xs font-bold text-on-surface">Pour Over</span>
+<span class="font-label-sm text-xs font-extrabold text-primary">₹260</span>
+</button>
+<button class="p-2 rounded-lg bg-surface-container-low border border-black text-left flex justify-between items-center neo-press active:scale-95 transition-all" onclick="addPosItem('Butter Croissant', 180)">
+<span class="font-label-md text-xs font-bold text-on-surface">Butter Croissant</span>
+<span class="font-label-sm text-xs font-extrabold text-primary">₹180</span>
+</button>
+<button class="p-2 rounded-lg bg-surface-container-low border border-black text-left flex justify-between items-center neo-press active:scale-95 transition-all" onclick="addPosItem('Iced Oat Latte', 250)">
+<span class="font-label-md text-xs font-bold text-on-surface">Iced Oat Latte</span>
+<span class="font-label-sm text-xs font-extrabold text-primary">₹250</span>
+</button>
+</div>
+</div>
+<!-- Active Bill Ticket / Cart Preview -->
+<div class="p-3 rounded-xl bg-surface-container border-2 border-black flex flex-col gap-2">
+<div class="flex justify-between items-center font-label-sm font-bold text-xs pb-1.5 border-b border-black/10">
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-sm text-primary">table_restaurant</span>
+              Table 04 • Dine-In
+            </span>
+<span class="text-secondary font-bold flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse inline-block"></span>● Active Ticket</span>
+</div>
+<div class="flex flex-col gap-1 text-xs max-h-28 overflow-y-auto" id="pos-items-list">
+<div class="flex justify-between text-on-surface py-0.5">
+<span>2x Flat White (Oat Milk)</span>
+<span class="font-semibold">₹440</span>
+</div>
+<div class="flex justify-between text-on-surface py-0.5">
+<span>1x Butter Croissant</span>
+<span class="font-semibold">₹180</span>
+</div>
+</div>
+<div class="pt-2 border-t border-dashed border-black/20 flex flex-col gap-0.5 text-xs">
+<div class="flex justify-between text-on-surface-variant">
+<span>Subtotal</span>
+<span id="pos-subtotal">₹620</span>
+</div>
+<div class="flex justify-between text-on-surface-variant">
+<span>GST (5%)</span>
+<span id="pos-gst">₹31</span>
+</div>
+<div class="flex justify-between font-black text-sm text-on-surface pt-1">
+<span>Total Payable</span>
+<span class="text-primary font-black transition-all" id="pos-total">₹651</span>
+</div>
+</div>
+<button class="mt-1 w-full py-2.5 px-3 rounded-lg bg-secondary text-white font-label-md text-xs font-bold flex items-center justify-center gap-1.5 border border-black retro-shadow-sm neo-press" id="pos-send-btn" onclick="triggerWhatsappSent()">
+<span class="material-symbols-outlined text-base">chat</span>
+<span id="pos-btn-text">Send Instant WhatsApp GST Bill</span>
+</button>
+</div>
+</div>
+<!-- ================= VIEW 2: KITCHEN KDS ================= -->
+<div class="hidden flex-col gap-3 bg-[#18181b] -m-3.5 p-3.5 rounded-2xl text-white transition-opacity duration-200" id="view-os-2">
+<div class="flex items-center justify-between pb-2 border-b border-zinc-800">
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 rounded bg-primary text-white font-label-sm text-[10px] font-black uppercase tracking-wider">
+              KDS Station 1
+            </span>
+<span class="font-label-sm text-xs font-bold text-zinc-300">Rush Load: 45%</span>
+</div>
+<span class="text-secondary font-mono text-xs font-bold flex items-center gap-1.5">
+<span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-secondary"></span></span>
+          0s Sync Latency
+          </span>
+</div>
+<!-- Ticket Card 1 -->
+<div class="p-3 rounded-xl bg-zinc-900 border-2 border-zinc-700 flex flex-col gap-2.5">
+<div class="flex justify-between items-start">
+<div>
+<span class="font-headline-sm text-sm font-black text-amber-400">ORDER #104</span>
+<div class="font-label-sm text-xs text-zinc-400">Table 04 • 2 Guests (Dine-in)</div>
+</div>
+<span class="px-2 py-0.5 rounded bg-red-950/90 text-red-400 border border-red-800 font-mono text-xs font-bold flex items-center gap-1" id="kds-timer-badge">
+<span class="material-symbols-outlined text-xs animate-spin" style="animation-duration: 3s;">timer</span>
+<span id="kds-timer-text">03m 42s</span>
+</span>
+</div>
+<!-- Items Checklist -->
+<div class="flex flex-col gap-2 py-1">
+<label class="flex items-center gap-2 cursor-pointer bg-zinc-800/80 p-2 rounded-lg hover:bg-zinc-800 transition-colors" id="kds-item-1-wrap">
+<input checked="" class="w-4 h-4 accent-secondary rounded" id="kds-item-1" onchange="toggleKdsItemManual(1)" type="checkbox"/>
+<span class="text-xs font-medium line-through text-zinc-500" id="kds-item-1-label">2x Flat White (Oat Milk)</span>
+</label>
+<label class="flex items-center gap-2 cursor-pointer bg-zinc-800/80 p-2 rounded-lg hover:bg-zinc-800 transition-colors" id="kds-item-2-wrap">
+<input class="w-4 h-4 accent-secondary rounded" id="kds-croissant" onchange="toggleKdsItem()" type="checkbox"/>
+<span class="text-xs font-medium text-zinc-200 transition-all" id="kds-croissant-label">1x Butter Croissant (Warm)</span>
+</label>
+</div>
+<!-- KDS Actions -->
+<div class="grid grid-cols-2 gap-2 pt-1">
+<button class="py-2 px-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-amber-300 border border-zinc-600 font-label-sm text-xs font-bold flex items-center justify-center gap-1 neo-press active:scale-95" id="kds-delay-btn" onclick="addKdsDelay()">
+<span class="material-symbols-outlined text-sm">schedule</span>
+<span>+2m Rush Alert</span>
+</button>
+<button class="py-2 px-2 rounded-lg bg-secondary hover:bg-secondary/90 text-white font-label-sm text-xs font-bold flex items-center justify-center gap-1 neo-press active:scale-95" id="kds-bump-btn" onclick="bumpKdsOrder()">
+<span class="material-symbols-outlined text-sm">check_circle</span>
+<span>Bump / Mark Ready</span>
+</button>
+</div>
+</div>
+<div class="flex items-center justify-between text-[10px] text-zinc-400 font-mono pt-1">
+<span>Kitchen screen updates in real-time</span>
+<span class="text-secondary font-bold">● Synchronized</span>
+</div>
+</div>
+<!-- ================= VIEW 3: DINER QR MENU ================= -->
+<div class="hidden flex-col gap-3 transition-opacity duration-200" id="view-os-3">
+<!-- Customer Mobile View Top Header -->
+<div class="p-2.5 rounded-xl bg-surface-container border border-black flex justify-between items-center">
+<div class="flex items-center gap-2">
+<div class="w-7 h-7 rounded-full bg-primary text-white flex items-center justify-center font-black text-xs border border-black">
+              P
+            </div>
+<div>
+<div class="font-label-md text-xs font-black">Roast &amp; Co. Bar</div>
+<div class="font-label-sm text-[10px] text-on-surface-variant font-semibold">Table #04 (Dine In)</div>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-[10px] font-bold border border-black/20 flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse inline-block"></span>
+            Direct Menu
+          </span>
+</div>
+<!-- Filter Pill Chips -->
+<div class="flex gap-1.5 overflow-x-auto pb-1 text-xs">
+<span class="px-3 py-1 rounded-full bg-black text-white font-bold text-[11px] shrink-0 cursor-pointer">☕ Brew Bar</span>
+<span class="px-3 py-1 rounded-full bg-surface-container border border-black/20 text-on-surface font-semibold text-[11px] shrink-0 cursor-pointer" onclick="showToast('Browsing Bakery selection...')">🥐 Bakery</span>
+<span class="px-3 py-1 rounded-full bg-surface-container border border-black/20 text-on-surface font-semibold text-[11px] shrink-0 cursor-pointer" onclick="showToast('Browsing Sandwiches selection...')">🥪 Sandwiches</span>
+</div>
+<!-- Menu items row with dynamic steppers -->
+<div class="flex flex-col gap-2">
+<div class="p-2.5 rounded-xl bg-surface-container-low border border-black flex justify-between items-center">
+<div>
+<span class="font-label-md text-xs font-bold text-on-surface">Single Origin Pour Over</span>
+<div class="font-label-sm text-[10px] text-on-surface-variant">Kerehaklu Estate • Floral, Citrus</div>
+<span class="font-label-md text-xs font-extrabold text-primary">₹260</span>
+</div>
+<!-- Stepper Controls -->
+<div class="flex items-center gap-1.5 bg-surface-container-lowest border border-black rounded-lg p-1">
+<button class="w-6 h-6 rounded bg-surface-container flex items-center justify-center font-bold text-xs neo-press active:scale-90" onclick="updateDinerItem('pourOver', -1, 260)">-</button>
+<span class="w-5 text-center font-bold text-xs" id="diner-qty-pourOver">1</span>
+<button class="w-6 h-6 rounded bg-primary text-white flex items-center justify-center font-bold text-xs neo-press active:scale-90" onclick="updateDinerItem('pourOver', 1, 260)">+</button>
+</div>
+</div>
+<div class="p-2.5 rounded-xl bg-surface-container-low border border-black flex justify-between items-center">
+<div>
+<span class="font-label-md text-xs font-bold text-on-surface">Almond Pain Au Chocolat</span>
+<div class="font-label-sm text-[10px] text-on-surface-variant">Flaky double baked with Belgian cocoa</div>
+<span class="font-label-md text-xs font-extrabold text-primary">₹240</span>
+</div>
+<!-- Stepper Controls -->
+<div class="flex items-center gap-1.5 bg-surface-container-lowest border border-black rounded-lg p-1">
+<button class="w-6 h-6 rounded bg-surface-container flex items-center justify-center font-bold text-xs neo-press active:scale-90" onclick="updateDinerItem('chocolat', -1, 240)">-</button>
+<span class="w-5 text-center font-bold text-xs" id="diner-qty-chocolat">1</span>
+<button class="w-6 h-6 rounded bg-primary text-white flex items-center justify-center font-bold text-xs neo-press active:scale-90" onclick="updateDinerItem('chocolat', 1, 240)">+</button>
+</div>
+</div>
+</div>
+<!-- Floating UPI Checkout Summary -->
+<div class="p-3 rounded-xl bg-surface-container-highest border-2 border-black flex items-center justify-between">
+<div class="flex flex-col">
+<span class="font-label-sm text-[10px] uppercase font-bold text-on-surface-variant">Diner Tab Total</span>
+<span class="font-headline-sm text-sm font-black text-on-surface" id="qr-tab-total">₹735 (3 Items)</span>
+</div>
+<button class="py-2 px-3 rounded-lg bg-secondary text-white font-label-md text-xs font-black border border-black retro-shadow-sm flex items-center gap-1 neo-press active:scale-95" id="qr-pay-btn" onclick="triggerUpiPay()">
+<span class="material-symbols-outlined text-sm">bolt</span>
+<span id="qr-pay-btn-label">Pay ₹735 via Direct UPI</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- 4. THE LEGACY WINDOWS POS TAX VS PAROS (SAVINGS & FORENSIC AUDIT) -->
+<section class="px-margin-mobile py-8 flex flex-col gap-5" id="calculator-section">
+<div class="flex flex-col gap-1.5">
+<span class="inline-flex items-center gap-1.5 self-start px-2.5 py-0.5 rounded-md bg-error-container text-on-error-container border border-black font-label-sm uppercase font-bold text-[10px]">
+        Hardware Elimination Audit
+      </span>
+<h2 class="font-headline-md text-headline-sm font-black text-on-surface">
+        The Brutal Cost of Legacy Windows POS vs. Paros
+      </h2>
+<p class="font-body-sm text-on-surface-variant">
+        See how much money legacy billing hardware leeches from your cafe every 12 months.
+      </p>
+</div>
+<!-- Interactive Orders Volume Selector & Slider -->
+<div class="p-4 rounded-xl bg-surface-container-low border-2 border-black retro-shadow-sm flex flex-col gap-3">
+<div class="flex justify-between items-center">
+<span class="font-label-md text-xs font-bold text-on-surface">Daily Order Volume:</span>
+<span class="font-label-sm text-xs font-black text-primary px-2.5 py-1 rounded-md bg-primary-fixed border border-primary/30 transition-all" id="order-volume-label">
+          80 Orders / Day (12 Tables)
+        </span>
+</div>
+<!-- Draggable Range Slider with Smooth Haptic Feedback -->
+<div class="flex flex-col gap-1">
+<input class="w-full h-2 bg-surface-container-highest rounded-lg appearance-none cursor-pointer accent-primary border border-black" id="audit-range-slider" max="300" min="20" oninput="onAuditSlider(this.value)" step="5" type="range" value="80"/>
+<div class="flex justify-between text-[10px] font-bold text-on-surface-variant px-0.5">
+<span>20 (Takeaway Cart)</span>
+<span>150</span>
+<span>300+ (High Rush Bistro)</span>
+</div>
+</div>
+<!-- Quick Preset Pills -->
+<div class="grid grid-cols-3 gap-2 pt-1">
+<button class="audit-pill py-1.5 px-2 rounded-lg bg-surface-container-lowest border border-black font-label-sm text-xs font-bold text-center neo-press active:scale-95" id="preset-30" onclick="setAuditVolume(30, '30 Orders / Day (Espresso Bar)')">
+          30 / Day
+        </button>
+<button class="audit-pill py-1.5 px-2 rounded-lg bg-primary text-white border border-black font-label-sm text-xs font-bold text-center neo-press active:scale-95" id="preset-80" onclick="setAuditVolume(80, '80 Orders / Day (12 Tables)')">
+          80 / Day
+        </button>
+<button class="audit-pill py-1.5 px-2 rounded-lg bg-surface-container-lowest border border-black font-label-sm text-xs font-bold text-center neo-press active:scale-95" id="preset-200" onclick="setAuditVolume(200, '200+ Orders / Day (Bustling Bistro)')">
+          200+ / Day
+        </button>
+</div>
+</div>
+<!-- Side-by-side comparison cards -->
+<div class="flex flex-col gap-3.5">
+<!-- RED CARD: Old School POS -->
+<div class="p-4 rounded-2xl bg-[#fff1f2] border-2 border-black retro-shadow flex flex-col gap-3">
+<div class="flex justify-between items-center pb-2 border-b border-red-300">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-error text-xl">desktop_access_disabled</span>
+<span class="font-headline-sm text-sm font-black text-red-950">Old-School Windows POS</span>
+</div>
+<span class="px-2 py-0.5 rounded bg-red-200 text-red-900 font-label-sm text-[10px] font-bold">Capital Trap</span>
+</div>
+<div class="flex flex-col gap-2 text-xs text-red-950 font-medium">
+<div class="flex justify-between">
+<span>Annual Software Lock-in</span>
+<span class="font-bold">₹20,000 / yr</span>
+</div>
+<div class="flex justify-between">
+<span>Bulky Touchscreen Capex</span>
+<span class="font-bold">₹35,000 (Upfront)</span>
+</div>
+<div class="flex justify-between">
+<span>Toxic BPA Thermal Paper Rolls</span>
+<span class="font-bold text-error" id="audit-paper-cost">₹32,850 / yr</span>
+</div>
+<div class="flex justify-between">
+<span>Aggregator Gateway Cut (1.5% MDR)</span>
+<span class="font-bold text-error" id="audit-mdr-cost">₹1,22,640 / yr</span>
+</div>
+<div class="flex justify-between">
+<span>Technician AMC &amp; Cabling Fee</span>
+<span class="font-bold">₹4,500 / yr</span>
+</div>
+</div>
+<div class="pt-2 border-t-2 border-red-300 flex justify-between items-center">
+<span class="font-label-md text-xs font-bold uppercase text-red-900">Total Year 1 Drain</span>
+<span class="font-headline-sm text-lg font-black text-error" id="audit-legacy-total">₹2,14,990</span>
+</div>
+</div>
+<!-- GREEN CARD: Paros Cafe OS -->
+<div class="p-4 rounded-2xl bg-[#f0fdf4] border-2 border-black retro-shadow flex flex-col gap-3">
+<div class="flex justify-between items-center pb-2 border-b border-green-300">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-secondary text-xl">energy_savings_leaf</span>
+<span class="font-headline-sm text-sm font-black text-green-950">Paros Cafe Cloud OS</span>
+</div>
+<span class="px-2 py-0.5 rounded bg-green-200 text-green-900 font-label-sm text-[10px] font-bold">Pure Profit</span>
+</div>
+<div class="flex flex-col gap-2 text-xs text-green-950 font-medium">
+<div class="flex justify-between">
+<span>Paros Unlimited Cloud OS</span>
+<span class="font-bold text-secondary">₹4,999 / yr</span>
+</div>
+<div class="flex justify-between">
+<span>Hardware Capex (Any Device)</span>
+<span class="font-bold text-secondary">₹0</span>
+</div>
+<div class="flex justify-between">
+<span>Paper Rolls (100% WhatsApp)</span>
+<span class="font-bold text-secondary">₹0</span>
+</div>
+<div class="flex justify-between">
+<span>Direct Bank UPI (0% MDR)</span>
+<span class="font-bold text-secondary">₹0</span>
+</div>
+<div class="flex justify-between">
+<span>Maintenance, Support &amp; Updates</span>
+<span class="font-bold text-secondary">₹0 (Included)</span>
+</div>
+</div>
+<div class="pt-2 border-t-2 border-green-300 flex justify-between items-center">
+<span class="font-label-md text-xs font-bold uppercase text-green-900">Total Year 1</span>
+<span class="font-headline-sm text-lg font-black text-secondary">₹4,999</span>
+</div>
+</div>
+</div>
+<!-- BOLD HIGHLIGHT SAVINGS BANNER -->
+<div class="p-4 rounded-2xl bg-[#fef08a] border-2 border-black retro-shadow-lg flex flex-col gap-2 text-black transition-all" id="audit-savings-card">
+<div class="flex items-center gap-2">
+<span class="text-2xl animate-bounce" style="animation-duration: 2s;">🎉</span>
+<h3 class="font-headline-sm text-base font-black" id="audit-savings-headline">
+          You Save ₹2,09,991 in Year 1 with Paros!
+        </h3>
+</div>
+<p class="font-body-sm text-xs leading-relaxed text-stone-800">
+        Reinvest your hard-earned money into high-grade single origin beans, barista salary incentives, or opening your second coffee outpost.
+      </p>
+<button class="mt-2 py-3 px-4 rounded-xl bg-black text-white font-label-md text-xs font-black flex items-center justify-center gap-2 neo-press" onclick="document.getElementById('pricing-section').scrollIntoView({behavior: 'smooth'})">
+<span>Switch to Paros &amp; Save Today</span>
+<span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</section>
+<!-- 5. ENGINEERED FOR SUNDAY BRUNCH RUSHES (FEATURE MATRIX) -->
+<section class="px-margin-mobile py-8 bg-surface border-t-2 border-black flex flex-col gap-5">
+<div class="flex flex-col gap-1.5">
+<span class="inline-flex items-center gap-1.5 self-start px-2.5 py-0.5 rounded-md bg-secondary-container text-on-secondary-container border border-black font-label-sm uppercase font-bold text-[10px]">
+        Speed Without Chaos
+      </span>
+<h2 class="font-headline-md text-headline-sm font-black text-on-surface">
+        Engineered for Sunday Brunch Rushes
+      </h2>
+<p class="font-body-sm text-on-surface-variant">
+        Built by former hospitality operators who know what happens when 40 tickets arrive at once.
+      </p>
+</div>
+<!-- 4 Modular Cards -->
+<div class="flex flex-col gap-3.5">
+<!-- Feature 1 -->
+<div class="p-4 rounded-xl bg-surface-container-lowest border-2 border-black retro-shadow flex flex-col gap-2 neo-press cursor-pointer" onclick="showToast('Universal QR: 1 QR print handles dining, takeaways, &amp; room service')">
+<div class="w-10 h-10 rounded-lg bg-tertiary-fixed border border-black flex items-center justify-center text-on-tertiary-fixed">
+<span class="material-symbols-outlined text-2xl">qr_code_scanner</span>
+</div>
+<h3 class="font-headline-sm text-base font-black text-on-surface">Universal Single Table QR</h3>
+<p class="font-body-sm text-xs text-on-surface-variant leading-relaxed">
+          Print just 1 single QR artwork for your entire cafe. Eliminates rogue table stickers, sticky physical card damages, and table swapping order confusion.
         </p>
+<span class="text-[11px] font-bold text-primary flex items-center gap-1 mt-1">
+<span class="material-symbols-outlined text-sm">verified</span> Zero hardware reprint costs
+        </span>
+</div>
+<!-- Feature 2 -->
+<div class="p-4 rounded-xl bg-surface-container-lowest border-2 border-black retro-shadow flex flex-col gap-2 neo-press cursor-pointer" onclick="showToast('ETA updates ping customer phones silently without loud kitchen shouting')">
+<div class="w-10 h-10 rounded-lg bg-secondary-container border border-black flex items-center justify-center text-on-secondary-container">
+<span class="material-symbols-outlined text-2xl">hourglass_top</span>
+</div>
+<h3 class="font-headline-sm text-base font-black text-on-surface">1-Tap Chef ETA Countdowns</h3>
+<p class="font-body-sm text-xs text-on-surface-variant leading-relaxed">
+          Barista slammed with 8 complex manual pour-overs? Tap +5m directly on the KDS tablet. Diner phones update live with estimated brew times.
+        </p>
+<span class="text-[11px] font-bold text-secondary flex items-center gap-1 mt-1">
+<span class="material-symbols-outlined text-sm">sentiment_very_satisfied</span> Cuts impatient customer inquiries by 90%
+        </span>
+</div>
+<!-- Feature 3 -->
+<div class="p-4 rounded-xl bg-surface-container-lowest border-2 border-black retro-shadow flex flex-col gap-2 neo-press cursor-pointer" onclick="showToast('Official WhatsApp Business API with zero paper waste')">
+<div class="w-10 h-10 rounded-lg bg-primary-fixed border border-black flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-2xl">receipt_long</span>
+</div>
+<h3 class="font-headline-sm text-base font-black text-on-surface">100% Paperless WhatsApp Bills</h3>
+<p class="font-body-sm text-xs text-on-surface-variant leading-relaxed">
+          Official GST-compliant PDF tax invoices pinged via WhatsApp API in &lt;1 second. Automatically captures customer names and phone numbers for your CRM.
+        </p>
+<span class="text-[11px] font-bold text-primary flex items-center gap-1 mt-1">
+<span class="material-symbols-outlined text-sm">forest</span> Zero chemical BPA thermal receipt pollution
+        </span>
+</div>
+<!-- Feature 4 -->
+<div class="p-4 rounded-xl bg-surface-container-lowest border-2 border-black retro-shadow flex flex-col gap-2 neo-press cursor-pointer" onclick="showToast('Register lock prevents drawer opening without manager 4-digit PIN')">
+<div class="w-10 h-10 rounded-lg bg-surface-container-highest border border-black flex items-center justify-center text-on-surface">
+<span class="material-symbols-outlined text-2xl">lock_clock</span>
+</div>
+<h3 class="font-headline-sm text-base font-black text-on-surface">Shift Cash Lock &amp; Spot Petty Audit</h3>
+<p class="font-body-sm text-xs text-on-surface-variant leading-relaxed">
+          Opening float check, mid-day dairy runs, and end-of-day register drawer reconciliation. Instant mismatch alarms sent straight to owner phones.
+        </p>
+<span class="text-[11px] font-bold text-on-surface flex items-center gap-1 mt-1">
+<span class="material-symbols-outlined text-sm">shield</span> Eliminates till pilferage on night shifts
+        </span>
+</div>
+</div>
+</section>
+<!-- 6. HONEST, INDIE-FRIENDLY PRICING -->
+<section class="px-margin-mobile py-8 bg-surface-container-low border-t-2 border-black flex flex-col gap-5" id="pricing-section">
+<div class="flex flex-col gap-1.5 text-center items-center">
+<span class="px-3 py-0.5 rounded-full bg-surface-container-highest border border-black font-label-sm uppercase font-bold text-[10px]">
+        Transparent Pricing
+      </span>
+<h2 class="font-headline-md text-headline-sm font-black text-on-surface">
+        Honest, Indie-Friendly Pricing
+      </h2>
+<p class="font-body-sm text-on-surface-variant">
+        No upfront capital expenditure. Cancel whenever you want in 1 click.
+      </p>
+<!-- Billing Toggle: Monthly vs Annual with pill slide -->
+<div class="mt-3 inline-flex p-1 rounded-xl bg-surface-container-highest border-2 border-black retro-shadow-sm items-center relative">
+<button class="py-1.5 px-4 rounded-lg bg-black text-white font-label-sm text-xs font-bold transition-all z-10 neo-press" id="billing-monthly-btn" onclick="toggleBilling('monthly')">
+          Monthly
+        </button>
+<button class="py-1.5 px-3 rounded-lg bg-transparent text-on-surface font-label-sm text-xs font-bold transition-all z-10 flex items-center gap-1 neo-press" id="billing-annual-btn" onclick="toggleBilling('annual')">
+<span>Annual</span>
+<span class="px-1.5 py-0.2 rounded bg-amber-300 text-stone-900 text-[10px] font-black border border-black/30">2 Mo Free ★</span>
+</button>
+</div>
+</div>
+<!-- Pricing Cards -->
+<div class="flex flex-col gap-5 pt-2">
+<!-- PLAN 1: Silver Plan -->
+<div class="p-5 rounded-2xl bg-surface-container-lowest border-2 border-black retro-shadow flex flex-col gap-4">
+<div class="flex justify-between items-start">
+<div>
+<span class="font-label-sm text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Quick Counter &amp; Bakery</span>
+<h3 class="font-headline-sm text-xl font-black text-on-surface">Silver Plan</h3>
+</div>
+<span class="px-2.5 py-0.5 rounded-full bg-surface-container border border-black text-on-surface font-label-sm text-[10px] font-bold">
+            Takeaway
+          </span>
+</div>
+<div class="flex items-baseline gap-1">
+<span class="font-headline-md text-3xl font-black text-on-surface transition-all duration-200" id="price-silver-num">₹499</span>
+<span class="font-body-sm text-xs text-on-surface-variant font-semibold" id="price-silver-period">/ month</span>
+</div>
+<p class="font-body-sm text-xs text-on-surface-variant leading-relaxed">
+          Ideal for takeaway espresso bars, bakeries, food trucks, and cloud kitchens.
+        </p>
+<!-- Feature Checklist -->
+<div class="flex flex-col gap-2 pt-2 border-t border-dashed border-outline-variant text-xs text-on-surface">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-base">check_circle</span>
+<span>Unlimited orders &amp; menu items</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-base">check_circle</span>
+<span>WhatsApp GST billing included</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-base">check_circle</span>
+<span>1 Kitchen KDS screen terminal</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-base">check_circle</span>
+<span>Offline-first Progressive Web App (PWA)</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-base">check_circle</span>
+<span>Shift cash lock &amp; spot petty cash audits</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-base">check_circle</span>
+<span>1 Counter Register login</span>
+</div>
+</div>
+<button class="w-full py-3 px-4 rounded-xl bg-surface-container-high hover:bg-surface-container-highest text-on-surface border-2 border-black retro-shadow-sm font-label-md text-xs font-black flex items-center justify-center gap-1 neo-press" onclick="showToast('⚡ Silver 14-day free trial activated! Ready in under 180s.')">
+<span>Start 14-Day Free Trial</span>
+</button>
+</div>
+<!-- PLAN 2: Gold Plan (Highlight) -->
+<div class="p-5 rounded-2xl bg-[#fff8ee] border-2 border-black retro-shadow-lg flex flex-col gap-4 relative overflow-hidden">
+<!-- Most Loved Ribbon -->
+<div class="absolute -right-12 top-6 bg-primary text-white text-[10px] font-black uppercase tracking-widest py-1 px-12 rotate-45 border-y border-black">
+          Top Pick
+        </div>
+<div class="flex justify-between items-start">
+<div>
+<span class="font-label-sm text-[11px] font-bold text-primary uppercase tracking-wider">Full Dine-In &amp; Brewpub</span>
+<h3 class="font-headline-sm text-xl font-black text-on-surface">Gold Plan</h3>
+</div>
+</div>
+<div class="flex items-baseline gap-1">
+<span class="font-headline-md text-3xl font-black text-primary transition-all duration-200" id="price-gold-num">₹799</span>
+<span class="font-body-sm text-xs text-on-surface-variant font-semibold" id="price-gold-period">/ month</span>
+</div>
+<p class="font-body-sm text-xs text-on-surface-variant leading-relaxed">
+          For seated specialty cafes, bistros, roasteries, and multi-floor craft spaces.
+        </p>
+<!-- Feature Checklist -->
+<div class="flex flex-col gap-2 pt-2 border-t border-dashed border-primary/30 text-xs text-on-surface">
+<div class="font-label-sm text-[11px] font-black text-primary uppercase tracking-wider pb-1">
+            EVERYTHING IN SILVER, PLUS:
+          </div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-base">check_circle</span>
+<span class="font-bold">Universal Single Table QR ordering</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-base">check_circle</span>
+<span>Interactive floor plan &amp; occupancy map</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-base">check_circle</span>
+<span>Dynamic Chef ETA countdown on diner mobile</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-base">check_circle</span>
+<span>Multi-device sync (Counter + Barista + Runner)</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-base">check_circle</span>
+<span>Automated Google Review Collector via WhatsApp</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-base">check_circle</span>
+<span>Priority WhatsApp VIP Founder Support (24/7)</span>
+</div>
+</div>
+<button class="w-full py-3.5 px-4 rounded-xl bg-primary text-white border-2 border-black retro-shadow font-label-md text-xs font-black flex items-center justify-center gap-2 neo-press" onclick="showToast('⚡ Gold Plan VIP concierge trial started! Support ping sent.')">
+<span>Start 14-Day Free Trial</span>
+<span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Guarantees Footer Strip -->
+<div class="p-3 rounded-xl bg-surface-container-highest border border-black flex flex-wrap items-center justify-around gap-2 text-center text-[11px] font-bold text-on-surface-variant">
+<span>Zero Hardware Lock-In</span>
+<span>•</span>
+<span>Zero Setup Fees</span>
+<span>•</span>
+<span>0% UPI Commission</span>
+<span>•</span>
+<span>1-Click Cancel</span>
+</div>
+</section>
+<!-- 7. VOICES FROM THE COFFEE BAR (INTERACTIVE REVIEWS) -->
+<section class="px-margin-mobile py-8 bg-surface border-t-2 border-black flex flex-col gap-5">
+<div class="flex flex-col gap-1.5">
+<span class="inline-flex items-center gap-1.5 self-start px-2.5 py-0.5 rounded-md bg-tertiary-fixed text-on-tertiary-fixed border border-black font-label-sm uppercase font-bold text-[10px]">
+        Real Cafe Stories
+      </span>
+<h2 class="font-headline-md text-headline-sm font-black text-on-surface">
+        “We Threw Out Our Windows Terminal.”
+      </h2>
+<p class="font-body-sm text-on-surface-variant">
+        How indie cafe owners dumped legacy hardware and never looked back.
+      </p>
+</div>
+<!-- Review Operator Avatar Tabs -->
+<div class="flex gap-2 overflow-x-auto pb-1">
+<button class="rev-tab px-3 py-2 rounded-xl bg-black text-white border border-black font-label-sm text-xs font-bold shrink-0 flex items-center gap-2 transition-all neo-press" id="rev-btn-0" onclick="selectReview(0)">
+<span class="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-[10px] font-bold">AK</span>
+<span>Arjun • Indiranagar</span>
+</button>
+<button class="rev-tab px-3 py-2 rounded-xl bg-surface-container border border-black text-on-surface font-label-sm text-xs font-bold shrink-0 flex items-center gap-2 transition-all neo-press" id="rev-btn-1" onclick="selectReview(1)">
+<span class="w-6 h-6 rounded-full bg-secondary text-white flex items-center justify-center text-[10px] font-bold">SM</span>
+<span>Sanya • Bandra</span>
+</button>
+<button class="rev-tab px-3 py-2 rounded-xl bg-surface-container border border-black text-on-surface font-label-sm text-xs font-bold shrink-0 flex items-center gap-2 transition-all neo-press" id="rev-btn-2" onclick="selectReview(2)">
+<span class="w-6 h-6 rounded-full bg-tertiary text-white flex items-center justify-center text-[10px] font-bold">VR</span>
+<span>Vikram • Hauz Khas</span>
+</button>
+</div>
+<!-- Review Card Display Box with Smooth Transition -->
+<div class="p-5 rounded-2xl bg-surface-container-lowest border-2 border-black retro-shadow flex flex-col gap-3 min-h-[220px] justify-between transition-all duration-300" id="review-card-box">
+<div class="flex flex-col gap-2.5">
+<!-- 5 Star Rating -->
+<div class="flex text-amber-500 gap-0.5">
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+<p class="font-body-md text-xs sm:text-sm text-on-surface italic leading-relaxed transition-opacity duration-200" id="review-quote-text">
+          “We were burning over ₹3,000 every single month on rolls of thermal receipt paper that customers threw in the dustbin 2 seconds later. Paros WhatsApp billing paid for itself in week one, and our brew bar looks pristine with just an iPad.”
+        </p>
+</div>
+<div class="pt-3 border-t border-black/10 flex items-center justify-between">
+<div>
+<div class="font-label-md text-xs font-black text-on-surface" id="review-author-name">Arjun Kulkarni</div>
+<div class="font-label-sm text-[11px] text-on-surface-variant" id="review-author-role">Founder, RoastCraft • Indiranagar, BLR</div>
+</div>
+<!-- Next / Prev Controls & Dots -->
+<div class="flex items-center gap-2">
+<div class="flex gap-1" id="review-dots">
+<span class="w-2 h-2 rounded-full bg-black inline-block"></span>
+<span class="w-2 h-2 rounded-full bg-black/20 inline-block"></span>
+<span class="w-2 h-2 rounded-full bg-black/20 inline-block"></span>
+</div>
+<div class="flex gap-1.5 ml-1">
+<button aria-label="Previous review" class="w-8 h-8 rounded-lg bg-surface-container border border-black flex items-center justify-center neo-press active:scale-95" onclick="prevReview()">
+<span class="material-symbols-outlined text-base">chevron_left</span>
+</button>
+<button aria-label="Next review" class="w-8 h-8 rounded-lg bg-surface-container border border-black flex items-center justify-center neo-press active:scale-95" onclick="nextReview()">
+<span class="material-symbols-outlined text-base">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- 8. HIGH-IMPACT READY TO DUMP CALLOUT -->
+<section class="px-margin-mobile py-8 bg-surface-container">
+<div class="p-6 rounded-2xl bg-primary text-white border-2 border-black retro-shadow-lg flex flex-col gap-4">
+<div class="inline-flex items-center gap-1.5 self-start px-3 py-1 rounded-full bg-black text-white font-label-sm uppercase font-bold text-[10px] tracking-wider border border-white/20">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse inline-block"></span>
+        ⚡ READY IN UNDER 180 SECONDS
+      </div>
+<h2 class="font-headline-lg-mobile text-2xl font-black leading-tight">
+        Ready to dump your bulky POS terminal once and for all?
+      </h2>
+<p class="font-body-md text-xs text-white/90 leading-relaxed">
+        Join 150+ forward-thinking cafe owners. No hardware purchases, zero setup fees, and your tablet or phone is all you need.
+      </p>
+<div class="flex flex-col gap-2.5 pt-2">
+<button class="w-full py-4 px-5 rounded-xl bg-white text-stone-900 border-2 border-black retro-shadow font-label-md text-sm font-black flex items-center justify-center gap-2 neo-press" onclick="showToast('🎉 Free trial starting! Launching fast setup wizard...')">
+<span>Start 14-Day Free Trial</span>
+<span class="material-symbols-outlined text-lg">arrow_forward</span>
+</button>
+<button class="w-full py-3 px-5 rounded-xl bg-black/20 hover:bg-black/30 text-white border-2 border-white/40 font-label-md text-xs font-bold flex items-center justify-center gap-2 neo-press" onclick="showToast('📅 Live screen tour booked for today at 4:30 PM')">
+<span>📅 Book 5-Min Live Screen Tour</span>
+</button>
+</div>
+<div class="text-center font-label-sm text-[10px] text-white/75 font-semibold">
+        Setup takes under 3 minutes • Instant WhatsApp onboarding assistance
+      </div>
+</div>
+</section>
+<!-- 9. FREQUENTLY ASKED QUESTIONS (EXPANDABLE ACCORDIONS) -->
+<section class="px-margin-mobile py-8 bg-surface border-t-2 border-black flex flex-col gap-5">
+<div class="flex flex-col gap-1">
+<span class="font-label-sm uppercase tracking-wider text-primary font-bold text-[11px]">No Secrets</span>
+<h2 class="font-headline-md text-headline-sm font-black text-on-surface">Frequently Asked Questions</h2>
+</div>
+<div class="flex flex-col gap-3">
+<!-- FAQ 1 -->
+<div class="rounded-xl border-2 border-black bg-surface-container-lowest overflow-hidden retro-shadow-sm transition-all">
+<button class="w-full p-3.5 text-left flex justify-between items-center gap-2 font-label-md text-xs font-bold text-on-surface neo-press" onclick="toggleFaq(1)">
+<span>Do UPI payments go directly to my own bank account?</span>
+<span class="material-symbols-outlined text-primary text-xl transition-transform duration-200" id="faq-icon-1">add</span>
+</button>
+<div class="hidden px-3.5 pb-3.5 pt-1 text-xs text-on-surface-variant border-t border-dashed border-outline-variant leading-relaxed" id="faq-body-1">
+          Yes, 100%! We connect directly to your merchant VPA (BHIM, Pine Labs, Razorpay, or ICICI/HDFC bank QR). Payments never sit in an intermediary wallet. Money hits your current account in real time with 0% gateway commission.
+        </div>
 </div>
 <!-- FAQ 2 -->
-<div class="bg-surface-container-lowest rounded-xl p-3.5 shadow-sm flex flex-col gap-1 cursor-pointer" onclick="toggleFaq('faq-2')">
-<div class="flex items-center justify-between">
-<span class="font-label-md font-bold text-xs text-on-surface">What if our cafe Wi-Fi cuts out in a rush?</span>
-<span class="material-symbols-outlined text-on-surface-variant text-[18px]" id="faq-2-icon">expand_more</span>
-</div>
-<p class="font-body-sm text-xs text-on-surface-variant hidden pt-1" id="faq-2">
-          Paros operates as an offline-first Progressive Web App (PWA). You can continue punching tickets and taking cash without internet. Everything automatically synchronizes the instant connection returns.
-        </p>
+<div class="rounded-xl border-2 border-black bg-surface-container-lowest overflow-hidden retro-shadow-sm transition-all">
+<button class="w-full p-3.5 text-left flex justify-between items-center gap-2 font-label-md text-xs font-bold text-on-surface neo-press" onclick="toggleFaq(2)">
+<span>What happens if our cafe Wi-Fi goes down during a rush?</span>
+<span class="material-symbols-outlined text-primary text-xl transition-transform duration-200" id="faq-icon-2">add</span>
+</button>
+<div class="hidden px-3.5 pb-3.5 pt-1 text-xs text-on-surface-variant border-t border-dashed border-outline-variant leading-relaxed" id="faq-body-2">
+          Paros operates as a local Progressive Web App (PWA). You can continue punching orders, sending kitchen tickets to your KDS or Bluetooth printers, and managing tables offline. As soon as connectivity returns, orders auto-sync seamlessly.
+        </div>
 </div>
 <!-- FAQ 3 -->
-<div class="bg-surface-container-lowest rounded-xl p-3.5 shadow-sm flex flex-col gap-1 cursor-pointer" onclick="toggleFaq('faq-3')">
-<div class="flex items-center justify-between">
-<span class="font-label-md font-bold text-xs text-on-surface">Can we still print paper if a patron insists?</span>
-<span class="material-symbols-outlined text-on-surface-variant text-[18px]" id="faq-3-icon">expand_more</span>
+<div class="rounded-xl border-2 border-black bg-surface-container-lowest overflow-hidden retro-shadow-sm transition-all">
+<button class="w-full p-3.5 text-left flex justify-between items-center gap-2 font-label-md text-xs font-bold text-on-surface neo-press" onclick="toggleFaq(3)">
+<span>Can I still print paper receipts if an older customer insists?</span>
+<span class="material-symbols-outlined text-primary text-xl transition-transform duration-200" id="faq-icon-3">add</span>
+</button>
+<div class="hidden px-3.5 pb-3.5 pt-1 text-xs text-on-surface-variant border-t border-dashed border-outline-variant leading-relaxed" id="faq-body-3">
+          Absolutely. You can pair any standard Bluetooth, USB, or LAN thermal receipt printer in 1 tap. Paros supports ESC/POS protocol without needing any proprietary Windows print drivers.
+        </div>
 </div>
-<p class="font-body-sm text-xs text-on-surface-variant hidden pt-1" id="faq-3">
-          Absolutely. While 94% of cafe patrons love the instant WhatsApp bill, Paros connects with any cheap Bluetooth or USB thermal receipt printer in 1 tap.
-        </p>
+<!-- FAQ 4 -->
+<div class="rounded-xl border-2 border-black bg-surface-container-lowest overflow-hidden retro-shadow-sm transition-all">
+<button class="w-full p-3.5 text-left flex justify-between items-center gap-2 font-label-md text-xs font-bold text-on-surface neo-press" onclick="toggleFaq(4)">
+<span>How long does cafe menu setup take?</span>
+<span class="material-symbols-outlined text-primary text-xl transition-transform duration-200" id="faq-icon-4">add</span>
+</button>
+<div class="hidden px-3.5 pb-3.5 pt-1 text-xs text-on-surface-variant border-t border-dashed border-outline-variant leading-relaxed" id="faq-body-4">
+          Under 3 minutes! You can upload an Excel sheet, take a photo of your printed chalkboard menu for our team to digitize, or pick from our curated specialty cafe preset templates.
+        </div>
 </div>
-</div>
-<!-- Mini Footer -->
-<div class="flex flex-col items-center justify-center text-center pt-2 gap-1 pb-4">
-<span class="text-xs font-label-md font-bold text-on-surface">Paros — Table se Kitchen tak. Bas Paros.</span>
-<span class="text-[11px] font-body-sm text-on-surface-variant">Made with ❤️ for Indian Independent Cafes &amp; Coffee Hustlers.</span>
 </div>
 </section>
+<!-- 10. PREMIUM FOOTER -->
+<footer class="px-margin-mobile pt-8 pb-12 bg-[#1c1917] text-white border-t-2 border-black flex flex-col gap-6">
+<div class="flex flex-col gap-2">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white border border-white/20">
+<span class="material-symbols-outlined text-xl">restaurant</span>
 </div>
+<span class="font-headline-sm text-xl font-black tracking-tight text-white">Paros</span>
+</div>
+<p class="font-body-sm text-xs text-stone-400 font-medium">
+        Table se Kitchen tak. Bas Paros. The modern cloud POS built for passionate Indian coffee roasters and culinary creators.
+      </p>
+<div class="inline-flex items-center gap-2 text-[11px] font-mono text-[#22c55e] mt-1">
+<span class="w-2 h-2 rounded-full bg-[#22c55e] animate-pulse"></span>
+<span>99.99% Cloud SLA • Built for Indie Food Hustlers</span>
+</div>
+</div>
+<!-- Categorized Links Grid -->
+<div class="grid grid-cols-2 gap-4 text-xs pt-2 border-t border-stone-800">
+<div class="flex flex-col gap-2">
+<span class="font-label-sm font-bold text-white uppercase text-[10px] tracking-wider text-[#e05d38]">Product</span>
+<a class="text-stone-400 hover:text-white transition-colors" href="#os-interactive-demo">Counter Billing</a>
+<a class="text-stone-400 hover:text-white transition-colors" href="#os-interactive-demo">Barista KDS</a>
+<a class="text-stone-400 hover:text-white transition-colors" href="#os-interactive-demo">Single Table QR</a>
+<a class="text-stone-400 hover:text-white transition-colors" href="#pricing-section">Pricing Plans</a>
+</div>
+<div class="flex flex-col gap-2">
+<span class="font-label-sm font-bold text-white uppercase text-[10px] tracking-wider text-[#e05d38]">Operations</span>
+<a class="text-stone-400 hover:text-white transition-colors" href="#calculator-section">Petpooja Migration</a>
+<a class="text-stone-400 hover:text-white transition-colors" href="#faq-body-3">Thermal Printer Setup</a>
+<a class="text-stone-400 hover:text-white transition-colors" href="#os-interactive-demo">Offline PWA Engine</a>
+<a class="text-stone-400 hover:text-white transition-colors" href="#pricing-section">GST WhatsApp Invoicing</a>
+</div>
+</div>
+<!-- Copyright & Disclaimer -->
+<div class="pt-4 border-t border-stone-800 flex flex-col gap-2 text-[10px] text-stone-500">
+<div>
+        © 2025 Paros Technologies Pvt. Ltd. Crafted with ❤️ for Indian Independent Cafes.
+      </div>
+<div class="font-semibold text-stone-400">
+        Zero Hardware Guarantee. All trademarks referenced belong to their respective owners.
+      </div>
+</div>
+</footer>
+</div>
+<!-- FLOATING TACTILE TOAST NOTIFICATION CONTAINER -->
+<div class="fixed top-20 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-sm pointer-events-none transition-all duration-300 opacity-0 translate-y-[-10px]" id="toast-container">
+<div class="p-3 rounded-xl bg-black text-white border-2 border-white/20 retro-shadow-sm flex items-center gap-2.5 text-xs font-bold shadow-xl">
+<span class="material-symbols-outlined text-secondary text-lg" id="toast-icon">check_circle</span>
+<span class="leading-tight" id="toast-message">Notification message here</span>
+</div>
+</div>
+<!-- CLIENT-SIDE SCRIPTS -->
 <script>
-  function switchSimulatorTab(mode) {
-    const tabCounter = document.getElementById('tab-counter');
-    const tabKds = document.getElementById('tab-kds');
-    const tabQr = document.getElementById('tab-qr');
-    const stationLabel = document.getElementById('sim-station-label');
-    const tableBadge = document.getElementById('sim-table-badge');
-    const btnText = document.getElementById('sim-btn-text');
-
-    // Reset styles
-    [tabCounter, tabKds, tabQr].forEach(tab => {
-      tab.className = 'py-2 rounded-lg text-on-surface-variant font-label-sm text-xs font-semibold transition-all';
-    });
-
-    if (mode === 'counter') {
-      tabCounter.className = 'py-2 rounded-lg bg-surface-container-lowest shadow-sm text-primary font-label-sm text-xs font-bold transition-all';
-      stationLabel.textContent = 'Morning Brew Station #01';
-      tableBadge.textContent = 'Table 04 (Dine-In)';
-      btnText.textContent = 'Send WhatsApp GST Bill';
-    } else if (mode === 'kds') {
-      tabKds.className = 'py-2 rounded-lg bg-surface-container-lowest shadow-sm text-primary font-label-sm text-xs font-bold transition-all';
-      stationLabel.textContent = 'Kitchen Screen • Barista 1';
-      tableBadge.textContent = 'Prep Time: 4m 20s';
-      btnText.textContent = 'Mark Ready & Dispatch ETA (+3m)';
-    } else if (mode === 'qr') {
-      tabQr.className = 'py-2 rounded-lg bg-surface-container-lowest shadow-sm text-primary font-label-sm text-xs font-bold transition-all';
-      stationLabel.textContent = 'Diner Mobile Self-Order';
-      tableBadge.textContent = 'Scanned Table 04';
-      btnText.textContent = 'Confirm & Pay via UPI (₹735)';
-    }
-  }
-
-  function triggerWhatsAppModal() {
-    const banner = document.getElementById('sim-status-banner');
-    banner.classList.remove('hidden');
-    setTimeout(() => {
-      banner.classList.add('hidden');
+  // Toast Helper
+  let toastTimer = null;
+  function showToast(msg, icon = 'check_circle') {
+    const t = document.getElementById('toast-container');
+    const m = document.getElementById('toast-message');
+    const i = document.getElementById('toast-icon');
+    if (!t) return;
+    m.textContent = msg;
+    i.textContent = icon;
+    t.classList.remove('opacity-0', 'translate-y-[-10px]');
+    t.classList.add('opacity-100', 'translate-y-0');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+      t.classList.remove('opacity-100', 'translate-y-0');
+      t.classList.add('opacity-0', 'translate-y-[-10px]');
     }, 2800);
   }
 
-  function updateCostComparison(orders) {
-    const volLabel = document.getElementById('calc-volume-label');
-    const paperCost = document.getElementById('legacy-paper-cost');
-    const mdrCost = document.getElementById('legacy-mdr-cost');
-    const legacyTotal = document.getElementById('legacy-total-cost');
-    const netSavings = document.getElementById('net-savings-label');
+  // 1. OS Interactive Perspectives Switcher
+  function switchOsTab(tabIndex) {
+    const v1 = document.getElementById('view-os-1');
+    const v2 = document.getElementById('view-os-2');
+    const v3 = document.getElementById('view-os-3');
 
-    const dailyOrders = parseInt(orders, 10);
-    const tablesEstimate = Math.max(4, Math.round(dailyOrders / 6.5));
-    volLabel.textContent = `${dailyOrders} orders / day (~${tablesEstimate} tables)`;
+    const b1 = document.getElementById('tab-btn-1');
+    const b2 = document.getElementById('tab-btn-2');
+    const b3 = document.getElementById('tab-btn-3');
 
-    // Calculations based on daily order count
-    const paperAnnual = dailyOrders * 365 * 1.125; // ₹1.12 per thermal printed receipt roll segment
-    const avgTicket = 320;
-    const annualGTV = dailyOrders * avgTicket * 365;
-    const mdrAnnual = annualGTV * 0.016; // 1.6% average aggregator cut
-    const baseLegacyFixed = 20000 + 35000 + 4500; // Software + Terminal + AMC = ₹59,500
-    const totalLegacy = Math.round(baseLegacyFixed + paperAnnual + mdrAnnual);
+    // Reset views
+    v1.classList.add('hidden');
+    v2.classList.add('hidden');
+    v3.classList.add('hidden');
+    v2.classList.remove('flex');
+    v3.classList.remove('flex');
 
-    const parosCost = 4999;
-    const diff = totalLegacy - parosCost;
+    // Reset button styling
+    [b1, b2, b3].forEach(b => {
+      b.className = 'py-2 px-1 rounded-lg bg-transparent text-on-surface font-label-sm text-[11px] font-bold tracking-tight text-center transition-all flex flex-col items-center neo-press';
+    });
 
-    paperCost.textContent = `₹${Math.round(paperAnnual).toLocaleString('en-IN')}`;
-    mdrCost.textContent = `₹${Math.round(mdrAnnual).toLocaleString('en-IN')}`;
-    legacyTotal.textContent = `₹${totalLegacy.toLocaleString('en-IN')}`;
-    netSavings.textContent = `Save ₹${diff.toLocaleString('en-IN')} / yr`;
+    const activeClasses = 'py-2 px-1 rounded-lg bg-black text-white font-label-sm text-[11px] font-bold tracking-tight text-center transition-all flex flex-col items-center neo-press';
+
+    if (tabIndex === 1) {
+      v1.classList.remove('hidden');
+      b1.className = activeClasses;
+      showToast('Switched to Counter POS Register');
+    } else if (tabIndex === 2) {
+      v2.classList.remove('hidden');
+      v2.classList.add('flex');
+      b2.className = activeClasses;
+      showToast('Switched to Barista KDS Screen');
+    } else if (tabIndex === 3) {
+      v3.classList.remove('hidden');
+      v3.classList.add('flex');
+      b3.className = activeClasses;
+      showToast('Switched to Diner Table #04 QR View');
+    }
+    updateNavHighlight('os-demo');
   }
 
-  function switchPricing(mode) {
-    const btnM = document.getElementById('price-btn-monthly');
-    const btnA = document.getElementById('price-btn-annual');
-    const amt = document.getElementById('pricing-amt');
-    const period = document.getElementById('pricing-period');
+  // POS Add item interaction
+  let currentSubtotal = 620;
+  function addPosItem(name, price) {
+    currentSubtotal += price;
+    const gst = Math.round(currentSubtotal * 0.05);
+    const total = currentSubtotal + gst;
 
-    if (mode === 'monthly') {
-      btnM.className = 'px-4 py-1.5 rounded-lg text-xs font-label-sm font-bold bg-surface-container-lowest text-primary shadow-sm transition-all';
-      btnA.className = 'px-4 py-1.5 rounded-lg text-xs font-label-sm font-semibold text-on-surface-variant transition-all flex items-center gap-1';
-      amt.textContent = '₹999';
-      period.textContent = '/ month (Billed monthly)';
+    const list = document.getElementById('pos-items-list');
+    const row = document.createElement('div');
+    row.className = 'flex justify-between text-on-surface py-0.5 item-flash';
+    row.innerHTML = '<span>1x ' + name + '</span><span class="font-semibold">₹' + price + '</span>';
+    list.appendChild(row);
+
+    document.getElementById('pos-subtotal').textContent = '₹' + currentSubtotal;
+    document.getElementById('pos-gst').textContent = '₹' + gst;
+    const totalEl = document.getElementById('pos-total');
+    totalEl.textContent = '₹' + total;
+    totalEl.classList.add('scale-pop');
+    setTimeout(() => totalEl.classList.remove('scale-pop'), 400);
+
+    showToast('Added ' + name + ' (+₹' + price + ') to Station 1 Ticket');
+  }
+
+  function triggerWhatsappSent() {
+    const btn = document.getElementById('pos-send-btn');
+    const text = document.getElementById('pos-btn-text');
+    text.textContent = '⚡ Bill Dispatched via WhatsApp (0.4s)';
+    btn.classList.remove('bg-secondary');
+    btn.classList.add('bg-black');
+    showToast('✓ WhatsApp GST Invoice pinged in 0.6s to +91 98201 44321', 'send');
+    setTimeout(() => {
+      text.textContent = 'Send Instant WhatsApp GST Bill';
+      btn.classList.add('bg-secondary');
+      btn.classList.remove('bg-black');
+    }, 2500);
+  }
+
+  // KDS Live Clock & Ticking Countdown
+  let kdsSecondsLeft = 222; // 03m 42s
+  setInterval(() => {
+    if (kdsSecondsLeft > 0) {
+      kdsSecondsLeft--;
+      const m = Math.floor(kdsSecondsLeft / 60).toString().padStart(2, '0');
+      const s = (kdsSecondsLeft % 60).toString().padStart(2, '0');
+      const timerEl = document.getElementById('kds-timer-text');
+      if (timerEl) timerEl.textContent = m + 'm ' + s + 's';
+    }
+  }, 1000);
+
+  function addKdsDelay() {
+    kdsSecondsLeft += 120;
+    const btn = document.getElementById('kds-delay-btn');
+    btn.innerHTML = '<span class="material-symbols-outlined text-sm">alarm_on</span> Diner Notified (+2m)';
+    btn.classList.add('text-green-400');
+    showToast('⏱ +2m Delay alert sent to diner mobile on Table 04');
+    setTimeout(() => {
+      btn.innerHTML = '<span class="material-symbols-outlined text-sm">schedule</span> +2m Rush Alert';
+      btn.classList.remove('text-green-400');
+    }, 2000);
+  }
+
+  function toggleKdsItem() {
+    const label = document.getElementById('kds-croissant-label');
+    const check = document.getElementById('kds-croissant');
+    if (check.checked) {
+      label.classList.add('line-through', 'text-zinc-500');
+      showToast('Croissant toasted & ready for pickup');
     } else {
-      btnA.className = 'px-4 py-1.5 rounded-lg text-xs font-label-sm font-bold bg-surface-container-lowest text-primary shadow-sm transition-all flex items-center gap-1';
-      btnM.className = 'px-4 py-1.5 rounded-lg text-xs font-label-sm font-semibold text-on-surface-variant transition-all';
-      amt.textContent = '₹8,499';
-      period.textContent = '/ year (Effective ₹708/mo)';
+      label.classList.remove('line-through', 'text-zinc-500');
     }
   }
 
-  function toggleFaq(id) {
-    const el = document.getElementById(id);
-    const icon = document.getElementById(`${id}-icon`);
-    if (el.classList.contains('hidden')) {
-      el.classList.remove('hidden');
-      icon.textContent = 'expand_less';
+  function toggleKdsItemManual(num) {
+    const label = document.getElementById('kds-item-1-label');
+    const check = document.getElementById('kds-item-1');
+    if (check.checked) {
+      label.classList.add('line-through', 'text-zinc-500');
     } else {
-      el.classList.add('hidden');
-      icon.textContent = 'expand_more';
+      label.classList.remove('line-through', 'text-zinc-500');
     }
   }
-</script></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface-container-lowest/90 backdrop-blur-xl shadow-[0_-4px_20px_rgba(28,25,23,0.06)]" data-active-classes="text-primary font-bold"><div class="h-20 px-space-sm flex items-center justify-around gap-1"><a aria-current="page" class="flex-1 min-w-0 h-14 rounded-xl flex flex-col items-center justify-center transition-all active:scale-95 text-primary font-bold" data-path="landing" href="#"><span class="material-symbols-outlined text-[22px]">storefront</span><span class="font-label-sm text-label-sm tracking-normal truncate mt-0.5">Paros</span></a><a class="flex-1 min-w-0 h-14 rounded-xl flex flex-col items-center justify-center text-on-surface-variant transition-all hover:text-on-surface active:scale-95" data-path="live-demo" href="#"><span class="material-symbols-outlined text-[22px]">smartphone</span><span class="font-label-sm text-label-sm tracking-normal truncate mt-0.5">Live Demo</span></a><a class="flex-1 min-w-0 h-14 rounded-xl flex flex-col items-center justify-center text-on-surface-variant transition-all hover:text-on-surface active:scale-95" data-path="savings-calc" href="#"><span class="material-symbols-outlined text-[22px]">calculate</span><span class="font-label-sm text-label-sm tracking-normal truncate mt-0.5">Savings Calc</span></a><a class="flex-1 min-w-0 h-14 rounded-xl flex flex-col items-center justify-center text-on-surface-variant transition-all hover:text-on-surface active:scale-95" data-path="pricing-plans" href="#"><span class="material-symbols-outlined text-[22px]">payments</span><span class="font-label-sm text-label-sm tracking-normal truncate mt-0.5">₹499/mo</span></a></div></nav></body></html>
+
+  function bumpKdsOrder() {
+    const btn = document.getElementById('kds-bump-btn');
+    const label1 = document.getElementById('kds-item-1-label');
+    const check1 = document.getElementById('kds-item-1');
+    const label2 = document.getElementById('kds-croissant-label');
+    const check2 = document.getElementById('kds-croissant');
+
+    check1.checked = true;
+    check2.checked = true;
+    label1.classList.add('line-through', 'text-zinc-500');
+    label2.classList.add('line-through', 'text-zinc-500');
+
+    btn.textContent = '✓ Order #104 Cleared!';
+    btn.classList.add('bg-emerald-600');
+    showToast('🎉 Order #104 bumped to dispatch counter!');
+    setTimeout(() => {
+      btn.innerHTML = '<span class="material-symbols-outlined text-sm">check_circle</span> Bump / Mark Ready';
+      btn.classList.remove('bg-emerald-600');
+    }, 2200);
+  }
+
+  // QR Customer Stepper & Checkout interaction
+  const dinerItems = {
+    pourOver: { count: 1, price: 260 },
+    chocolat: { count: 1, price: 240 },
+    extraOat: { count: 1, price: 235 } // initial 3 items sum to 735
+  };
+
+  function updateDinerItem(id, delta, price) {
+    if (!dinerItems[id]) dinerItems[id] = { count: 0, price: price };
+    dinerItems[id].count = Math.max(0, dinerItems[id].count + delta);
+    const qtyEl = document.getElementById('diner-qty-' + id);
+    if (qtyEl) {
+      qtyEl.textContent = dinerItems[id].count;
+      qtyEl.classList.add('scale-pop');
+      setTimeout(() => qtyEl.classList.remove('scale-pop'), 200);
+    }
+
+    // Recompute total
+    let totalItems = 0;
+    let sum = 0;
+    for (const key in dinerItems) {
+      totalItems += dinerItems[key].count;
+      sum += (dinerItems[key].count * dinerItems[key].price);
+    }
+    const tabEl = document.getElementById('qr-tab-total');
+    tabEl.textContent = '₹' + sum + ' (' + totalItems + ' Items)';
+    const payLabel = document.getElementById('qr-pay-btn-label');
+    payLabel.textContent = 'Pay ₹' + sum + ' via Direct UPI';
+  }
+
+  function triggerUpiPay() {
+    showToast('⚡ Launching UPI intent (GPay/PhonePe). Direct 0% fee settlement!');
+  }
+
+  // 2. Hardware Elimination Audit calculations & Slider
+  function recalculateAudit(ordersPerDay, labelText) {
+    document.getElementById('order-volume-label').textContent = labelText;
+
+    // Pricing formulas
+    let paper = Math.round(ordersPerDay * 365 * 1.12);
+    let mdr = Math.round(ordersPerDay * 365 * 280 * 0.015);
+    let totalLegacy = 20000 + 35000 + paper + mdr + 4500;
+    let parosCost = 4999;
+    let savings = totalLegacy - parosCost;
+
+    document.getElementById('audit-paper-cost').textContent = '₹' + paper.toLocaleString('en-IN') + ' / yr';
+    document.getElementById('audit-mdr-cost').textContent = '₹' + mdr.toLocaleString('en-IN') + ' / yr';
+    document.getElementById('audit-legacy-total').textContent = '₹' + totalLegacy.toLocaleString('en-IN');
+    
+    const banner = document.getElementById('audit-savings-headline');
+    banner.textContent = '🎉 You Save ₹' + savings.toLocaleString('en-IN') + ' in Year 1 with Paros!';
+    
+    const card = document.getElementById('audit-savings-card');
+    card.classList.remove('scale-pop');
+    void card.offsetWidth; // trigger reflow
+    card.classList.add('scale-pop');
+  }
+
+  function onAuditSlider(val) {
+    const orders = parseInt(val);
+    let label = orders + ' Orders / Day';
+    if (orders <= 40) label += ' (Espresso Bar)';
+    else if (orders <= 100) label += ' (12 Tables)';
+    else label += ' (High Rush Bistro)';
+
+    // reset preset pills
+    document.querySelectorAll('.audit-pill').forEach(p => {
+      p.className = 'audit-pill py-1.5 px-2 rounded-lg bg-surface-container-lowest border border-black font-label-sm text-xs font-bold text-center neo-press active:scale-95';
+    });
+
+    if (orders === 30) document.getElementById('preset-30').className = 'audit-pill py-1.5 px-2 rounded-lg bg-primary text-white border border-black font-label-sm text-xs font-bold text-center neo-press active:scale-95';
+    if (orders === 80) document.getElementById('preset-80').className = 'audit-pill py-1.5 px-2 rounded-lg bg-primary text-white border border-black font-label-sm text-xs font-bold text-center neo-press active:scale-95';
+    if (orders === 200) document.getElementById('preset-200').className = 'audit-pill py-1.5 px-2 rounded-lg bg-primary text-white border border-black font-label-sm text-xs font-bold text-center neo-press active:scale-95';
+
+    recalculateAudit(orders, label);
+  }
+
+  function setAuditVolume(ordersPerDay, labelText) {
+    const slider = document.getElementById('audit-range-slider');
+    slider.value = ordersPerDay;
+
+    document.querySelectorAll('.audit-pill').forEach(p => {
+      p.className = 'audit-pill py-1.5 px-2 rounded-lg bg-surface-container-lowest border border-black font-label-sm text-xs font-bold text-center neo-press active:scale-95';
+    });
+    if (ordersPerDay === 30) document.getElementById('preset-30').className = 'audit-pill py-1.5 px-2 rounded-lg bg-primary text-white border border-black font-label-sm text-xs font-bold text-center neo-press active:scale-95';
+    if (ordersPerDay === 80) document.getElementById('preset-80').className = 'audit-pill py-1.5 px-2 rounded-lg bg-primary text-white border border-black font-label-sm text-xs font-bold text-center neo-press active:scale-95';
+    if (ordersPerDay === 200) document.getElementById('preset-200').className = 'audit-pill py-1.5 px-2 rounded-lg bg-primary text-white border border-black font-label-sm text-xs font-bold text-center neo-press active:scale-95';
+
+    recalculateAudit(ordersPerDay, labelText);
+    showToast('Recalculated savings for ' + ordersPerDay + ' orders/day');
+  }
+
+  // 3. Pricing Toggle
+  function toggleBilling(type) {
+    const mBtn = document.getElementById('billing-monthly-btn');
+    const aBtn = document.getElementById('billing-annual-btn');
+    const silverNum = document.getElementById('price-silver-num');
+    const silverPeriod = document.getElementById('price-silver-period');
+    const goldNum = document.getElementById('price-gold-num');
+    const goldPeriod = document.getElementById('price-gold-period');
+
+    if (type === 'annual') {
+      aBtn.className = 'py-1.5 px-3 rounded-lg bg-black text-white font-label-sm text-xs font-bold transition-all z-10 flex items-center gap-1 neo-press';
+      mBtn.className = 'py-1.5 px-4 rounded-lg bg-transparent text-on-surface font-label-sm text-xs font-bold transition-all z-10 neo-press';
+      silverNum.textContent = '₹4,999';
+      silverPeriod.textContent = '/ year';
+      goldNum.textContent = '₹8,499';
+      goldPeriod.textContent = '/ year';
+      silverNum.classList.add('scale-pop');
+      goldNum.classList.add('scale-pop');
+      showToast('Switched to Annual Billing (2 Months Free Applied)');
+    } else {
+      mBtn.className = 'py-1.5 px-4 rounded-lg bg-black text-white font-label-sm text-xs font-bold transition-all z-10 neo-press';
+      aBtn.className = 'py-1.5 px-3 rounded-lg bg-transparent text-on-surface font-label-sm text-xs font-bold transition-all z-10 flex items-center gap-1 neo-press';
+      silverNum.textContent = '₹499';
+      silverPeriod.textContent = '/ month';
+      goldNum.textContent = '₹799';
+      goldPeriod.textContent = '/ month';
+      silverNum.classList.add('scale-pop');
+      goldNum.classList.add('scale-pop');
+      showToast('Switched to Monthly Flexible Billing');
+    }
+    setTimeout(() => {
+      silverNum.classList.remove('scale-pop');
+      goldNum.classList.remove('scale-pop');
+    }, 400);
+  }
+
+  // 4. Testimonials Interactive Switcher
+  const reviewsData = [
+    {
+      quote: "We were burning over ₹3,000 every single month on rolls of thermal receipt paper that customers threw in the dustbin 2 seconds later. Paros WhatsApp billing paid for itself in week one, and our brew bar looks pristine with just an iPad.",
+      name: "Arjun Kulkarni",
+      role: "Founder, RoastCraft • Indiranagar, BLR"
+    },
+    {
+      quote: "Our previous POS would crash and lose tickets whenever Bandra Wi-Fi flickered during heavy monsoon showers. Paros handles local offline sync seamlessly. When Sunday morning rushes happen, our baristas don't drop a single order.",
+      name: "Sanya Merchant",
+      role: "Head Baker, Sourdough Co. • Bandra West, BOM"
+    },
+    {
+      quote: "The 1-tap chef ETA countdown genuinely saved our floor staff from nervous breakdowns. Diners can see a live timer on their phone, so they never wave arms angrily asking 'kahan hai meri coffee?'. Absolute calm in our kitchen.",
+      name: "Vikram Rao",
+      role: "Partner, Third Wave Lab • Hauz Khas, DEL"
+    }
+  ];
+
+  let currentReviewIdx = 0;
+  function updateReviewDisplay(idx) {
+    currentReviewIdx = idx;
+    const r = reviewsData[idx];
+    const qEl = document.getElementById('review-quote-text');
+    const nEl = document.getElementById('review-author-name');
+    const rEl = document.getElementById('review-author-role');
+
+    qEl.style.opacity = '0';
+    setTimeout(() => {
+      qEl.textContent = '“' + r.quote + '”';
+      nEl.textContent = r.name;
+      rEl.textContent = r.role;
+      qEl.style.opacity = '1';
+    }, 150);
+
+    for (let i = 0; i < 3; i++) {
+      const btn = document.getElementById('rev-btn-' + i);
+      if (btn) {
+        if (i === idx) {
+          btn.classList.add('bg-black', 'text-white');
+          btn.classList.remove('bg-surface-container', 'text-on-surface');
+        } else {
+          btn.classList.remove('bg-black', 'text-white');
+          btn.classList.add('bg-surface-container', 'text-on-surface');
+        }
+      }
+    }
+
+    // Update dots
+    const dots = document.getElementById('review-dots');
+    if (dots) {
+      dots.innerHTML = '';
+      for (let i = 0; i < 3; i++) {
+        const d = document.createElement('span');
+        d.className = i === idx 
+          ? 'w-2 h-2 rounded-full bg-black inline-block transition-all'
+          : 'w-2 h-2 rounded-full bg-black/20 inline-block transition-all';
+        dots.appendChild(d);
+      }
+    }
+  }
+
+  function selectReview(idx) {
+    updateReviewDisplay(idx);
+  }
+  function nextReview() {
+    const next = (currentReviewIdx + 1) % reviewsData.length;
+    updateReviewDisplay(next);
+  }
+  function prevReview() {
+    const prev = (currentReviewIdx - 1 + reviewsData.length) % reviewsData.length;
+    updateReviewDisplay(prev);
+  }
+
+  // 5. FAQ Accordions
+  function toggleFaq(num) {
+    const body = document.getElementById('faq-body-' + num);
+    const icon = document.getElementById('faq-icon-' + num);
+    const isHidden = body.classList.contains('hidden');
+
+    // Close others
+    for (let i = 1; i <= 4; i++) {
+      const b = document.getElementById('faq-body-' + i);
+      const ic = document.getElementById('faq-icon-' + i);
+      if (b && ic) {
+        b.classList.add('hidden');
+        ic.textContent = 'add';
+        ic.style.transform = 'rotate(0deg)';
+      }
+    }
+
+    if (isHidden) {
+      body.classList.remove('hidden');
+      icon.textContent = 'close';
+      icon.style.transform = 'rotate(90deg)';
+    }
+  }
+
+  // Sticky Bottom Nav Indicator sync
+  function updateNavHighlight(activePath) {
+    const navItems = document.querySelectorAll('nav a');
+    navItems.forEach(item => {
+      const p = item.getAttribute('data-path');
+      if (p === activePath) {
+        item.className = 'flex flex-col items-center justify-center flex-1 h-full min-w-[44px] text-primary font-bold transition-colors';
+      } else {
+        item.className = 'flex flex-col items-center justify-center flex-1 h-full min-w-[44px] text-on-surface-variant transition-colors';
+      }
+    });
+  }
+
+  function handleNavClick(path, targetId) {
+    updateNavHighlight(path);
+    if (targetId) {
+      const el = document.getElementById(targetId);
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
+</script></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface/90 backdrop-blur-xl shadow-[0_-1px_12px_rgba(0,0,0,0.05)] border-t border-black/10" data-active-classes="text-primary font-bold"><div class="flex items-center justify-around h-16 px-space-xs"><a aria-current="page" class="flex flex-col items-center justify-center flex-1 h-full min-w-[44px] text-primary font-bold transition-colors neo-press" data-path="home" href="#" onclick="handleNavClick('home', null)"><span class="material-symbols-outlined text-[22px]">storefront</span><span class="font-label-sm text-[11px] mt-0.5">Home</span></a><a class="flex flex-col items-center justify-center flex-1 h-full min-w-[44px] text-on-surface-variant transition-colors neo-press" data-path="os-demo" href="#os-interactive-demo" onclick="handleNavClick('os-demo', 'os-interactive-demo')"><span class="material-symbols-outlined text-[22px]">point_of_sale</span><span class="font-label-sm text-[11px] mt-0.5">OS Demo</span></a><a class="flex flex-col items-center justify-center flex-1 h-full min-w-[44px] text-on-surface-variant transition-colors neo-press" data-path="calculator" href="#calculator-section" onclick="handleNavClick('calculator', 'calculator-section')"><span class="material-symbols-outlined text-[22px]">calculate</span><span class="font-label-sm text-[11px] mt-0.5">Calculator</span></a><a class="flex flex-col items-center justify-center flex-1 h-full min-w-[44px] text-on-surface-variant transition-colors neo-press" data-path="plans" href="#pricing-section" onclick="handleNavClick('plans', 'pricing-section')"><span class="material-symbols-outlined text-[22px]">local_offer</span><span class="font-label-sm text-[11px] mt-0.5">Plans</span></a></div></nav></body></html>

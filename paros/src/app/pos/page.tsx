@@ -155,6 +155,61 @@ export default function PosRegisterPage() {
   const [tenderAmount, setTenderAmount] = useState<number>(500);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
+  // Staff PIN & Cashier Operator State
+  const [operator, setOperator] = useState<{ name: string; role: string } | null>(null);
+  const [pinModalOpen, setPinModalOpen] = useState(false);
+  const [enteredPin, setEnteredPin] = useState('');
+  const [pinError, setPinError] = useState('');
+  const [pinLoading, setPinLoading] = useState(false);
+
+  useEffect(() => {
+    const cached = sessionStorage.getItem('paros_pos_operator');
+    if (cached) {
+      try {
+        setOperator(JSON.parse(cached));
+      } catch {
+        setPinModalOpen(true);
+      }
+    } else {
+      setPinModalOpen(true);
+    }
+  }, []);
+
+  async function handleVerifyPin(e?: React.FormEvent) {
+    if (e) e.preventDefault();
+    if (enteredPin.length !== 4) {
+      setPinError('Enter a 4-digit PIN');
+      return;
+    }
+    setPinLoading(true);
+    setPinError('');
+    try {
+      const res = await fetch('/api/auth/pin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin: enteredPin, target: 'POS' }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Invalid PIN');
+
+      sessionStorage.setItem('paros_pos_operator', JSON.stringify(data.operator));
+      setOperator(data.operator);
+      setPinModalOpen(false);
+      setEnteredPin('');
+    } catch (err: unknown) {
+      setPinError(err instanceof Error ? err.message : 'Invalid PIN');
+    } finally {
+      setPinLoading(false);
+    }
+  }
+
+  function handleLockTerminal() {
+    sessionStorage.removeItem('paros_pos_operator');
+    setOperator(null);
+    setEnteredPin('');
+    setPinModalOpen(true);
+  }
+
   // Live tables (loaded dynamically from database)
   const [tables, setTables] = useState<TableNode[]>([]);
 
@@ -578,6 +633,7 @@ export default function PosRegisterPage() {
         paymentMethod: method,
         customerName: billData.customerName,
         customerPhone: currentCustomer.phone || (isExpress ? null : '+91 98450 00000'),
+        processedBy: operator?.name || 'Primary Cashier',
       }),
     }).catch(() => {});
 
@@ -825,8 +881,29 @@ export default function PosRegisterPage() {
             </Link>
           </div>
 
-          {/* Till Float & Clock & Fresh Registration Button */}
+          {/* Till Float & Clock & Operator Badge */}
           <div className="flex items-center gap-2 sm:gap-3">
+            {/* Operator Lock/Unlock Badge */}
+            {operator ? (
+              <button
+                onClick={handleLockTerminal}
+                title="Tap to lock terminal or switch cashier"
+                className="flex items-center gap-1.5 px-2.5 py-1 bg-paros-mint hover:bg-paros-yellow rounded-xl border border-espresso font-display text-xs font-black text-espresso transition-colors shadow-brutal-sm"
+              >
+                <span className="material-symbols-outlined text-[15px] text-paros-matcha">badge</span>
+                <span>{operator.name}</span>
+                <span className="material-symbols-outlined text-[13px] text-espresso/60">lock</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => setPinModalOpen(true)}
+                className="flex items-center gap-1.5 px-2.5 py-1 bg-paros-yellow rounded-xl border border-espresso font-display text-xs font-black text-espresso animate-pulse shadow-brutal-sm"
+              >
+                <span className="material-symbols-outlined text-[15px]">lock</span>
+                <span>Enter PIN</span>
+              </button>
+            )}
+
             <div className="flex items-center gap-1.5 px-2.5 py-1 bg-paros-cream rounded-xl border border-espresso font-display text-xs font-bold shadow-brutal-sm">
               <span className="material-symbols-outlined text-[16px] text-paros-orange">point_of_sale</span>
               <span className="hidden md:inline text-espresso/60 uppercase text-[10px]">Till Cash:</span>
@@ -2512,6 +2589,103 @@ export default function PosRegisterPage() {
                 Log Expense & Deduct Float ➔
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── Cashier Terminal PIN Unlock Modal ── */}
+      {pinModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-espresso/80 backdrop-blur-md p-4">
+          <div className="bg-white rounded-3xl border-2 border-espresso shadow-brutal-xl w-full max-w-sm p-6 flex flex-col items-center">
+            <div className="w-14 h-14 rounded-2xl bg-paros-yellow border-2 border-espresso shadow-brutal-sm flex items-center justify-center mb-3">
+              <span className="material-symbols-outlined text-espresso text-3xl">lock</span>
+            </div>
+
+            <h2 className="font-display text-2xl font-black text-espresso text-center">
+              Cashier Terminal Access
+            </h2>
+            <p className="font-body text-xs text-espresso/70 text-center mt-1 mb-4">
+              Enter your 4-digit Cashier PIN to unlock the POS register.
+            </p>
+
+            {/* PIN Display Dots */}
+            <div className="flex items-center justify-center gap-3 my-2">
+              {[0, 1, 2, 3].map((idx) => (
+                <div
+                  key={idx}
+                  className={`w-4 h-4 rounded-full border-2 border-espresso transition-all ${
+                    enteredPin.length > idx ? 'bg-paros-orange scale-110' : 'bg-paros-cream'
+                  }`}
+                />
+              ))}
+            </div>
+
+            {pinError && (
+              <p className="font-display text-xs font-bold text-red-600 bg-red-100 border border-red-300 px-3 py-1 rounded-lg my-2 text-center">
+                {pinError}
+              </p>
+            )}
+
+            {/* Numeric Keypad */}
+            <div className="grid grid-cols-3 gap-2.5 w-full mt-3">
+              {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((digit) => (
+                <button
+                  key={digit}
+                  type="button"
+                  onClick={() => {
+                    if (enteredPin.length < 4) {
+                      const next = enteredPin + digit;
+                      setEnteredPin(next);
+                      setPinError('');
+                    }
+                  }}
+                  className="py-3.5 rounded-xl bg-paros-cream hover:bg-paros-yellow active:bg-paros-orange active:text-white border-2 border-espresso font-mono text-xl font-black text-espresso transition-all shadow-brutal-sm flex items-center justify-center"
+                >
+                  {digit}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => setEnteredPin('')}
+                className="py-3.5 rounded-xl bg-red-100 hover:bg-red-200 border-2 border-espresso font-display text-xs font-black text-red-700 uppercase shadow-brutal-sm"
+              >
+                Clear
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (enteredPin.length < 4) {
+                    const next = enteredPin + '0';
+                    setEnteredPin(next);
+                    setPinError('');
+                  }
+                }}
+                className="py-3.5 rounded-xl bg-paros-cream hover:bg-paros-yellow border-2 border-espresso font-mono text-xl font-black text-espresso shadow-brutal-sm flex items-center justify-center"
+              >
+                0
+              </button>
+              <button
+                type="button"
+                onClick={() => setEnteredPin((prev) => prev.slice(0, -1))}
+                className="py-3.5 rounded-xl bg-gray-100 hover:bg-gray-200 border-2 border-espresso font-mono text-sm font-black text-espresso shadow-brutal-sm flex items-center justify-center"
+              >
+                ⌫
+              </button>
+            </div>
+
+            {/* Submit / Unlock Button */}
+            <button
+              type="button"
+              disabled={enteredPin.length !== 4 || pinLoading}
+              onClick={() => handleVerifyPin()}
+              className="brutal-btn w-full mt-4 py-3.5 bg-paros-orange text-white font-display font-black text-sm uppercase rounded-xl border-2 border-espresso shadow-brutal disabled:opacity-40"
+            >
+              {pinLoading ? 'Verifying PIN...' : 'Unlock Register ➔'}
+            </button>
+
+            <p className="font-body text-[11px] text-espresso/50 mt-3 text-center">
+              💡 Default Cashier PIN: <span className="font-mono font-bold text-espresso">1234</span>
+            </p>
           </div>
         </div>
       )}

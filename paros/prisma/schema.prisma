@@ -22,6 +22,12 @@ model Tenant {
   upiId           String?
   enableKds       Boolean     @default(true)
   enableWhatsapp  Boolean     @default(true)
+  closingTime     String?     @default("23:00") // 24-hr format (e.g. "23:00" = 11:00 PM) for daily report email
+  googleReviewUrl String?     // Direct Google Review link (e.g. https://maps.app.goo.gl/...)
+  wifiName        String?     // Wi-Fi network name for printable QR cards
+  wifiPassword    String?     // Wi-Fi password for printable QR cards
+  cashierPin      String?     @default("1234") // 4-digit POS Cashier PIN
+  kitchenPin      String?     @default("7788") // 4-digit Kitchen KDS PIN
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 
@@ -45,6 +51,7 @@ model User {
   phone       String?
   email       String?
   role        String      @default("OWNER") // OWNER, MANAGER, CASHIER, KITCHEN
+  pin         String?     // 4-digit PIN for terminal unlock
   firebaseUid String?     @unique
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
@@ -122,6 +129,7 @@ model Order {
   customerPhone       String?
   customerEmail       String?
   specialNotes        String?
+  processedBy         String?     // e.g. "Rahul (Cashier)" or "Table QR"
   createdAt           DateTime    @default(now())
   updatedAt           DateTime    @updatedAt
 
@@ -159,6 +167,7 @@ model Bill {
   customerName    String?
   customerPhone   String?
   customerEmail   String?
+  processedBy     String?   // e.g. "Rahul (Cashier)"
   whatsappSent    Boolean   @default(false)
   emailSent       Boolean   @default(false)
   createdAt       DateTime  @default(now())

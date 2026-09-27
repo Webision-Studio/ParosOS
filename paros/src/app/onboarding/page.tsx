@@ -26,6 +26,10 @@ export default function OnboardingPage() {
   const [businessType, setBusinessType] = useState<BusinessType>('cafe');
   const [tableCount, setTableCount] = useState(8);
   const [isCounterOnly, setIsCounterOnly] = useState(false);
+  const [closingTime, setClosingTime] = useState('23:00');
+  const [googleReviewUrl, setGoogleReviewUrl] = useState('');
+  const [wifiName, setWifiName] = useState('');
+  const [wifiPassword, setWifiPassword] = useState('');
   const [savingLoading, setSavingLoading] = useState(false);
 
   // Step 3: Preview Item Selection
@@ -128,6 +132,10 @@ export default function OnboardingPage() {
           city,
           businessType,
           tableCount: isCounterOnly ? 0 : tableCount,
+          closingTime,
+          googleReviewUrl: googleReviewUrl || null,
+          wifiName: wifiName || null,
+          wifiPassword: wifiPassword || null,
         }),
       });
       const data = await res.json();
@@ -472,6 +480,72 @@ export default function OnboardingPage() {
                     />
                     <span>I don&apos;t have tables (Counter Billing / Token Mode Only)</span>
                   </label>
+                </div>
+
+                {/* Cafe Closing Time & Automated Daily Report */}
+                <div className="p-4 bg-paros-mint/20 rounded-2xl border-2 border-espresso flex flex-col gap-2">
+                  <div className="flex items-center justify-between">
+                    <label className="font-display text-xs font-black uppercase text-espresso flex items-center gap-1.5">
+                      <span className="material-symbols-outlined text-paros-orange text-[18px]">schedule</span>
+                      Daily Cafe Closing Time *
+                    </label>
+                    <span className="text-[10px] font-display font-black bg-paros-matcha text-white px-2 py-0.5 rounded">
+                      IST (INDIA)
+                    </span>
+                  </div>
+                  <input
+                    type="time"
+                    value={closingTime}
+                    onChange={(e) => setClosingTime(e.target.value)}
+                    required
+                    className="w-full p-3 bg-white border-2 border-espresso rounded-xl font-mono text-xl font-bold text-espresso outline-none shadow-brutal-sm"
+                  />
+                  <p className="font-body text-xs text-espresso/70 flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[16px] text-paros-orange">mail</span>
+                    Is time par aapke registered email par din bhar ki sales, cash & expense summary automatically deliver ho jayegi.
+                  </p>
+                </div>
+
+                {/* Google Review Link (Optional) */}
+                <div className="flex flex-col gap-2">
+                  <label className="font-display text-xs font-black uppercase text-espresso flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-amber-500 text-[18px]">star</span>
+                    Google Maps Review Link (Optional):
+                  </label>
+                  <input
+                    type="url"
+                    value={googleReviewUrl}
+                    onChange={(e) => setGoogleReviewUrl(e.target.value)}
+                    placeholder="https://maps.app.goo.gl/your-cafe-link"
+                    className="w-full p-3 bg-paros-cream border-2 border-espresso rounded-xl font-body text-sm text-espresso outline-none shadow-brutal-sm"
+                  />
+                  <p className="font-body text-[11px] text-espresso/60">
+                    Customer ka order SERVED hone par uske phone par 5-star Google review ka popup dikhega.
+                  </p>
+                </div>
+
+                {/* Guest Wi-Fi (Optional for Printable QR Cards) */}
+                <div className="p-4 bg-white rounded-2xl border-2 border-espresso flex flex-col gap-3">
+                  <p className="font-display text-xs font-black uppercase text-espresso flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-espresso/70 text-[18px]">wifi</span>
+                    Guest Wi-Fi Details (Optional for QR Table Cards):
+                  </p>
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    <input
+                      type="text"
+                      value={wifiName}
+                      onChange={(e) => setWifiName(e.target.value)}
+                      placeholder="Wi-Fi Name (SSID)"
+                      className="w-full p-2.5 bg-paros-cream border-2 border-espresso rounded-xl font-body text-xs text-espresso outline-none"
+                    />
+                    <input
+                      type="text"
+                      value={wifiPassword}
+                      onChange={(e) => setWifiPassword(e.target.value)}
+                      placeholder="Wi-Fi Password"
+                      className="w-full p-2.5 bg-paros-cream border-2 border-espresso rounded-xl font-body text-xs text-espresso outline-none"
+                    />
+                  </div>
                 </div>
 
                 {/* CTA Button */}

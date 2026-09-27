@@ -6,7 +6,7 @@ export async function POST(req: NextRequest) {
   try {
     const session = await getSession();
     const body = await req.json();
-    const { outletName, city, businessType, tableCount } = body;
+    const { outletName, city, businessType, tableCount, closingTime, googleReviewUrl, wifiName, wifiPassword, cashierPin, kitchenPin } = body;
 
     let targetCafeId = session?.cafeId || body.cafeId;
     let updatedCafe: any;
@@ -24,6 +24,12 @@ export async function POST(req: NextRequest) {
           slug: cleanSlug,
           city: city || 'Bandra West, Mumbai',
           plan: 'GOLD',
+          closingTime: closingTime || '23:00',
+          googleReviewUrl: googleReviewUrl || null,
+          wifiName: wifiName || null,
+          wifiPassword: wifiPassword || null,
+          cashierPin: cashierPin || '1234',
+          kitchenPin: kitchenPin || '7788',
         },
       });
       targetCafeId = updatedCafe.id;
@@ -51,6 +57,12 @@ export async function POST(req: NextRequest) {
           name: outletName || 'Artisan Cafe',
           city: city || 'Bandra West, Mumbai',
           plan: 'GOLD',
+          closingTime: closingTime || undefined,
+          googleReviewUrl: googleReviewUrl !== undefined ? googleReviewUrl : undefined,
+          wifiName: wifiName !== undefined ? wifiName : undefined,
+          wifiPassword: wifiPassword !== undefined ? wifiPassword : undefined,
+          cashierPin: cashierPin || undefined,
+          kitchenPin: kitchenPin || undefined,
         },
       });
     }

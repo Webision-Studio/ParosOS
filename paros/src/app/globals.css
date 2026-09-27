@@ -117,12 +117,19 @@
 
 /* Marquee Animation */
 @keyframes marquee {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+  0% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(-50%, 0, 0); }
 }
 .animate-marquee {
-  animation: marquee 30s linear infinite;
+  display: inline-flex;
+  width: max-content;
+  animation: marquee 24s linear infinite;
+  will-change: transform;
 }
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
@@ -159,3 +166,76 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Mobile Landing Page Typography & Spacing System from DESIGN.md */
+.font-headline-lg-mobile { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; }
+.text-headline-lg-mobile { font-size: 32px; line-height: 40px; letter-spacing: -0.015em; font-weight: 700; }
+
+.font-headline-sm { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 600; }
+.text-headline-sm { font-size: 20px; line-height: 28px; letter-spacing: -0.01em; font-weight: 600; }
+
+.font-headline-md { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 600; }
+.text-headline-md { font-size: 28px; line-height: 36px; letter-spacing: -0.015em; font-weight: 600; }
+
+.font-body-lg { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 400; }
+.text-body-lg { font-size: 18px; line-height: 28px; letter-spacing: -0.005em; font-weight: 400; }
+
+.font-body-md { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 400; }
+.text-body-md { font-size: 15px; line-height: 24px; font-weight: 400; }
+
+.font-body-sm { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 400; }
+.text-body-sm { font-size: 13px; line-height: 20px; font-weight: 400; }
+
+.font-label-sm { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; }
+.text-label-sm { font-size: 11px; line-height: 16px; letter-spacing: 0.04em; font-weight: 700; }
+
+.font-label-md { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 600; }
+.text-label-md { font-size: 14px; line-height: 20px; letter-spacing: 0.01em; font-weight: 600; }
+
+.font-metric-display { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; }
+.text-metric-display { font-size: 36px; line-height: 44px; letter-spacing: -0.02em; font-weight: 700; }
+
+.px-margin-mobile { padding-left: 1.25rem; padding-right: 1.25rem; }
+.-mx-margin-mobile { margin-left: -1.25rem; margin-right: -1.25rem; }
+.px-gutter-mobile { padding-left: 1rem; padding-right: 1rem; }
+.pb-space-xl { padding-bottom: 2.5rem; }
+.pt-space-md { padding-top: 1rem; }
+.gap-y-space-xl { row-gap: 2.5rem; }
+.gap-y-space-md { row-gap: 1rem; }
+.gap-space-sm { gap: 0.5rem; }
+.gap-space-xs { gap: 0.25rem; }
+.px-space-sm { padding-left: 0.5rem; padding-right: 0.5rem; }
+.px-space-xs { padding-left: 0.25rem; padding-right: 0.25rem; }
+
+/* Retro Neo-Brutalist shadows & animations from code.html */
+.retro-shadow-sm {
+  box-shadow: 2px 2px 0px #1c1917;
+}
+.retro-shadow {
+  box-shadow: 3.5px 3.5px 0px #1c1917;
+}
+.retro-shadow-lg {
+  box-shadow: 5px 5px 0px #1c1917;
+}
+.neo-press {
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+.neo-press:active {
+  transform: translate(2px, 2px);
+  box-shadow: 0px 0px 0px #1c1917 !important;
+}
+@keyframes bounce-scale {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+}
+.scale-pop {
+  animation: bounce-scale 0.35s ease-out;
+}
+@keyframes flash-in {
+  0% { background-color: #ffdbd1; }
+  100% { background-color: transparent; }
+}
+.item-flash {
+  animation: flash-in 0.6s ease-out;
+}
+

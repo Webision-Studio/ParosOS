@@ -118,6 +118,7 @@ export async function POST(req: NextRequest) {
         customerPhone,
         customerName,
         customerEmail,
+        processedBy,
       } = body;
 
       // Find table by id or tableNumber (case-insensitive & handles 'T4' vs '4')
@@ -236,6 +237,7 @@ export async function POST(req: NextRequest) {
           customerPhone: normalizedPhone || customerPhone || null,
           customerName: customerName || null,
           customerEmail: customerEmail || null,
+          processedBy: processedBy || 'Primary Cashier',
           whatsappSent: false,
           emailSent: false,
         },
