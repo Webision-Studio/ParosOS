@@ -7,20 +7,24 @@ export async function GET(req: NextRequest) {
     const session = await getSession();
     const { searchParams } = new URL(req.url);
     const cafeSlug = searchParams.get('cafeSlug');
+    const cafeId = searchParams.get('cafeId');
 
     let cafe = null;
     if (session?.cafeId) {
       cafe = await prisma.tenant.findUnique({ where: { id: session.cafeId } });
     }
-    if (!cafe && cafeSlug) {
-      cafe = await prisma.tenant.findFirst({ where: { slug: cafeSlug } });
+    if (!cafe && cafeId) {
+      cafe = await prisma.tenant.findUnique({ where: { id: String(cafeId) } });
     }
-    if (!cafe) {
+    if (!cafe && cafeSlug) {
+      cafe = await prisma.tenant.findFirst({ where: { slug: String(cafeSlug) } });
+    }
+    if (!cafe && process.env.NODE_ENV !== 'production') {
       cafe = await prisma.tenant.findFirst({ orderBy: { createdAt: 'desc' } });
     }
 
     if (!cafe) {
-      return NextResponse.json({ error: 'Cafe not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Cafe not found or unauthorized' }, { status: 404 });
     }
 
     // Fetch active kitchen orders and recently served/bumped orders
@@ -59,16 +63,38 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const session = await getSession();
     const body = await req.json();
-    const { action, orderId, itemId, minutes } = body;
+    const { action, orderId, itemId, minutes, cafeId, cafeSlug } = body;
+
+    let targetCafeId = session?.cafeId || cafeId;
+    if (!targetCafeId && cafeSlug) {
+      const c = await prisma.tenant.findFirst({ where: { slug: String(cafeSlug) } });
+      targetCafeId = c?.id;
+    }
+    if (!targetCafeId && process.env.NODE_ENV !== 'production') {
+      const def = await prisma.tenant.findFirst({ orderBy: { createdAt: 'desc' } });
+      targetCafeId = def?.id;
+    }
 
     // 1. Toggle Item Ready
     if (action === 'toggle-item') {
-      const item = await prisma.orderItem.findUnique({ where: { id: itemId } });
+      if (!itemId) {
+        return NextResponse.json({ error: 'itemId is required' }, { status: 400 });
+      }
+
+      const item = await prisma.orderItem.findUnique({
+        where: { id: String(itemId) },
+        include: { order: true },
+      });
       if (!item) return NextResponse.json({ error: 'Item not found' }, { status: 404 });
 
+      if (targetCafeId && item.order?.cafeId !== targetCafeId) {
+        return NextResponse.json({ error: 'Unauthorized: Item does not belong to this cafe' }, { status: 403 });
+      }
+
       const updated = await prisma.orderItem.update({
-        where: { id: itemId },
+        where: { id: item.id },
         data: { status: item.status === 'READY' ? 'PENDING' : 'READY' },
       });
 
@@ -80,12 +106,25 @@ export async function POST(req: NextRequest) {
       if (!orderId) {
         return NextResponse.json({ success: true, note: 'Mock ETA updated' });
       }
-      const order = await prisma.order.findUnique({ where: { id: orderId } });
+
+      const order = await prisma.order.findFirst({
+        where: {
+          OR: [{ id: String(orderId) }, { orderNumber: String(orderId) }],
+        },
+      });
       if (!order) return NextResponse.json({ error: 'Order not found' }, { status: 404 });
 
+      if (targetCafeId && order.cafeId !== targetCafeId) {
+        return NextResponse.json({ error: 'Unauthorized: Order does not belong to this cafe' }, { status: 403 });
+      }
+
+      // Strictly clamp minutes: 1 to 60 minutes per tap, max prep ceiling of 180 min
+      const validMinutes = Math.min(60, Math.max(1, Math.round(Number(minutes) || 5)));
+      const newPrepMinutes = Math.min(180, (order.dynamicPrepMinutes || 10) + validMinutes);
+
       const updated = await prisma.order.update({
-        where: { id: orderId },
-        data: { dynamicPrepMinutes: order.dynamicPrepMinutes + Number(minutes || 5) },
+        where: { id: order.id },
+        data: { dynamicPrepMinutes: newPrepMinutes },
       });
 
       return NextResponse.json({ success: true, order: updated });
@@ -98,10 +137,14 @@ export async function POST(req: NextRequest) {
       }
 
       const order = await prisma.order.findFirst({
-        where: { OR: [{ id: orderId }, { orderNumber: orderId }] },
+        where: { OR: [{ id: String(orderId) }, { orderNumber: String(orderId) }] },
       });
       if (!order) {
         return NextResponse.json({ success: true, note: 'Order not found in DB, client state updated' });
+      }
+
+      if (targetCafeId && order.cafeId !== targetCafeId) {
+        return NextResponse.json({ error: 'Unauthorized: Order does not belong to this cafe' }, { status: 403 });
       }
 
       const updated = await prisma.order.update({
@@ -139,9 +182,13 @@ export async function POST(req: NextRequest) {
       }
 
       const order = await prisma.order.findFirst({
-        where: { OR: [{ id: orderId }, { orderNumber: orderId }] },
+        where: { OR: [{ id: String(orderId) }, { orderNumber: String(orderId) }] },
       });
       if (order) {
+        if (targetCafeId && order.cafeId !== targetCafeId) {
+          return NextResponse.json({ error: 'Unauthorized: Order does not belong to this cafe' }, { status: 403 });
+        }
+
         await prisma.order.update({
           where: { id: order.id },
           data: { status: 'SERVED' },
@@ -164,16 +211,26 @@ export async function POST(req: NextRequest) {
       let orderToRecall = null;
       if (orderId) {
         orderToRecall = await prisma.order.findFirst({
-          where: { OR: [{ id: orderId }, { orderNumber: orderId }] },
+          where: {
+            OR: [{ id: String(orderId) }, { orderNumber: String(orderId) }],
+            ...(targetCafeId ? { cafeId: targetCafeId } : {}),
+          },
         });
       } else {
         orderToRecall = await prisma.order.findFirst({
-          where: { status: 'SERVED' },
+          where: {
+            status: 'SERVED',
+            ...(targetCafeId ? { cafeId: targetCafeId } : {}),
+          },
           orderBy: { updatedAt: 'desc' },
         });
       }
 
       if (orderToRecall) {
+        if (targetCafeId && orderToRecall.cafeId !== targetCafeId) {
+          return NextResponse.json({ error: 'Unauthorized: Order does not belong to this cafe' }, { status: 403 });
+        }
+
         const recalled = await prisma.order.update({
           where: { id: orderToRecall.id },
           data: { status: 'PREPARING' },

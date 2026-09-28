@@ -29,8 +29,11 @@ export async function GET(req: NextRequest) {
     }
     if (!cafe && cafeSlug) {
       cafe = await prisma.tenant.findUnique({ where: { slug: String(cafeSlug).slice(0, 60) } });
+      if (!cafe) {
+        return NextResponse.json({ error: 'Cafe not found for specified slug' }, { status: 404 });
+      }
     }
-    if (!cafe) {
+    if (!cafe && process.env.NODE_ENV !== 'production') {
       cafe = await prisma.tenant.findFirst({ orderBy: { createdAt: 'desc' } });
     }
 
@@ -120,8 +123,11 @@ export async function POST(req: NextRequest) {
     }
     if (!cafe && cafeId) {
       cafe = await prisma.tenant.findUnique({ where: { id: String(cafeId).slice(0, 60) } });
+      if (!cafe) {
+        return NextResponse.json({ error: 'Specified cafe not found' }, { status: 404 });
+      }
     }
-    if (!cafe) {
+    if (!cafe && process.env.NODE_ENV !== 'production') {
       cafe = await prisma.tenant.findFirst({ orderBy: { createdAt: 'desc' } });
     }
 

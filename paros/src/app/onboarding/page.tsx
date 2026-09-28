@@ -174,7 +174,10 @@ export default function OnboardingPage() {
             <button
               onClick={async () => {
                 if (confirm('Reset local database & cache to start fresh?')) {
-                  await fetch('/api/system/reset', { method: 'POST' });
+                  await fetch('/api/system/reset', {
+                    method: 'POST',
+                    headers: { 'x-reset-secret': 'paros-dev-reset-key' },
+                  });
                   if (typeof window !== 'undefined') localStorage.clear();
                   window.location.reload();
                 }

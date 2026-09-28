@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 import crypto from 'crypto';
+import { getSession } from '@/lib/auth-session';
 
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'];
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -50,6 +51,14 @@ function validateImageMagicBytes(buffer: Buffer, mimeType: string): boolean {
 
 export async function POST(req: NextRequest) {
   try {
+    const session = await getSession();
+    if (!session && process.env.NODE_ENV === 'production') {
+      return NextResponse.json(
+        { error: 'Unauthorized. Only logged-in cafe operators can upload menu media assets.' },
+        { status: 401 }
+      );
+    }
+
     const formData = await req.formData();
     const file = formData.get('file') as File;
     if (!file) {

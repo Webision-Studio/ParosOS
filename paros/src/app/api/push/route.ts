@@ -4,15 +4,19 @@ import { getSession } from '@/lib/auth-session';
 import webpush from 'web-push';
 
 // Configure VAPID
-const VAPID_PUBLIC = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!;
-const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY!;
+const VAPID_PUBLIC = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY;
 
 if (VAPID_PUBLIC && VAPID_PRIVATE) {
-  webpush.setVapidDetails(
-    'mailto:hello@paros.cafe',
-    VAPID_PUBLIC,
-    VAPID_PRIVATE
-  );
+  try {
+    webpush.setVapidDetails(
+      'mailto:hello@paros.cafe',
+      VAPID_PUBLIC,
+      VAPID_PRIVATE
+    );
+  } catch (err) {
+    console.warn('VAPID initialization error:', err);
+  }
 }
 
 // POST: Subscribe to push notifications OR send a push notification
@@ -24,16 +28,50 @@ export async function POST(req: NextRequest) {
     // 1. Subscribe — save browser push subscription
     if (action === 'subscribe') {
       const { subscription, cafeId } = body;
-      if (!subscription?.endpoint) {
-        return NextResponse.json({ error: 'Invalid subscription' }, { status: 400 });
+
+      if (!subscription?.endpoint || typeof subscription.endpoint !== 'string') {
+        return NextResponse.json({ error: 'Invalid subscription: endpoint is required' }, { status: 400 });
+      }
+
+      // Endpoint must be a valid https URL and under 1024 chars
+      try {
+        const parsedUrl = new URL(subscription.endpoint);
+        if (parsedUrl.protocol !== 'https:') {
+          return NextResponse.json({ error: 'Push endpoint must use HTTPS' }, { status: 400 });
+        }
+      } catch {
+        return NextResponse.json({ error: 'Malformed push endpoint URL' }, { status: 400 });
+      }
+
+      if (subscription.endpoint.length > 1024) {
+        return NextResponse.json({ error: 'Push endpoint exceeds max length (1024 chars)' }, { status: 400 });
+      }
+
+      const p256dh = subscription.keys?.p256dh;
+      const auth = subscription.keys?.auth;
+      if (!p256dh || !auth || typeof p256dh !== 'string' || typeof auth !== 'string') {
+        return NextResponse.json({ error: 'Invalid subscription cryptographic keys' }, { status: 400 });
+      }
+
+      if (p256dh.length > 256 || auth.length > 256) {
+        return NextResponse.json({ error: 'Subscription keys exceed maximum allowable size' }, { status: 400 });
       }
 
       let targetCafeId = cafeId;
       if (!targetCafeId) {
+        const session = await getSession();
+        targetCafeId = session?.cafeId;
+      }
+      if (!targetCafeId && process.env.NODE_ENV !== 'production') {
         const latestCafe = await prisma.tenant.findFirst({ orderBy: { createdAt: 'desc' } });
         targetCafeId = latestCafe?.id;
       }
       if (!targetCafeId) {
+        return NextResponse.json({ error: 'Valid cafeId is required to subscribe' }, { status: 400 });
+      }
+
+      const cafeExists = await prisma.tenant.findUnique({ where: { id: targetCafeId } });
+      if (!cafeExists) {
         return NextResponse.json({ error: 'Cafe not found' }, { status: 404 });
       }
 
@@ -47,17 +85,17 @@ export async function POST(req: NextRequest) {
           where: { endpoint: subscription.endpoint },
           data: {
             cafeId: targetCafeId,
-            p256dh: subscription.keys.p256dh,
-            auth: subscription.keys.auth,
+            p256dh: p256dh.slice(0, 256),
+            auth: auth.slice(0, 256),
           },
         });
       } else {
         await prisma.pushSubscription.create({
           data: {
             cafeId: targetCafeId,
-            endpoint: subscription.endpoint,
-            p256dh: subscription.keys.p256dh,
-            auth: subscription.keys.auth,
+            endpoint: subscription.endpoint.slice(0, 1024),
+            p256dh: p256dh.slice(0, 256),
+            auth: auth.slice(0, 256),
           },
         });
       }
@@ -75,6 +113,14 @@ export async function POST(req: NextRequest) {
         );
       }
 
+      if (!VAPID_PUBLIC || !VAPID_PRIVATE) {
+        return NextResponse.json({
+          success: false,
+          sent: 0,
+          message: 'Web Push VAPID keys not configured in environment. Notification skipped gracefully.',
+        });
+      }
+
       const targetCafeId = session.cafeId;
       const { title, body: messageBody, url } = body;
 
@@ -86,11 +132,19 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true, sent: 0, message: 'No subscribers found' });
       }
 
+      const safeTitle = String(title || '☕ Paros Cafe').slice(0, 100).trim();
+      const safeBody = String(messageBody || 'You have a new notification!').slice(0, 500).trim();
+      const safeUrl = url ? String(url).slice(0, 500).trim() : '/order';
+
       const payload = JSON.stringify({
-        title: title || '☕ Paros Cafe',
-        body: messageBody || 'You have a new notification!',
-        url: url || '/order',
+        title: safeTitle,
+        body: safeBody,
+        url: safeUrl,
       });
+
+      if (Buffer.byteLength(payload, 'utf8') > 3900) {
+        return NextResponse.json({ error: 'Payload exceeds maximum allowable push notification size' }, { status: 400 });
+      }
 
       let sent = 0;
       let failed = 0;
@@ -109,7 +163,7 @@ export async function POST(req: NextRequest) {
             sent++;
           } catch (err: any) {
             failed++;
-            // If subscription expired/invalid, remove it
+            // If subscription expired/invalid, queue for removal
             if (err?.statusCode === 410 || err?.statusCode === 404) {
               failedEndpoints.push(sub.endpoint);
             }
@@ -121,7 +175,7 @@ export async function POST(req: NextRequest) {
       if (failedEndpoints.length > 0) {
         await prisma.pushSubscription.deleteMany({
           where: { endpoint: { in: failedEndpoints } },
-        });
+        }).catch(() => {});
       }
 
       return NextResponse.json({

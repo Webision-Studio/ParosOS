@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
         where: { slug: cafeSlug },
       });
     }
-    if (!cafe) {
+    if (!cafe && process.env.NODE_ENV !== 'production') {
       cafe = await prisma.tenant.findFirst();
     }
 
@@ -95,8 +95,11 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { action, cafeId } = body;
 
-    let targetCafeId = session?.cafeId || cafeId;
-    if (!targetCafeId) {
+    let targetCafeId = session?.cafeId;
+    if (!targetCafeId && cafeId) {
+      targetCafeId = String(cafeId);
+    }
+    if (!targetCafeId && process.env.NODE_ENV !== 'production') {
       const defaultCafe = await prisma.tenant.findFirst({ orderBy: { createdAt: 'desc' } });
       targetCafeId = defaultCafe?.id;
     }
@@ -154,9 +157,15 @@ export async function POST(req: NextRequest) {
       let primaryOrder: (typeof activeOrders)[number] | null = null;
       if (body.orderId) {
         primaryOrder = await prisma.order.findUnique({
-          where: { id: body.orderId },
+          where: { id: String(body.orderId) },
           include: { items: true },
         });
+        if (primaryOrder && primaryOrder.cafeId !== targetCafeId) {
+          return NextResponse.json({ error: 'Unauthorized: Order does not belong to this cafe' }, { status: 403 });
+        }
+        if (primaryOrder && primaryOrder.status === 'CANCELLED') {
+          return NextResponse.json({ error: 'Cannot settle a cancelled order' }, { status: 400 });
+        }
       } else if (!isTakeawayStation) {
         primaryOrder = activeOrders[0] || null;
         if (!primaryOrder && table?.activeOrderId) {
@@ -393,6 +402,18 @@ export async function POST(req: NextRequest) {
         },
       });
 
+      if (!Array.isArray(items) || items.length === 0) {
+        return NextResponse.json({ error: 'Parked order must contain items' }, { status: 400 });
+      }
+
+      const safeItems = items.slice(0, 50).map((i: { name: string; price: number; quantity: number; notes?: string }) => ({
+        name: String(i.name || 'Custom Item').slice(0, 100),
+        price: Math.min(100000, Math.max(0, Number(i.price) || 0)),
+        quantity: Math.min(50, Math.max(1, Math.floor(Number(i.quantity) || 1))),
+        status: 'PENDING' as const,
+        notes: i.notes ? String(i.notes).slice(0, 150) : '',
+      }));
+
       const order = await prisma.order.create({
         data: {
           cafeId: targetCafeId,
@@ -400,15 +421,9 @@ export async function POST(req: NextRequest) {
           orderNumber: `#${Math.floor(1000 + Math.random() * 9000)}`,
           source: 'POS',
           status: 'PLACED',
-          customerName: customerName || 'Parked Ticket',
+          customerName: customerName ? String(customerName).slice(0, 80).trim() : 'Parked Ticket',
           items: {
-            create: (items || []).map((i: { name: string; price: number; quantity: number; notes?: string }) => ({
-              name: i.name,
-              price: Number(i.price),
-              quantity: Number(i.quantity || 1),
-              status: 'PENDING',
-              notes: i.notes || '',
-            })),
+            create: safeItems,
           },
         },
       });

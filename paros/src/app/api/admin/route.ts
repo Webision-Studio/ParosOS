@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
     if (!cafe && cafeSlug) {
       cafe = await prisma.tenant.findUnique({ where: { slug: cafeSlug } });
     }
-    if (!cafe) {
+    if (!cafe && process.env.NODE_ENV !== 'production') {
       cafe = await prisma.tenant.findFirst({ orderBy: { createdAt: 'desc' } });
     }
 
@@ -100,14 +100,21 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { action, cafeId } = body;
 
-    let targetCafeId = session?.cafeId || cafeId;
-    if (!targetCafeId) {
+    let targetCafeId = session?.cafeId;
+    if (!targetCafeId && cafeId) {
+      if (process.env.NODE_ENV !== 'production') {
+        targetCafeId = cafeId;
+      } else {
+        return NextResponse.json({ error: 'Unauthorized: Session login required for admin operations' }, { status: 401 });
+      }
+    }
+    if (!targetCafeId && process.env.NODE_ENV !== 'production') {
       const latestCafe = await prisma.tenant.findFirst({ orderBy: { createdAt: 'desc' } });
       targetCafeId = latestCafe?.id;
     }
 
     if (!targetCafeId) {
-      return NextResponse.json({ error: 'Cafe ID required' }, { status: 400 });
+      return NextResponse.json({ error: 'Unauthorized: No active admin session found' }, { status: 401 });
     }
 
     // 1. Log Expense
