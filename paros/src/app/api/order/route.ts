@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
     // 1. Live Order Status Lookup (for customer countdown & ETA polling)
     if (orderId || orderNumber) {
       const order = await prisma.order.findFirst({
-        where: orderId ? { id: orderId } : { orderNumber: orderNumber as string },
+        where: orderId ? { id: String(orderId).slice(0, 60) } : { orderNumber: String(orderNumber).slice(0, 20) },
         include: { items: true, table: true },
       });
       if (!order) {
@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
       cafe = await prisma.tenant.findUnique({ where: { id: session.cafeId } });
     }
     if (!cafe && cafeSlug) {
-      cafe = await prisma.tenant.findUnique({ where: { slug: cafeSlug } });
+      cafe = await prisma.tenant.findUnique({ where: { slug: String(cafeSlug).slice(0, 60) } });
     }
     if (!cafe) {
       cafe = await prisma.tenant.findFirst({ orderBy: { createdAt: 'desc' } });
@@ -61,45 +61,65 @@ export async function POST(req: NextRequest) {
     const session = await getSession();
     const body = await req.json();
 
-    // Handle Customer Rating & Feedback Submission
+    // 1. Handle Customer Rating & Feedback Submission
     if (body.action === 'submit-feedback') {
       const { orderId, rating, feedbackText, customerPhone, cafeId } = body;
-      if (orderId && feedbackText) {
-        await prisma.order.update({
-          where: { id: orderId },
-          data: {
-            specialNotes: `[CUSTOMER FEEDBACK: ${rating}★] ${feedbackText}`,
-          },
-        }).catch(() => {});
+
+      // Validate rating integer bounds (1 to 5)
+      const validRating = Math.min(5, Math.max(1, Math.round(Number(rating) || 5)));
+      const cleanFeedback = feedbackText ? String(feedbackText).slice(0, 1000).trim() : '';
+
+      let targetCafeId = session?.cafeId || cafeId;
+      if (!targetCafeId) {
+        const defCafe = await prisma.tenant.findFirst({ orderBy: { createdAt: 'desc' } });
+        targetCafeId = defCafe?.id;
       }
-      if (customerPhone) {
+
+      if (orderId && cleanFeedback) {
+        // Enforce tenant isolation: verify order exists and belongs to targetCafeId
+        const existingOrder = await prisma.order.findUnique({
+          where: { id: String(orderId).slice(0, 60) },
+          select: { id: true, cafeId: true, specialNotes: true },
+        });
+
+        if (existingOrder && (!targetCafeId || existingOrder.cafeId === targetCafeId)) {
+          const prevNotes = existingOrder.specialNotes ? `${existingOrder.specialNotes} • ` : '';
+          await prisma.order.update({
+            where: { id: existingOrder.id },
+            data: {
+              specialNotes: `${prevNotes}[CUSTOMER FEEDBACK: ${validRating}★] ${cleanFeedback}`.slice(0, 1200),
+            },
+          }).catch(() => {});
+        }
+      }
+
+      if (customerPhone && targetCafeId) {
         const digits = String(customerPhone).replace(/[^0-9]/g, '');
         if (digits.length >= 10) {
           const norm = `+91 ${digits.slice(-10)}`;
-          let targetCafeId = cafeId;
-          if (!targetCafeId) {
-            const defCafe = await prisma.tenant.findFirst({ orderBy: { createdAt: 'desc' } });
-            targetCafeId = defCafe?.id;
-          }
-          if (targetCafeId) {
-            await prisma.customer.updateMany({
-              where: { cafeId: targetCafeId, phone: norm },
-              data: { ratingScore: Number(rating) },
-            }).catch(() => {});
-          }
+          await prisma.customer.updateMany({
+            where: { cafeId: targetCafeId, phone: norm },
+            data: { ratingScore: validRating },
+          }).catch(() => {});
         }
       }
-      return NextResponse.json({ success: true, message: 'Feedback recorded successfully' });
+
+      return NextResponse.json({ success: true, message: 'Feedback recorded securely' });
     }
 
-    const { tableNumber, items, total, customerName, customerPhone, customerEmail, whatsappOptIn, specialNotes, paymentMode, cafeId } = body;
+    // 2. Validate Order Placement Inputs
+    const { tableNumber, items, customerName, customerPhone, customerEmail, whatsappOptIn, specialNotes, paymentMode, cafeId } = body;
+
+    if (!Array.isArray(items) || items.length === 0) {
+      return NextResponse.json({ error: 'Order cart cannot be empty' }, { status: 400 });
+    }
 
     let cafe = null;
     if (session?.cafeId) {
       cafe = await prisma.tenant.findUnique({ where: { id: session.cafeId } });
     }
     if (!cafe && cafeId) {
-      cafe = await prisma.tenant.findUnique({ where: { id: cafeId } });
+      cafe = await prisma.tenant.findUnique({ where: { id: String(cafeId).slice(0, 60) } });
     }
     if (!cafe) {
       cafe = await prisma.tenant.findFirst({ orderBy: { createdAt: 'desc' } });
@@ -110,50 +130,75 @@ export async function POST(req: NextRequest) {
     }
 
     // Find table (case-insensitive & handles 'T4' vs '4' or 'Takeaway')
-    const cleanTableNum = String(tableNumber).replace(/^T/i, '').trim();
+    const cleanTableNum = String(tableNumber || 'Takeaway').replace(/^T/i, '').trim();
     const table = await prisma.table.findFirst({
       where: {
         cafeId: cafe.id,
         OR: [
-          { tableNumber: { equals: String(tableNumber), mode: 'insensitive' } },
+          { tableNumber: { equals: String(tableNumber || 'Takeaway'), mode: 'insensitive' } },
           { tableNumber: { equals: cleanTableNum, mode: 'insensitive' } },
           { tableNumber: { equals: `T${cleanTableNum}`, mode: 'insensitive' } },
         ],
       },
     });
 
-    // Phone number normalization to avoid CRM duplicates
+    // Phone number normalization
     let normalizedPhone: string | null = null;
     if (customerPhone) {
-      const digits = customerPhone.replace(/[^0-9]/g, '');
+      const digits = String(customerPhone).replace(/[^0-9]/g, '');
       if (digits.length >= 10) {
         normalizedPhone = `+91 ${digits.slice(-10)}`;
       }
     }
 
-    // Verify item prices from DB catalog to prevent client price tampering
+    // Server-Side Price Verification against DB catalog to completely prevent client price tampering
     const catalog = await prisma.menuItem.findMany({
-      where: { cafeId: cafe.id },
+      where: { cafeId: cafe.id, inStock: true },
       select: { id: true, name: true, price: true },
     });
     const catalogMap = new Map(catalog.map((m) => [m.name.toLowerCase().trim(), m.price]));
 
+    const verifiedItems = [];
+    for (const item of items) {
+      const cleanName = String(item.name || '').trim();
+      const baseCatalogPrice = catalogMap.get(cleanName.toLowerCase());
+
+      if (baseCatalogPrice === undefined) {
+        return NextResponse.json(
+          { error: `Item "${cleanName}" is currently unavailable or does not exist in the menu catalog` },
+          { status: 400 }
+        );
+      }
+
+      // Quantity must be a safe positive integer (1..50)
+      const quantity = Math.min(50, Math.max(1, Math.floor(Number(item.quantity) || 1)));
+      const milkSurcharge = item.milk && String(item.milk).toLowerCase().includes('oat') ? 40 : 0;
+      const verifiedUnitPrice = baseCatalogPrice + milkSurcharge;
+
+      verifiedItems.push({
+        name: cleanName.slice(0, 100),
+        price: verifiedUnitPrice,
+        quantity,
+        status: 'PENDING' as const,
+        notes: [item.notes ? String(item.notes).slice(0, 150) : null, item.milk ? String(item.milk).slice(0, 50) : null]
+          .filter(Boolean)
+          .join(' • '),
+      });
+    }
+
+    const calculatedSubtotal = verifiedItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
+    const calculatedGst = Math.round(calculatedSubtotal * 0.05);
+    const calculatedTotal = calculatedSubtotal + calculatedGst;
+
     const orderNumber = `#${Math.floor(1000 + Math.random() * 9000)}`;
 
-    const verifiedItems = (items || []).map((i: { name: string; price: number; quantity: number; notes?: string; milk?: string }) => {
-      const basePrice = catalogMap.get((i.name || '').toLowerCase().trim()) ?? Number(i.price);
-      const milkSurcharge = i.milk && i.milk.toLowerCase().includes('oat') ? 40 : 0;
-      return {
-        name: i.name,
-        price: basePrice + milkSurcharge,
-        quantity: Math.max(1, Number(i.quantity || 1)),
-        status: 'PENDING' as const,
-        notes: [i.notes, i.milk].filter(Boolean).join(' • '),
-      };
-    });
-
-    const calculatedSubtotal = verifiedItems.reduce((acc: number, item: { price: number; quantity: number }) => acc + item.price * item.quantity, 0);
-    const calculatedTotal = calculatedSubtotal + Math.round(calculatedSubtotal * 0.05);
+    const safeCustomerName = customerName ? String(customerName).slice(0, 80).trim() : `Table ${tableNumber} Guest`;
+    const safeCustomerEmail = customerEmail && isValidEmail(customerEmail) ? String(customerEmail).trim().slice(0, 100) : null;
+    const safeNotes = specialNotes
+      ? String(specialNotes).slice(0, 300).trim()
+      : paymentMode === 'PAY_LATER'
+      ? 'PAY LATER TO WAITER / COUNTER'
+      : 'ONLINE PREPAID (UPI)';
 
     const order = await prisma.order.create({
       data: {
@@ -163,10 +208,10 @@ export async function POST(req: NextRequest) {
         source: 'QR',
         status: 'PLACED',
         dynamicPrepMinutes: 10,
-        customerName: customerName || `Table ${tableNumber} Guest`,
+        customerName: safeCustomerName,
         customerPhone: normalizedPhone || '+91 98450 XXXXX',
-        customerEmail: customerEmail || null,
-        specialNotes: specialNotes || (paymentMode === 'PAY_LATER' ? 'PAY LATER TO WAITER / COUNTER' : 'ONLINE PREPAID (UPI)'),
+        customerEmail: safeCustomerEmail,
+        specialNotes: safeNotes,
         items: {
           create: verifiedItems,
         },
@@ -189,8 +234,8 @@ export async function POST(req: NextRequest) {
           cafeId_phone: { cafeId: cafe.id, phone: normalizedPhone }
         },
         update: {
-          name: customerName || undefined,
-          email: customerEmail || undefined,
+          name: safeCustomerName !== `Table ${tableNumber} Guest` ? safeCustomerName : undefined,
+          email: safeCustomerEmail || undefined,
           visitCount: { increment: 1 },
           totalSpend: { increment: calculatedTotal },
           lastVisitAt: new Date(),
@@ -199,8 +244,8 @@ export async function POST(req: NextRequest) {
         create: {
           cafeId: cafe.id,
           phone: normalizedPhone,
-          name: customerName || null,
-          email: customerEmail || null,
+          name: safeCustomerName !== `Table ${tableNumber} Guest` ? safeCustomerName : null,
+          email: safeCustomerEmail || null,
           totalSpend: calculatedTotal,
           isOptedInWhatsApp: whatsappOptIn !== false,
         },
@@ -208,7 +253,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Dispatch Brevo digital receipt if prepaid via UPI and valid email provided
-    if (customerEmail && isValidEmail(customerEmail) && paymentMode === 'UPI_NOW') {
+    if (safeCustomerEmail && paymentMode === 'UPI_NOW') {
       const billNumber = `INV-${order.orderNumber.replace('#', '')}-${Math.floor(100 + Math.random() * 900)}`;
       sendCustomerReceiptEmail({
         cafe,
@@ -222,15 +267,15 @@ export async function POST(req: NextRequest) {
           createdAt: order.createdAt,
           tableNumber: table?.tableNumber || (tableNumber ? String(tableNumber) : 'Takeaway'),
         },
-        items: verifiedItems.map((it: { name: string; quantity: number; price: number; notes?: string }) => ({
+        items: verifiedItems.map((it) => ({
           name: it.name,
           quantity: it.quantity,
           price: it.price,
           notes: it.notes,
         })),
         customer: {
-          email: customerEmail,
-          name: customerName,
+          email: safeCustomerEmail,
+          name: safeCustomerName,
           phone: normalizedPhone,
         },
       }).catch((err) => console.error('Failed to send QR customer receipt email:', err));

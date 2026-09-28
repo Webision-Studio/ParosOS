@@ -6,6 +6,7 @@
  * 2. Nightly End-of-Day Sales & Till Audit Reports for Cafe Owners
  * 3. Dynamic Multi-Tenant Sender Branding (Custom Cafe Name as sender name)
  * 4. Graceful mock fallback when BREVO_API_KEY is not yet configured
+ * 5. Complete HTML sanitization & Header CRLF injection protection
  */
 
 export interface EmailRecipient {
@@ -101,6 +102,40 @@ export function isValidEmail(email: string | null | undefined): boolean {
 }
 
 /**
+ * Escape HTML special characters to prevent HTML/XSS injection in emails
+ */
+export function escapeHtml(str: unknown): string {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/**
+ * Sanitize email headers against CRLF injection attacks
+ */
+export function sanitizeHeader(str: unknown): string {
+  if (str === null || str === undefined) return '';
+  return String(str).replace(/[\r\n]+/g, ' ').trim();
+}
+
+/**
+ * Sanitize external URLs (e.g. Google Review link)
+ * Only allows valid http:// or https:// URLs
+ */
+export function sanitizeUrl(url: string | null | undefined): string {
+  if (!url || typeof url !== 'string') return '';
+  const trimmed = url.trim();
+  if (/^https?:\/\/[a-zA-Z0-9\-._~:/?#[\]@!$&'()*+,;=]+$/i.test(trimmed)) {
+    return escapeHtml(trimmed);
+  }
+  return '';
+}
+
+/**
  * Low-level Brevo REST API dispatcher
  */
 export async function sendBrevoEmail({
@@ -119,12 +154,15 @@ export async function sendBrevoEmail({
   const apiKey = process.env.BREVO_API_KEY?.trim();
   const defaultSenderEmail = process.env.BREVO_SENDER_EMAIL?.trim() || 'receipts@paros.app';
 
+  const cleanSubject = sanitizeHeader(subject);
+  const cleanSenderName = sanitizeHeader(senderName);
+
   // 1. If Brevo API key is not yet set, provide graceful mock/development logging
   if (!apiKey) {
     console.log(`\n📧 [BREVO MOCK EMAIL ENGINE] (Configure BREVO_API_KEY in .env to send real emails)`);
-    console.log(`   To: ${to.map((r) => `${r.name || 'Recipient'} <${r.email}>`).join(', ')}`);
-    console.log(`   Sender: ${senderName} <${defaultSenderEmail}>`);
-    console.log(`   Subject: ${subject}`);
+    console.log(`   To: ${to.map((r) => `${sanitizeHeader(r.name) || 'Recipient'} <${r.email}>`).join(', ')}`);
+    console.log(`   Sender: ${cleanSenderName} <${defaultSenderEmail}>`);
+    console.log(`   Subject: ${cleanSubject}`);
     console.log(`   Content Length: ${htmlContent.length} bytes\n`);
     return { success: true, mocked: true };
   }
@@ -133,21 +171,21 @@ export async function sendBrevoEmail({
   try {
     const payload: Record<string, unknown> = {
       sender: {
-        name: senderName,
+        name: cleanSenderName,
         email: defaultSenderEmail,
       },
       to: to.map((r) => ({
         email: r.email.trim(),
-        name: r.name?.trim() || undefined,
+        name: r.name ? sanitizeHeader(r.name) : undefined,
       })),
-      subject,
+      subject: cleanSubject,
       htmlContent,
     };
 
     if (replyTo && isValidEmail(replyTo.email)) {
       payload.replyTo = {
         email: replyTo.email.trim(),
-        name: replyTo.name?.trim() || senderName,
+        name: sanitizeHeader(replyTo.name) || cleanSenderName,
       };
     }
 
@@ -194,6 +232,16 @@ export async function sendCustomerReceiptEmail(params: CustomerReceiptParams) {
     return { success: false, error: 'Invalid customer email address' };
   }
 
+  const safeCafeName = escapeHtml(cafe.name);
+  const safeCafeAddress = escapeHtml(cafe.address);
+  const safeCafeCity = escapeHtml(cafe.city);
+  const safeGstin = escapeHtml(cafe.gstin);
+  const safeBillNumber = escapeHtml(bill.billNumber);
+  const safeTableNumber = bill.tableNumber ? escapeHtml(bill.tableNumber) : null;
+  const safePaymentMethod = escapeHtml(bill.paymentMethod);
+  const safeCustomerName = customer.name ? escapeHtml(customer.name) : 'Guest';
+  const cleanReviewUrl = sanitizeUrl(cafe.googleReviewUrl);
+
   const billDate = bill.createdAt ? new Date(bill.createdAt) : new Date();
   const formattedDate = billDate.toLocaleDateString('en-IN', {
     day: '2-digit',
@@ -209,16 +257,16 @@ export async function sendCustomerReceiptEmail(params: CustomerReceiptParams) {
   const subject = `🧾 Your Tax Receipt from ${cafe.name} (${bill.billNumber})`;
 
   // Build Item rows
-  const itemRowsHtml = items
+  const itemRowsHtml = (items || [])
     .map(
       (item) => `
       <tr>
         <td style="padding: 10px 0; border-bottom: 1px dashed #e5e5e5; font-size: 14px; color: #1c1917;">
-          <div style="font-weight: 600;">${item.name}</div>
-          ${item.notes ? `<div style="font-size: 11px; color: #78716c; margin-top: 2px;">${item.notes}</div>` : ''}
+          <div style="font-weight: 600;">${escapeHtml(item.name)}</div>
+          ${item.notes ? `<div style="font-size: 11px; color: #78716c; margin-top: 2px;">${escapeHtml(item.notes)}</div>` : ''}
         </td>
         <td style="padding: 10px 0; border-bottom: 1px dashed #e5e5e5; font-size: 14px; text-align: center; color: #1c1917; font-weight: 600;">
-          ${item.quantity}x
+          ${Math.max(1, Number(item.quantity || 1))}x
         </td>
         <td style="padding: 10px 0; border-bottom: 1px dashed #e5e5e5; font-size: 14px; text-align: right; color: #1c1917; font-family: monospace; font-weight: 700;">
           ${formatCurrency(item.price * item.quantity)}
@@ -229,17 +277,17 @@ export async function sendCustomerReceiptEmail(params: CustomerReceiptParams) {
     .join('');
 
   // Google Review CTA block
-  const googleReviewHtml = cafe.googleReviewUrl
+  const googleReviewHtml = cleanReviewUrl
     ? `
       <div style="margin-top: 24px; padding: 18px; background-color: #fef08a; border-radius: 12px; border: 2px solid #1c1917; text-align: center;">
         <div style="font-size: 18px; margin-bottom: 4px;">⭐⭐⭐⭐⭐</div>
         <div style="font-size: 14px; font-weight: 800; color: #1c1917; margin-bottom: 4px;">
-          Loved your experience at ${cafe.name}?
+          Loved your experience at ${safeCafeName}?
         </div>
         <div style="font-size: 12px; color: #44403c; margin-bottom: 12px;">
           Your 5-star review helps our small team grow and brew better coffee every day!
         </div>
-        <a href="${cafe.googleReviewUrl}" target="_blank" style="display: inline-block; padding: 10px 20px; background-color: #a63412; color: #ffffff; text-decoration: none; font-size: 13px; font-weight: 800; border-radius: 8px; border: 2px solid #1c1917; text-transform: uppercase;">
+        <a href="${cleanReviewUrl}" target="_blank" rel="noopener noreferrer" style="display: inline-block; padding: 10px 20px; background-color: #a63412; color: #ffffff; text-decoration: none; font-size: 13px; font-weight: 800; border-radius: 8px; border: 2px solid #1c1917; text-transform: uppercase;">
           Leave a 5-Star Google Review ➔
         </a>
       </div>
@@ -252,7 +300,7 @@ export async function sendCustomerReceiptEmail(params: CustomerReceiptParams) {
     <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>${subject}</title>
+      <title>${escapeHtml(subject)}</title>
     </head>
     <body style="margin: 0; padding: 20px; background-color: #faf2ee; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1c1917;">
       <table align="center" width="100%" cellpadding="0" cellspacing="0" style="max-width: 540px; background-color: #ffffff; border: 2px solid #1c1917; border-radius: 16px; box-shadow: 4px 4px 0px #1c1917; overflow: hidden; margin: 0 auto;">
@@ -263,9 +311,9 @@ export async function sendCustomerReceiptEmail(params: CustomerReceiptParams) {
             <div style="display: inline-block; width: 44px; height: 44px; line-height: 44px; background-color: #ffffff; color: #a63412; font-size: 22px; font-weight: 900; border-radius: 10px; margin-bottom: 8px; border: 2px solid #1c1917;">
               P
             </div>
-            <h1 style="margin: 0; font-size: 24px; font-weight: 900; letter-spacing: -0.5px;">${cafe.name}</h1>
-            ${cafe.address ? `<div style="font-size: 12px; opacity: 0.9; margin-top: 4px;">${cafe.address}${cafe.city ? `, ${cafe.city}` : ''}</div>` : ''}
-            ${cafe.gstin ? `<div style="font-size: 11px; opacity: 0.85; margin-top: 2px; font-family: monospace;">GSTIN: ${cafe.gstin}</div>` : ''}
+            <h1 style="margin: 0; font-size: 24px; font-weight: 900; letter-spacing: -0.5px;">${safeCafeName}</h1>
+            ${safeCafeAddress ? `<div style="font-size: 12px; opacity: 0.9; margin-top: 4px;">${safeCafeAddress}${safeCafeCity ? `, ${safeCafeCity}` : ''}</div>` : ''}
+            ${safeGstin ? `<div style="font-size: 11px; opacity: 0.85; margin-top: 2px; font-family: monospace;">GSTIN: ${safeGstin}</div>` : ''}
           </td>
         </tr>
 
@@ -275,12 +323,13 @@ export async function sendCustomerReceiptEmail(params: CustomerReceiptParams) {
             <table width="100%" cellpadding="0" cellspacing="0">
               <tr>
                 <td style="font-size: 12px; color: #58413b;">
-                  <div><strong>Invoice:</strong> ${bill.billNumber}</div>
+                  <div><strong>Invoice:</strong> ${safeBillNumber}</div>
                   <div style="margin-top: 2px;"><strong>Date:</strong> ${formattedDate} at ${formattedTime}</div>
+                  <div style="margin-top: 2px;"><strong>Guest:</strong> ${safeCustomerName}</div>
                 </td>
                 <td style="font-size: 12px; color: #58413b; text-align: right;">
-                  ${bill.tableNumber ? `<div><strong>Table:</strong> ${bill.tableNumber}</div>` : '<div><strong>Mode:</strong> Takeaway</div>'}
-                  <div style="margin-top: 2px;"><strong>Paid via:</strong> ${bill.paymentMethod}</div>
+                  ${safeTableNumber ? `<div><strong>Table:</strong> ${safeTableNumber}</div>` : '<div><strong>Mode:</strong> Takeaway</div>'}
+                  <div style="margin-top: 2px;"><strong>Paid via:</strong> ${safePaymentMethod}</div>
                 </td>
               </tr>
             </table>
@@ -379,6 +428,8 @@ export async function sendNightlySalesReportEmail(params: NightlyReportParams) {
     return { success: false, error: 'Cafe has no valid email address configured' };
   }
 
+  const safeCafeName = escapeHtml(cafe.name);
+  const safeDate = escapeHtml(date);
   const subject = `🌙 Daily Sales Summary: ${cafe.name} (${date})`;
 
   // Top Items HTML
@@ -387,10 +438,10 @@ export async function sendNightlySalesReportEmail(params: NightlyReportParams) {
       (it, idx) => `
       <tr>
         <td style="padding: 8px 0; border-bottom: 1px dashed #e5e5e5; font-size: 13px; font-weight: 600; color: #1c1917;">
-          ${idx + 1}. ${it.name}
+          ${idx + 1}. ${escapeHtml(it.name)}
         </td>
         <td style="padding: 8px 0; border-bottom: 1px dashed #e5e5e5; font-size: 13px; text-align: center; font-weight: 700; color: #a63412;">
-          ${it.quantity} sold
+          ${Math.max(0, Number(it.quantity || 0))} sold
         </td>
         <td style="padding: 8px 0; border-bottom: 1px dashed #e5e5e5; font-size: 13px; text-align: right; font-family: monospace; font-weight: 700;">
           ${formatCurrency(it.revenue)}
@@ -435,8 +486,8 @@ export async function sendNightlySalesReportEmail(params: NightlyReportParams) {
             </td>
           </tr>
         </table>
-        ${shiftSummary.operatorName ? `<div style="font-size: 11px; color: #78716c; margin-top: 8px;">Audited & Closed by: <strong>${shiftSummary.operatorName}</strong></div>` : ''}
-        ${shiftSummary.notes ? `<div style="font-size: 11px; color: #78716c; margin-top: 4px;">Notes: <em>${shiftSummary.notes}</em></div>` : ''}
+        ${shiftSummary.operatorName ? `<div style="font-size: 11px; color: #78716c; margin-top: 8px;">Audited & Closed by: <strong>${escapeHtml(shiftSummary.operatorName)}</strong></div>` : ''}
+        ${shiftSummary.notes ? `<div style="font-size: 11px; color: #78716c; margin-top: 4px;">Notes: <em>${escapeHtml(shiftSummary.notes)}</em></div>` : ''}
       </div>
     `
     : '';
@@ -454,7 +505,7 @@ export async function sendNightlySalesReportEmail(params: NightlyReportParams) {
             .map(
               (exp) => `
             <tr>
-              <td style="padding: 4px 0; border-bottom: 1px dotted #e5e5e5;">${exp.title} (${exp.category})</td>
+              <td style="padding: 4px 0; border-bottom: 1px dotted #e5e5e5;">${escapeHtml(exp.title)} (${escapeHtml(exp.category)})</td>
               <td align="right" style="padding: 4px 0; border-bottom: 1px dotted #e5e5e5; font-family: monospace; font-weight: 700; color: #ba1a1a;">
                 -${formatCurrency(exp.amount)}
               </td>
@@ -473,7 +524,7 @@ export async function sendNightlySalesReportEmail(params: NightlyReportParams) {
     <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>${subject}</title>
+      <title>${escapeHtml(subject)}</title>
     </head>
     <body style="margin: 0; padding: 20px; background-color: #faf2ee; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1c1917;">
       <table align="center" width="100%" cellpadding="0" cellspacing="0" style="max-width: 580px; background-color: #ffffff; border: 2px solid #1c1917; border-radius: 16px; box-shadow: 5px 5px 0px #1c1917; overflow: hidden; margin: 0 auto;">
@@ -486,8 +537,8 @@ export async function sendNightlySalesReportEmail(params: NightlyReportParams) {
                 <span style="display: inline-block; padding: 4px 8px; background-color: #92f5a4; color: #00210a; font-size: 10px; font-weight: 800; border-radius: 6px; text-transform: uppercase; margin-bottom: 6px;">
                   End-of-Day Sales Report
                 </span>
-                <h1 style="margin: 0; font-size: 22px; font-weight: 900; letter-spacing: -0.5px;">${cafe.name}</h1>
-                <div style="font-size: 12px; color: #a8a29e; margin-top: 2px;">Report Date: ${date}</div>
+                <h1 style="margin: 0; font-size: 22px; font-weight: 900; letter-spacing: -0.5px;">${safeCafeName}</h1>
+                <div style="font-size: 12px; color: #a8a29e; margin-top: 2px;">Report Date: ${safeDate}</div>
               </div>
             </div>
           </td>
@@ -579,7 +630,7 @@ export async function sendNightlySalesReportEmail(params: NightlyReportParams) {
         <tr>
           <td style="padding: 16px 24px; background-color: #1c1917; color: #a8a29e; text-align: center; font-size: 11px;">
             <div style="font-weight: 700; color: #ffffff; margin-bottom: 2px;">Paros Cafe OS • Nightly Automatic Audit Engine</div>
-            <div>Sent to ${recipientEmail}. Data recorded locally and synchronized to Supabase Cloud.</div>
+            <div>Sent to ${escapeHtml(recipientEmail)}. Data recorded locally and synchronized to Supabase Cloud.</div>
           </td>
         </tr>
       </table>

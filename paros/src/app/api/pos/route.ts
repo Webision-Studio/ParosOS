@@ -222,23 +222,46 @@ export async function POST(req: NextRequest) {
         }
       }
 
+      // Race condition defense: Check if this order has already been billed
+      const existingPaidBill = await prisma.bill.findFirst({
+        where: { orderId: primaryOrder.id, paymentStatus: 'PAID' },
+      });
+      if (existingPaidBill) {
+        return NextResponse.json({
+          success: true,
+          bill: existingPaidBill,
+          alreadySettled: true,
+          message: 'Order has already been settled and paid.',
+        });
+      }
+
+      const numSubtotal = Math.max(0, Number(subtotal) || 0);
+      const numDiscount = Math.max(0, Number(discount) || 0);
+      const numCgst = Math.max(0, Number(cgst) || 0);
+      const numSgst = Math.max(0, Number(sgst) || 0);
+      const numTotal = Math.max(0, Number(total) || 0);
+
+      const safeCustomerName = customerName ? String(customerName).slice(0, 80).trim() : null;
+      const safeCustomerEmail = customerEmail && isValidEmail(customerEmail) ? String(customerEmail).trim().slice(0, 100) : null;
+      const safeProcessedBy = processedBy ? String(processedBy).slice(0, 60).trim() : 'Primary Cashier';
+
       // Create Bill attached to primaryOrder.id
       const bill = await prisma.bill.create({
         data: {
           cafeId: targetCafeId,
           orderId: primaryOrder.id,
           billNumber: `INV-${primaryOrder.orderNumber.replace('#', '')}-${Math.floor(100 + Math.random() * 900)}`,
-          subtotal: Number(subtotal),
-          discount: Number(discount || 0),
-          cgst: Number(cgst),
-          sgst: Number(sgst),
-          total: Number(total),
-          paymentMethod: paymentMethod || 'UPI',
+          subtotal: numSubtotal,
+          discount: numDiscount,
+          cgst: numCgst,
+          sgst: numSgst,
+          total: numTotal,
+          paymentMethod: String(paymentMethod || 'UPI').slice(0, 20),
           paymentStatus: 'PAID',
-          customerPhone: normalizedPhone || customerPhone || null,
-          customerName: customerName || null,
-          customerEmail: customerEmail || null,
-          processedBy: processedBy || 'Primary Cashier',
+          customerPhone: normalizedPhone || null,
+          customerName: safeCustomerName,
+          customerEmail: safeCustomerEmail,
+          processedBy: safeProcessedBy,
           whatsappSent: false,
           emailSent: false,
         },
@@ -403,25 +426,37 @@ export async function POST(req: NextRequest) {
     // 3. Add Petty Expense from Drawer
     if (action === 'add-expense') {
       const { title, amount, category, paidVia, receiptNote } = body;
+      const numAmount = Number(amount);
+      if (isNaN(numAmount) || numAmount <= 0 || numAmount > 1000000) {
+        return NextResponse.json(
+          { error: 'Valid positive expense amount required (₹1 to ₹10,00,000)' },
+          { status: 400 }
+        );
+      }
+
+      const safeTitle = String(title || 'Miscellaneous Expense').slice(0, 100).trim();
+      const safeCategory = String(category || 'INGREDIENTS').slice(0, 30).trim();
+      const safeReceiptNote = receiptNote ? String(receiptNote).slice(0, 300).trim() : null;
+      const mode = paidVia === 'UPI' || paidVia === 'OWNER_PERSONAL' ? paidVia : 'DRAWER_CASH';
+
       const activeShift = await prisma.cashShift.findFirst({
         where: { cafeId: targetCafeId, status: 'OPEN' },
       });
 
-      const mode = paidVia || 'DRAWER_CASH';
       const expense = await prisma.expense.create({
         data: {
           cafeId: targetCafeId,
           shiftId: activeShift?.id || null,
-          title: title || 'Miscellaneous Expense',
-          amount: Number(amount),
-          category: category || 'INGREDIENTS',
+          title: safeTitle,
+          amount: numAmount,
+          category: safeCategory,
           paidVia: mode,
-          receiptNote: receiptNote || null,
+          receiptNote: safeReceiptNote,
         },
       });
 
       if (activeShift && mode === 'DRAWER_CASH') {
-        const updatedExpenses = activeShift.pettyExpenses + Number(amount);
+        const updatedExpenses = activeShift.pettyExpenses + numAmount;
         const updatedExpected = activeShift.openingCash + activeShift.cashSales - updatedExpenses;
         await prisma.cashShift.update({
           where: { id: activeShift.id },
@@ -447,8 +482,15 @@ export async function POST(req: NextRequest) {
       const cashSales = activeShift?.cashSales || 0;
       const pettyExpenses = activeShift?.pettyExpenses || 0;
       const expectedCash = openingCash + cashSales - pettyExpenses;
+
       const counted = Number(countedCash !== undefined ? countedCash : expectedCash);
+      if (isNaN(counted) || counted < 0 || counted > 100000000) {
+        return NextResponse.json({ error: 'Valid positive counted cash amount required' }, { status: 400 });
+      }
+
       const discrepancy = counted - expectedCash;
+      const safeNotes = notes ? String(notes).slice(0, 500).trim() : null;
+      const safeOperatorName = String(operatorName || 'Primary Cashier').slice(0, 60).trim();
 
       let closedShift = null;
       if (activeShift) {
@@ -458,7 +500,7 @@ export async function POST(req: NextRequest) {
             status: 'CLOSED',
             countedCash: counted,
             discrepancy,
-            notes: notes || null,
+            notes: safeNotes,
             closedAt: new Date(),
           },
         });
@@ -473,7 +515,7 @@ export async function POST(req: NextRequest) {
             expectedCash,
             countedCash: counted,
             discrepancy,
-            notes: notes || null,
+            notes: safeNotes,
             closedAt: new Date(),
           },
         });

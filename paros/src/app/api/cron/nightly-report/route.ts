@@ -1,27 +1,47 @@
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { sendNightlySalesReportEmail } from '@/lib/brevo';
 
 /**
+ * Constant-time string comparison to prevent timing attacks on secret token
+ */
+function timingSafeCheck(input: string | null | undefined, secret: string): boolean {
+  if (!input || !secret) return false;
+  const bufInput = Buffer.from(input);
+  const bufSecret = Buffer.from(secret);
+  if (bufInput.length !== bufSecret.length) return false;
+  return crypto.timingSafeEqual(bufInput, bufSecret);
+}
+
+/**
  * Automated Cron Endpoint for Nightly Sales Reports
  * Triggered nightly (e.g. by Vercel Cron, GitHub Actions, or local scheduler).
- * Protected by CRON_SECRET authorization header.
+ * Protected strictly by CRON_SECRET authorization.
  */
 export async function GET(req: NextRequest) {
   try {
-    const authHeader = req.headers.get('authorization');
-    const cronSecret = process.env.CRON_SECRET;
+    const authHeader = req.headers.get('authorization') || '';
+    const cronSecret = process.env.CRON_SECRET?.trim();
 
-    // Verify Authorization if CRON_SECRET is configured
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-      const url = new URL(req.url);
-      const queryKey = url.searchParams.get('key');
-      if (queryKey !== cronSecret) {
-        return NextResponse.json({ error: 'Unauthorized cron invocation' }, { status: 401 });
-      }
+    // 1. Strict Authorization Gate
+    if (!cronSecret) {
+      console.error('[Cron Security] Rejected: CRON_SECRET is not configured in server environment.');
+      return NextResponse.json({ error: 'Server cron security unconfigured' }, { status: 503 });
     }
 
-    // Find all active cafes
+    const expectedHeader = `Bearer ${cronSecret}`;
+    const url = new URL(req.url);
+    const queryKey = url.searchParams.get('key') || '';
+
+    const isHeaderValid = timingSafeCheck(authHeader, expectedHeader);
+    const isQueryValid = timingSafeCheck(queryKey, cronSecret);
+
+    if (!isHeaderValid && !isQueryValid) {
+      return NextResponse.json({ error: 'Unauthorized cron invocation' }, { status: 401 });
+    }
+
+    // 2. Find all active cafes with configured owner email
     const cafes = await prisma.tenant.findMany({
       where: {
         email: { not: null },

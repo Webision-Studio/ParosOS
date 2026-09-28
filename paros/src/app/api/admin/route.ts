@@ -113,6 +113,11 @@ export async function POST(req: NextRequest) {
     // 1. Log Expense
     if (action === 'log-expense') {
       const { title, amount, category, paidVia, receiptNote } = body;
+      const numAmount = Number(amount);
+      if (isNaN(numAmount) || numAmount <= 0 || numAmount > 1000000) {
+        return NextResponse.json({ error: 'Valid positive expense amount required (₹1 to ₹10,00,000)' }, { status: 400 });
+      }
+
       const activeShift = await prisma.cashShift.findFirst({
         where: { cafeId: targetCafeId, status: 'OPEN' },
       });
@@ -121,16 +126,16 @@ export async function POST(req: NextRequest) {
         data: {
           cafeId: targetCafeId,
           shiftId: activeShift?.id || null,
-          title: title || 'Store Expense',
-          amount: Number(amount),
-          category: category || 'INGREDIENTS',
-          paidVia: paidVia || 'DRAWER_CASH',
-          receiptNote: receiptNote || null,
+          title: String(title || 'Store Expense').slice(0, 100).trim(),
+          amount: numAmount,
+          category: String(category || 'INGREDIENTS').slice(0, 30).trim(),
+          paidVia: paidVia === 'UPI' || paidVia === 'OWNER_PERSONAL' ? paidVia : 'DRAWER_CASH',
+          receiptNote: receiptNote ? String(receiptNote).slice(0, 300).trim() : null,
         },
       });
 
       if (activeShift && paidVia === 'DRAWER_CASH') {
-        const updatedExpenses = activeShift.pettyExpenses + Number(amount);
+        const updatedExpenses = activeShift.pettyExpenses + numAmount;
         const updatedExpected = activeShift.openingCash + activeShift.cashSales - updatedExpenses;
         await prisma.cashShift.update({
           where: { id: activeShift.id },
@@ -144,9 +149,13 @@ export async function POST(req: NextRequest) {
     // Delete / Void Expense
     if (action === 'delete-expense') {
       const { expenseId } = body;
-      const expense = await prisma.expense.findUnique({ where: { id: expenseId } });
+      const expense = await prisma.expense.findUnique({ where: { id: String(expenseId).slice(0, 60) } });
       if (!expense) {
         return NextResponse.json({ error: 'Expense not found' }, { status: 404 });
+      }
+
+      if (expense.cafeId !== targetCafeId) {
+        return NextResponse.json({ error: 'Unauthorized to delete this expense' }, { status: 403 });
       }
 
       // If it was paid from drawer cash, restore active shift float
@@ -162,9 +171,9 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      await prisma.expense.delete({ where: { id: expenseId } });
+      await prisma.expense.delete({ where: { id: expense.id } });
 
-      return NextResponse.json({ success: true, deletedId: expenseId });
+      return NextResponse.json({ success: true, deletedId: expense.id });
     }
 
     // 2. Close Shift (Day-End Z-Report)
@@ -198,15 +207,27 @@ export async function POST(req: NextRequest) {
     // 3. Add Menu Item
     if (action === 'add-menu-item') {
       const { name, price, categoryName, isVeg, description } = body;
+
+      const cleanName = String(name || '').slice(0, 100).trim();
+      if (!cleanName) {
+        return NextResponse.json({ error: 'Item name is required' }, { status: 400 });
+      }
+
+      const numPrice = Number(price);
+      if (isNaN(numPrice) || numPrice < 0 || numPrice > 100000) {
+        return NextResponse.json({ error: 'Valid item price required (₹0 to ₹1,00,000)' }, { status: 400 });
+      }
+
+      const cleanCategoryName = String(categoryName || 'Specials').slice(0, 50).trim();
       let category = await prisma.category.findFirst({
-        where: { cafeId: targetCafeId, name: categoryName || 'Specials' },
+        where: { cafeId: targetCafeId, name: cleanCategoryName },
       });
 
       if (!category) {
         category = await prisma.category.create({
           data: {
             cafeId: targetCafeId,
-            name: categoryName || 'Specials',
+            name: cleanCategoryName,
             sortOrder: 10,
           },
         });
@@ -216,13 +237,13 @@ export async function POST(req: NextRequest) {
         data: {
           cafeId: targetCafeId,
           categoryId: category.id,
-          name,
-          price: Number(price),
+          name: cleanName,
+          price: numPrice,
           isVeg: isVeg !== false,
-          description: description || 'Specialty creation',
+          description: description ? String(description).slice(0, 300).trim() : 'Specialty creation',
           inStock: true,
           prepTimeMinutes: 5,
-          imageUrl: body.imageUrl || null,
+          imageUrl: body.imageUrl ? String(body.imageUrl).slice(0, 500).trim() : null,
         },
         include: { category: true },
       });
@@ -233,7 +254,7 @@ export async function POST(req: NextRequest) {
     // Edit Menu Item
     if (action === 'edit-menu-item') {
       const { itemId, name, price, categoryName, isVeg, description, imageUrl } = body;
-      const existingItem = await prisma.menuItem.findUnique({ where: { id: itemId } });
+      const existingItem = await prisma.menuItem.findUnique({ where: { id: String(itemId).slice(0, 60) } });
       if (!existingItem) {
         return NextResponse.json({ error: 'Item not found' }, { status: 404 });
       }
@@ -242,28 +263,38 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Unauthorized to edit this item' }, { status: 403 });
       }
 
+      let validPrice = existingItem.price;
+      if (price !== undefined) {
+        const numPrice = Number(price);
+        if (isNaN(numPrice) || numPrice < 0 || numPrice > 100000) {
+          return NextResponse.json({ error: 'Valid item price required (₹0 to ₹1,00,000)' }, { status: 400 });
+        }
+        validPrice = numPrice;
+      }
+
       let categoryId = existingItem.categoryId;
       if (categoryName) {
+        const cleanCatName = String(categoryName).slice(0, 50).trim();
         let category = await prisma.category.findFirst({
-          where: { cafeId: targetCafeId, name: categoryName },
+          where: { cafeId: targetCafeId, name: cleanCatName },
         });
         if (!category) {
           category = await prisma.category.create({
-            data: { cafeId: targetCafeId, name: categoryName, sortOrder: 10 },
+            data: { cafeId: targetCafeId, name: cleanCatName, sortOrder: 10 },
           });
         }
         categoryId = category.id;
       }
 
       const updated = await prisma.menuItem.update({
-        where: { id: itemId },
+        where: { id: existingItem.id },
         data: {
-          name: name !== undefined ? name : existingItem.name,
-          price: price !== undefined ? Number(price) : existingItem.price,
+          name: name !== undefined ? String(name).slice(0, 100).trim() : existingItem.name,
+          price: validPrice,
           categoryId,
           isVeg: isVeg !== undefined ? isVeg : existingItem.isVeg,
-          description: description !== undefined ? description : existingItem.description,
-          imageUrl: imageUrl !== undefined ? imageUrl : existingItem.imageUrl,
+          description: description !== undefined ? String(description).slice(0, 300).trim() : existingItem.description,
+          imageUrl: imageUrl !== undefined ? String(imageUrl).slice(0, 500).trim() : existingItem.imageUrl,
         },
         include: { category: true },
       });
@@ -273,7 +304,7 @@ export async function POST(req: NextRequest) {
     // Delete Menu Item
     if (action === 'delete-menu-item') {
       const { itemId } = body;
-      const item = await prisma.menuItem.findUnique({ where: { id: itemId } });
+      const item = await prisma.menuItem.findUnique({ where: { id: String(itemId).slice(0, 60) } });
       if (!item) return NextResponse.json({ error: 'Item not found' }, { status: 404 });
       if (item.cafeId !== targetCafeId) {
         return NextResponse.json({ error: 'Unauthorized to delete this item' }, { status: 403 });
@@ -281,22 +312,26 @@ export async function POST(req: NextRequest) {
 
       // Detach from past order items to prevent Foreign Key constraint crash (P2003)
       await prisma.orderItem.updateMany({
-        where: { menuItemId: itemId },
+        where: { menuItemId: item.id },
         data: { menuItemId: null },
       });
 
-      await prisma.menuItem.delete({ where: { id: itemId } });
+      await prisma.menuItem.delete({ where: { id: item.id } });
       return NextResponse.json({ success: true });
     }
 
     // 4. Toggle Stock Status (86 Item)
     if (action === 'toggle-stock') {
       const { itemId } = body;
-      const item = await prisma.menuItem.findUnique({ where: { id: itemId } });
+      const item = await prisma.menuItem.findUnique({ where: { id: String(itemId).slice(0, 60) } });
       if (!item) return NextResponse.json({ error: 'Item not found' }, { status: 404 });
 
+      if (item.cafeId !== targetCafeId) {
+        return NextResponse.json({ error: 'Unauthorized to modify this item' }, { status: 403 });
+      }
+
       const updated = await prisma.menuItem.update({
-        where: { id: itemId },
+        where: { id: item.id },
         data: { inStock: !item.inStock },
       });
 
