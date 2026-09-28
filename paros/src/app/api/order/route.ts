@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/auth-session';
+import { isValidEmail, sendCustomerReceiptEmail } from '@/lib/brevo';
 
 export async function GET(req: NextRequest) {
   try {
@@ -59,6 +60,38 @@ export async function POST(req: NextRequest) {
   try {
     const session = await getSession();
     const body = await req.json();
+
+    // Handle Customer Rating & Feedback Submission
+    if (body.action === 'submit-feedback') {
+      const { orderId, rating, feedbackText, customerPhone, cafeId } = body;
+      if (orderId && feedbackText) {
+        await prisma.order.update({
+          where: { id: orderId },
+          data: {
+            specialNotes: `[CUSTOMER FEEDBACK: ${rating}★] ${feedbackText}`,
+          },
+        }).catch(() => {});
+      }
+      if (customerPhone) {
+        const digits = String(customerPhone).replace(/[^0-9]/g, '');
+        if (digits.length >= 10) {
+          const norm = `+91 ${digits.slice(-10)}`;
+          let targetCafeId = cafeId;
+          if (!targetCafeId) {
+            const defCafe = await prisma.tenant.findFirst({ orderBy: { createdAt: 'desc' } });
+            targetCafeId = defCafe?.id;
+          }
+          if (targetCafeId) {
+            await prisma.customer.updateMany({
+              where: { cafeId: targetCafeId, phone: norm },
+              data: { ratingScore: Number(rating) },
+            }).catch(() => {});
+          }
+        }
+      }
+      return NextResponse.json({ success: true, message: 'Feedback recorded successfully' });
+    }
+
     const { tableNumber, items, total, customerName, customerPhone, customerEmail, whatsappOptIn, specialNotes, paymentMode, cafeId } = body;
 
     let cafe = null;
@@ -174,6 +207,35 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // Dispatch Brevo digital receipt if prepaid via UPI and valid email provided
+    if (customerEmail && isValidEmail(customerEmail) && paymentMode === 'UPI_NOW') {
+      const billNumber = `INV-${order.orderNumber.replace('#', '')}-${Math.floor(100 + Math.random() * 900)}`;
+      sendCustomerReceiptEmail({
+        cafe,
+        bill: {
+          billNumber,
+          subtotal: calculatedSubtotal,
+          cgst: Math.round(calculatedSubtotal * 0.025 * 100) / 100,
+          sgst: Math.round(calculatedSubtotal * 0.025 * 100) / 100,
+          total: calculatedTotal,
+          paymentMethod: 'UPI_ONLINE',
+          createdAt: order.createdAt,
+          tableNumber: table?.tableNumber || (tableNumber ? String(tableNumber) : 'Takeaway'),
+        },
+        items: verifiedItems.map((it: { name: string; quantity: number; price: number; notes?: string }) => ({
+          name: it.name,
+          quantity: it.quantity,
+          price: it.price,
+          notes: it.notes,
+        })),
+        customer: {
+          email: customerEmail,
+          name: customerName,
+          phone: normalizedPhone,
+        },
+      }).catch((err) => console.error('Failed to send QR customer receipt email:', err));
+    }
+
     return NextResponse.json({
       success: true,
       orderId: order.id,
@@ -181,6 +243,7 @@ export async function POST(req: NextRequest) {
       orderNumber,
       prepTimeMinutes: order.dynamicPrepMinutes || 10,
     });
+
   } catch (error) {
     console.error('Order creation error:', error);
     return NextResponse.json({ error: 'Failed to create QR order' }, { status: 500 });

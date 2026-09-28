@@ -38,6 +38,19 @@ export default function TableQrOrderPage() {
   const [isCounterOnlyCafe, setIsCounterOnlyCafe] = useState(false);
   const [availableTables, setAvailableTables] = useState<string[]>(['1', '2', '3', '4', '5', '6', '7', '8']);
   const [cafeName, setCafeName] = useState<string>('Artisan Roastery');
+  const [cafeInfo, setCafeInfo] = useState<{
+    id?: string;
+    name?: string;
+    googleReviewUrl?: string | null;
+    wifiName?: string | null;
+    wifiPassword?: string | null;
+  } | null>(null);
+
+  // Google Review Nudge & Wi-Fi States
+  const [selectedRating, setSelectedRating] = useState<number | null>(null);
+  const [privateFeedback, setPrivateFeedback] = useState('');
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
+  const [wifiCopied, setWifiCopied] = useState(false);
 
   // Customizer modal
   const [customizingItem, setCustomizingItem] = useState<{
@@ -86,6 +99,7 @@ export default function TableQrOrderPage() {
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data?.cafe?.name) setCafeName(data.cafe.name);
+        if (data?.cafe) setCafeInfo(data.cafe);
         if (data?.menuItems?.length) setMenuItems(data.menuItems);
 
         const isCounterMode = data?.cafe?.qrMode === 'COUNTER_ONLY';
@@ -266,6 +280,55 @@ export default function TableQrOrderPage() {
     const s = secs % 60;
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   }
+
+  // Google Review Nudge & Private Feedback Submitter
+  async function handleSelectRating(rating: number) {
+    setSelectedRating(rating);
+    try {
+      await fetch('/api/order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'submit-feedback',
+          orderId: placedOrderId,
+          rating,
+          customerPhone: customerPhone ? `+91 ${customerPhone}` : null,
+          cafeId: cafeInfo?.id,
+        }),
+      });
+    } catch {
+      // offline/silent fallback
+    }
+
+    if (rating >= 4) {
+      if (cafeInfo?.googleReviewUrl) {
+        window.open(cafeInfo.googleReviewUrl, '_blank');
+      }
+    }
+  }
+
+  async function handleSubmitPrivateFeedback() {
+    if (!privateFeedback.trim() || !selectedRating) return;
+    try {
+      await fetch('/api/order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'submit-feedback',
+          orderId: placedOrderId,
+          rating: selectedRating,
+          feedbackText: privateFeedback.trim(),
+          customerPhone: customerPhone ? `+91 ${customerPhone}` : null,
+          cafeId: cafeInfo?.id,
+        }),
+      });
+      setFeedbackSubmitted(true);
+    } catch {
+      setFeedbackSubmitted(true);
+    }
+  }
+
+  const isEmailValid = !customerEmail.trim() || /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(customerEmail.trim());
 
   return (
     <div className="min-h-screen bg-paros-cream text-espresso font-body flex flex-col items-center select-none antialiased">
@@ -572,8 +635,28 @@ export default function TableQrOrderPage() {
                   value={customerEmail}
                   onChange={(e) => setCustomerEmail(e.target.value)}
                   placeholder="arjun@example.com"
-                  className="w-full px-4 py-3 rounded-xl border-2 border-espresso bg-white font-body text-base focus:ring-2 focus:ring-paros-orange focus:border-paros-orange outline-none"
+                  className={`w-full px-4 py-3 rounded-xl border-2 font-body text-base outline-none transition-all ${
+                    customerEmail.trim().length > 0
+                      ? isEmailValid
+                        ? 'border-emerald-600 bg-white focus:ring-2 focus:ring-emerald-500'
+                        : 'border-red-500 bg-red-50/50 focus:ring-2 focus:ring-red-400'
+                      : 'border-espresso bg-white focus:ring-2 focus:ring-paros-orange'
+                  }`}
                 />
+                {customerEmail.trim().length > 0 && (
+                  <p
+                    className={`font-body text-[11px] mt-1 flex items-center gap-1 ${
+                      isEmailValid ? 'text-emerald-700 font-bold' : 'text-red-600 font-bold'
+                    }`}
+                  >
+                    <span>{isEmailValid ? '✓' : '⚠️'}</span>
+                    <span>
+                      {isEmailValid
+                        ? 'Digital tax receipt will be emailed automatically'
+                        : 'Please enter a valid email address (e.g. name@domain.com)'}
+                    </span>
+                  </p>
+                )}
               </div>
 
               <label className="flex items-center gap-3 cursor-pointer mt-2">
@@ -594,13 +677,15 @@ export default function TableQrOrderPage() {
 
             <button
               onClick={() => {
-                if (customerName.trim().length > 0) {
+                if (customerName.trim().length > 0 && isEmailValid) {
                   setStep(4);
                 }
               }}
-              disabled={!customerName.trim()}
+              disabled={!customerName.trim() || !isEmailValid}
               className={`brutal-btn mt-auto w-full py-4 font-display font-black text-sm uppercase rounded-2xl border-2 border-espresso shadow-brutal flex items-center justify-center gap-2 ${
-                !customerName.trim() ? 'bg-espresso/40 text-white/60 cursor-not-allowed' : 'bg-paros-orange text-white hover:bg-[#c84c28]'
+                !customerName.trim() || !isEmailValid
+                  ? 'bg-espresso/40 text-white/60 cursor-not-allowed'
+                  : 'bg-paros-orange text-white hover:bg-[#c84c28]'
               }`}
             >
               <span>Continue to Payment ➔</span>
@@ -894,6 +979,136 @@ export default function TableQrOrderPage() {
                 <span>UPI Payment Received (₹{total}) • 0% Surcharge Applied!</span>
               </div>
             )}
+
+            {/* Cafe Wi-Fi Access Card */}
+            {cafeInfo?.wifiName && (
+              <div className="w-full bg-white p-4 rounded-2xl border-2 border-espresso shadow-brutal flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-paros-yellow border-2 border-espresso flex items-center justify-center text-espresso text-xl">
+                    📶
+                  </div>
+                  <div className="text-left">
+                    <p className="font-display font-black text-xs uppercase tracking-wider text-espresso">
+                      Cafe High-Speed Wi-Fi
+                    </p>
+                    <p className="font-body text-xs text-espresso/80 font-bold">
+                      SSID: <span className="font-mono text-espresso">{cafeInfo.wifiName}</span>
+                    </p>
+                    <p className="font-body text-[11px] text-espresso/60">
+                      Pass: <span className="font-mono font-bold text-espresso">{cafeInfo.wifiPassword || 'None'}</span>
+                    </p>
+                  </div>
+                </div>
+                {cafeInfo.wifiPassword && (
+                  <button
+                    onClick={() => {
+                      if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                        navigator.clipboard.writeText(cafeInfo.wifiPassword || '');
+                        setWifiCopied(true);
+                        setTimeout(() => setWifiCopied(false), 2000);
+                      }
+                    }}
+                    className="px-3 py-2 bg-paros-cream hover:bg-paros-yellow text-espresso font-display text-xs font-bold uppercase rounded-xl border border-espresso transition-all"
+                  >
+                    {wifiCopied ? '✓ Copied' : 'Copy Key'}
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Google Review & Manager Feedback Card */}
+            <div className="w-full bg-white p-5 rounded-2xl border-2 border-espresso shadow-brutal text-center flex flex-col gap-3">
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-2xl">☕ ⭐</span>
+                <h3 className="font-display font-black text-base text-espresso">
+                  How was your experience today?
+                </h3>
+                <p className="font-body text-xs text-espresso/70">
+                  Tap stars to rate your visit at {cafeName}
+                </p>
+              </div>
+
+              {/* Star Rating Buttons */}
+              <div className="flex justify-center gap-2 my-1">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    onClick={() => handleSelectRating(star)}
+                    className={`w-10 h-10 rounded-xl border-2 border-espresso flex items-center justify-center text-xl transition-all ${
+                      selectedRating && selectedRating >= star
+                        ? 'bg-amber-400 text-espresso shadow-brutal-sm scale-105'
+                        : 'bg-white hover:bg-amber-50 text-espresso/30'
+                    }`}
+                  >
+                    ★
+                  </button>
+                ))}
+              </div>
+
+              {/* 4 or 5 Stars: Google Review Call to Action */}
+              {selectedRating && selectedRating >= 4 && (
+                <div className="bg-paros-mint/40 border-2 border-espresso p-4 rounded-xl flex flex-col items-center gap-2 animate-in fade-in">
+                  <span className="text-sm font-display font-black text-emerald-950">
+                    🎉 Thank you for the love!
+                  </span>
+                  <p className="text-xs text-espresso/80">
+                    Could you take 10 seconds to share your kind review on Google Maps? It helps our small cafe immensely!
+                  </p>
+                  {cafeInfo?.googleReviewUrl ? (
+                    <a
+                      href={cafeInfo.googleReviewUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="brutal-btn inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-paros-orange text-white font-display font-black text-xs uppercase rounded-xl border-2 border-espresso shadow-brutal-sm mt-1"
+                    >
+                      <span>Post Review on Google Maps</span>
+                      <span className="material-symbols-outlined text-[16px]">open_in_new</span>
+                    </a>
+                  ) : (
+                    <span className="text-xs font-bold text-emerald-800">
+                      ✓ Your 5-star rating has been recorded. Thank you!
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {/* 1 to 3 Stars: Private Manager Feedback Intercept */}
+              {selectedRating && selectedRating <= 3 && (
+                <div className="bg-red-50 border-2 border-espresso p-4 rounded-xl flex flex-col gap-2.5 text-left animate-in fade-in">
+                  <p className="font-display font-bold text-xs text-red-950">
+                    We are deeply sorry things were not 100% perfect.
+                  </p>
+                  <p className="font-body text-xs text-espresso/75">
+                    Please tell our manager what went wrong so we can fix it for you right now:
+                  </p>
+                  {feedbackSubmitted ? (
+                    <div className="p-3 bg-white rounded-lg border border-espresso text-center">
+                      <p className="font-display font-black text-xs text-emerald-800">
+                        ✓ Feedback delivered directly to the manager. Thank you for helping us improve!
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-2">
+                      <textarea
+                        value={privateFeedback}
+                        onChange={(e) => setPrivateFeedback(e.target.value)}
+                        placeholder="Tell us about the issue (e.g. food temperature, wait time, staff service)..."
+                        rows={3}
+                        className="w-full p-2.5 text-xs bg-white rounded-lg border-2 border-espresso outline-none focus:ring-2 focus:ring-paros-orange font-body"
+                      />
+                      <button
+                        onClick={handleSubmitPrivateFeedback}
+                        disabled={!privateFeedback.trim()}
+                        className="brutal-btn py-2 bg-espresso text-white font-display font-bold text-xs uppercase rounded-xl border border-espresso flex items-center justify-center gap-1 disabled:opacity-50"
+                      >
+                        <span>Send to Management</span>
+                        <span className="material-symbols-outlined text-[14px]">send</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
 
             {/* Start New Order / Add Items */}
             <button

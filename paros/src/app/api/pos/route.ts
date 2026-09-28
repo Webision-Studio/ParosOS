@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/auth-session';
+import { isValidEmail, sendCustomerReceiptEmail, sendNightlySalesReportEmail } from '@/lib/brevo';
 
 export async function GET(req: NextRequest) {
   try {
@@ -263,6 +264,45 @@ export async function POST(req: NextRequest) {
         });
       }
 
+      // Dispatch Brevo digital receipt email if customer provided a valid email
+      if (customerEmail && isValidEmail(customerEmail)) {
+        const cafeInfo = await prisma.tenant.findUnique({ where: { id: targetCafeId } });
+        if (cafeInfo) {
+          sendCustomerReceiptEmail({
+            cafe: cafeInfo,
+            bill: {
+              billNumber: bill.billNumber,
+              subtotal: bill.subtotal,
+              discount: bill.discount,
+              cgst: bill.cgst,
+              sgst: bill.sgst,
+              total: bill.total,
+              paymentMethod: bill.paymentMethod,
+              createdAt: bill.createdAt,
+              tableNumber: table?.tableNumber || 'Takeaway',
+            },
+            items: (primaryOrder.items || []).map((it) => ({
+              name: it.name,
+              quantity: it.quantity,
+              price: it.price,
+              notes: it.notes,
+            })),
+            customer: {
+              email: customerEmail,
+              name: customerName,
+              phone: normalizedPhone,
+            },
+          })
+            .then((res) => {
+              if (res.success) {
+                prisma.bill.update({ where: { id: bill.id }, data: { emailSent: true } }).catch(() => {});
+              }
+            })
+            .catch((err) => console.error('Error dispatching customer receipt email:', err));
+        }
+      }
+
+
       // If there are other unbilled orders for this table, close them with bills as part of this table tab
       const otherUnbilled = activeOrders.filter((o) => o.id !== primaryOrder.id);
       for (const other of otherUnbilled) {
@@ -395,7 +435,160 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, expense });
     }
 
+    // 4. Close Shift & Reconcile Drawer & Trigger Nightly Report
+    if (action === 'close-shift') {
+      const { countedCash, notes, sendEmailReport, operatorName } = body;
+      const activeShift = await prisma.cashShift.findFirst({
+        where: { cafeId: targetCafeId, status: 'OPEN' },
+        orderBy: { openedAt: 'desc' },
+      });
+
+      const openingCash = activeShift?.openingCash || 0;
+      const cashSales = activeShift?.cashSales || 0;
+      const pettyExpenses = activeShift?.pettyExpenses || 0;
+      const expectedCash = openingCash + cashSales - pettyExpenses;
+      const counted = Number(countedCash !== undefined ? countedCash : expectedCash);
+      const discrepancy = counted - expectedCash;
+
+      let closedShift = null;
+      if (activeShift) {
+        closedShift = await prisma.cashShift.update({
+          where: { id: activeShift.id },
+          data: {
+            status: 'CLOSED',
+            countedCash: counted,
+            discrepancy,
+            notes: notes || null,
+            closedAt: new Date(),
+          },
+        });
+      } else {
+        closedShift = await prisma.cashShift.create({
+          data: {
+            cafeId: targetCafeId,
+            status: 'CLOSED',
+            openingCash,
+            cashSales,
+            pettyExpenses,
+            expectedCash,
+            countedCash: counted,
+            discrepancy,
+            notes: notes || null,
+            closedAt: new Date(),
+          },
+        });
+      }
+
+      // Automatically open next shift with the closing float cash
+      const nextShift = await prisma.cashShift.create({
+        data: {
+          cafeId: targetCafeId,
+          status: 'OPEN',
+          openingCash: counted,
+          openedAt: new Date(),
+        },
+      });
+
+      // Optionally dispatch nightly email report via Brevo
+      let emailResult = null;
+      if (sendEmailReport !== false) {
+        try {
+          const cafe = await prisma.tenant.findUnique({ where: { id: targetCafeId } });
+          if (cafe?.email) {
+            const startOfDay = new Date();
+            startOfDay.setHours(0, 0, 0, 0);
+            const endOfDay = new Date();
+            endOfDay.setHours(23, 59, 59, 999);
+
+            const [bills, expenses] = await Promise.all([
+              prisma.bill.findMany({
+                where: { cafeId: targetCafeId, createdAt: { gte: startOfDay, lte: endOfDay } },
+                include: { order: { include: { items: true } } },
+              }),
+              prisma.expense.findMany({
+                where: { cafeId: targetCafeId, createdAt: { gte: startOfDay, lte: endOfDay } },
+              }),
+            ]);
+
+            let totalRevenue = 0;
+            let totalGst = 0;
+            let upiTotal = 0;
+            let cashTotal = 0;
+            let cardTotal = 0;
+            let otherTotal = 0;
+            const itemCounts = new Map<string, { quantity: number; revenue: number }>();
+
+            for (const b of bills) {
+              totalRevenue += b.total;
+              totalGst += (b.cgst || 0) + (b.sgst || 0);
+              const mode = (b.paymentMethod || 'UPI').toUpperCase();
+              if (mode === 'UPI') upiTotal += b.total;
+              else if (mode === 'CASH') cashTotal += b.total;
+              else if (mode === 'CARD') cardTotal += b.total;
+              else otherTotal += b.total;
+
+              if (b.order?.items) {
+                for (const it of b.order.items) {
+                  const cur = itemCounts.get(it.name) || { quantity: 0, revenue: 0 };
+                  cur.quantity += it.quantity;
+                  cur.revenue += it.price * it.quantity;
+                  itemCounts.set(it.name, cur);
+                }
+              }
+            }
+
+            const topItems = Array.from(itemCounts.entries())
+              .map(([name, data]) => ({ name, quantity: data.quantity, revenue: data.revenue }))
+              .sort((a, b) => b.quantity - a.quantity)
+              .slice(0, 5);
+
+            emailResult = await sendNightlySalesReportEmail({
+              cafe,
+              date: new Date().toLocaleDateString('en-IN', {
+                weekday: 'short',
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+              }),
+              totalRevenue,
+              totalBills: bills.length,
+              avgTicket: bills.length > 0 ? Math.round((totalRevenue / bills.length) * 100) / 100 : 0,
+              totalGst,
+              paymentBreakdown: { upi: upiTotal, cash: cashTotal, card: cardTotal, other: otherTotal },
+              shiftSummary: {
+                openingCash,
+                cashSales,
+                pettyExpenses,
+                expectedCash,
+                countedCash: counted,
+                discrepancy,
+                notes: notes || null,
+                operatorName: operatorName || 'Primary Cashier',
+              },
+              expenses: expenses.map((e) => ({
+                title: e.title,
+                amount: e.amount,
+                category: e.category,
+                paidVia: e.paidVia,
+              })),
+              topItems,
+            });
+          }
+        } catch (emailErr) {
+          console.error('Failed to trigger nightly sales report email on shift close:', emailErr);
+        }
+      }
+
+      return NextResponse.json({
+        success: true,
+        closedShift,
+        nextShift,
+        emailResult,
+      });
+    }
+
     return NextResponse.json({ error: 'Unknown action' }, { status: 400 });
+
   } catch (error) {
     console.error('POS action error:', error);
     return NextResponse.json({ error: 'Failed to process POS action' }, { status: 500 });

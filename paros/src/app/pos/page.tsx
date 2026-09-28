@@ -104,6 +104,19 @@ export default function PosRegisterPage() {
   const [posExpenseCategory, setPosExpenseCategory] = useState('INGREDIENTS');
   const [posExpensePaidVia, setPosExpensePaidVia] = useState<'DRAWER_CASH' | 'UPI'>('DRAWER_CASH');
 
+  // End of Day / Shift Close Modal State
+  const [isCloseShiftModalOpen, setIsCloseShiftModalOpen] = useState(false);
+  const [closingCountedCash, setClosingCountedCash] = useState<string>('');
+  const [closingNotes, setClosingNotes] = useState<string>('');
+  const [closingSendEmail, setClosingSendEmail] = useState<boolean>(true);
+  const [closingLoading, setClosingLoading] = useState<boolean>(false);
+  const [activeShift, setActiveShift] = useState<{
+    openingCash: number;
+    cashSales: number;
+    pettyExpenses: number;
+    expectedCash: number;
+  } | null>(null);
+
   // System Reset Modal State
   const [showResetModal, setShowResetModal] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
@@ -441,7 +454,19 @@ export default function PosRegisterPage() {
             }
 
             // 4. Sync Active Shift & Cash Drawer Till Float
-            if (data?.activeShift?.expectedCash !== undefined) {
+            if (data?.activeShift) {
+              const op = Number(data.activeShift.openingCash || 0);
+              const cs = Number(data.activeShift.cashSales || 0);
+              const pe = Number(data.activeShift.pettyExpenses || 0);
+              const exp = data.activeShift.expectedCash !== undefined ? Number(data.activeShift.expectedCash) : (op + cs - pe);
+              setActiveShift({
+                openingCash: op,
+                cashSales: cs,
+                pettyExpenses: pe,
+                expectedCash: exp,
+              });
+              setDrawerCash(exp);
+            } else if (data?.activeShift?.expectedCash !== undefined) {
               setDrawerCash(data.activeShift.expectedCash);
             }
         })
@@ -737,6 +762,50 @@ export default function PosRegisterPage() {
     setPosExpenseAmount('');
   }
 
+  // Handle End of Day / Shift Close Audit
+  async function handleCloseShift(e: React.FormEvent) {
+    e.preventDefault();
+    setClosingLoading(true);
+    try {
+      const expCash = activeShift?.expectedCash ?? drawerCash;
+      const counted = closingCountedCash.trim() !== '' ? Number(closingCountedCash) : expCash;
+
+      const res = await fetch('/api/pos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'close-shift',
+          countedCash: counted,
+          notes: closingNotes,
+          sendEmailReport: closingSendEmail,
+          operatorName: operator?.name || 'Primary Cashier',
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to close shift');
+
+      setIsCloseShiftModalOpen(false);
+      setClosingCountedCash('');
+      setClosingNotes('');
+
+      if (data.emailResult?.mocked) {
+        showToast(`✓ Shift closed! Mock EOD report generated (Brevo API key pending).`);
+      } else if (data.emailResult?.success) {
+        showToast(`✓ Shift closed! Nightly EOD report sent to cafe owner.`);
+      } else {
+        showToast(`✓ Shift closed successfully! Drawer reset for next shift.`);
+      }
+
+      if (data.nextShift?.openingCash !== undefined) {
+        setDrawerCash(data.nextShift.openingCash);
+      }
+    } catch (err: unknown) {
+      showToast(err instanceof Error ? `⚠️ ${err.message}` : '⚠️ Failed to close shift');
+    } finally {
+      setClosingLoading(false);
+    }
+  }
+
   // Mark Order as Handed Over to Guest
   function handleMarkOrderServed(orderId: string, tableNum: string) {
     setLiveOrders((prev) =>
@@ -916,6 +985,17 @@ export default function PosRegisterPage() {
                 + Exp
               </button>
             </div>
+
+            {/* End Shift / EOD Audit Button */}
+            <button
+              onClick={() => setIsCloseShiftModalOpen(true)}
+              title="End Shift & Close Cash Drawer with EOD Audit"
+              className="flex items-center gap-1 px-2.5 py-1 bg-paros-yellow hover:bg-amber-300 rounded-xl border border-espresso font-display text-xs font-black text-espresso shadow-brutal-sm transition-all"
+            >
+              <span className="material-symbols-outlined text-[15px] text-amber-900">lock_clock</span>
+              <span className="hidden lg:inline">End Shift / EOD</span>
+              <span className="lg:hidden">EOD</span>
+            </button>
 
             <div className="hidden sm:flex items-center gap-1 font-mono text-xs font-bold text-espresso bg-paros-cream px-2.5 py-1 rounded-lg border border-espresso">
               <span className="material-symbols-outlined text-[14px]">schedule</span>
@@ -2686,6 +2766,180 @@ export default function PosRegisterPage() {
             <p className="font-body text-[11px] text-espresso/50 mt-3 text-center">
               💡 Default Cashier PIN: <span className="font-mono font-bold text-espresso">1234</span>
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* ── End of Day & Shift Close Audit Modal ── */}
+      {isCloseShiftModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-espresso/80 backdrop-blur-md p-4">
+          <div className="bg-white rounded-3xl border-2 border-espresso shadow-brutal-xl w-full max-w-lg p-6 flex flex-col gap-4 animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-paros-yellow border-2 border-espresso shadow-brutal-sm flex items-center justify-center text-espresso text-2xl">
+                  🔒
+                </div>
+                <div>
+                  <h2 className="font-display text-xl font-black text-espresso">
+                    End of Day & Shift Close Audit
+                  </h2>
+                  <p className="font-body text-xs text-espresso/70">
+                    Reconcile drawer till cash & dispatch owner sales report
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsCloseShiftModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-paros-cream border border-espresso flex items-center justify-center font-bold text-sm hover:bg-paros-yellow"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Shift Breakdown Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              <div className="bg-paros-cream p-3 rounded-xl border border-espresso text-center">
+                <p className="text-[10px] uppercase font-display font-black text-espresso/60">Opening Float</p>
+                <p className="text-base font-black text-espresso font-mono mt-0.5">
+                  ₹{(activeShift?.openingCash ?? 2000).toLocaleString('en-IN')}
+                </p>
+              </div>
+              <div className="bg-paros-mint/40 p-3 rounded-xl border border-espresso text-center">
+                <p className="text-[10px] uppercase font-display font-black text-emerald-800">Cash Sales</p>
+                <p className="text-base font-black text-emerald-900 font-mono mt-0.5">
+                  +₹{(activeShift?.cashSales ?? 0).toLocaleString('en-IN')}
+                </p>
+              </div>
+              <div className="bg-red-50 p-3 rounded-xl border border-espresso text-center">
+                <p className="text-[10px] uppercase font-display font-black text-red-700">Petty Expenses</p>
+                <p className="text-base font-black text-red-800 font-mono mt-0.5">
+                  -₹{(activeShift?.pettyExpenses ?? 0).toLocaleString('en-IN')}
+                </p>
+              </div>
+              <div className="bg-paros-yellow p-3 rounded-xl border border-espresso text-center">
+                <p className="text-[10px] uppercase font-display font-black text-amber-900">Expected Cash</p>
+                <p className="text-base font-black text-espresso font-mono mt-0.5">
+                  ₹{(activeShift?.expectedCash ?? drawerCash).toLocaleString('en-IN')}
+                </p>
+              </div>
+            </div>
+
+            {/* Reconciliation Form */}
+            <form onSubmit={handleCloseShift} className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1">
+                <label className="font-display text-xs font-black uppercase text-espresso">
+                  Actual Physical Cash Counted in Drawer (₹) *
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-mono font-bold text-base text-espresso">
+                    ₹
+                  </span>
+                  <input
+                    type="number"
+                    step="any"
+                    value={closingCountedCash}
+                    onChange={(e) => setClosingCountedCash(e.target.value)}
+                    placeholder={`Expected: ${activeShift?.expectedCash ?? drawerCash}`}
+                    className="w-full pl-8 pr-4 py-3 bg-paros-cream border-2 border-espresso rounded-xl font-mono text-lg font-bold text-espresso outline-none focus:ring-2 focus:ring-paros-orange"
+                    autoFocus
+                  />
+                </div>
+              </div>
+
+              {/* Live Discrepancy Indicator */}
+              {closingCountedCash.trim() !== '' && (
+                (() => {
+                  const counted = Number(closingCountedCash);
+                  const expected = activeShift?.expectedCash ?? drawerCash;
+                  const diff = counted - expected;
+                  return (
+                    <div
+                      className={`p-3 rounded-xl border-2 border-espresso flex items-center justify-between font-display text-xs font-bold ${
+                        diff === 0
+                          ? 'bg-paros-mint text-emerald-950'
+                          : diff > 0
+                          ? 'bg-amber-100 text-amber-950'
+                          : 'bg-red-100 text-red-950'
+                      }`}
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-[18px]">
+                          {diff === 0 ? 'check_circle' : diff > 0 ? 'add_circle' : 'warning'}
+                        </span>
+                        <span>
+                          {diff === 0
+                            ? 'Drawer is Balanced Penny-Perfect!'
+                            : diff > 0
+                            ? 'Cash Drawer Surplus (Over)'
+                            : 'Cash Drawer Shortage (Deficit)'}
+                        </span>
+                      </span>
+                      <span className="font-mono text-sm font-black">
+                        {diff === 0 ? '₹0.00' : diff > 0 ? `+₹${diff.toFixed(2)}` : `-₹${Math.abs(diff).toFixed(2)}`}
+                      </span>
+                    </div>
+                  );
+                })()
+              )}
+
+              {/* Notes */}
+              <div className="flex flex-col gap-1">
+                <label className="font-display text-xs font-black uppercase text-espresso">
+                  Shift Notes & Discrepancy Explanation (optional)
+                </label>
+                <textarea
+                  value={closingNotes}
+                  onChange={(e) => setClosingNotes(e.target.value)}
+                  placeholder="e.g. Nightly cash counted by Rahul. ₹50 surplus due to customer tip left in drawer."
+                  rows={2}
+                  className="w-full p-2.5 bg-paros-cream border-2 border-espresso rounded-xl font-body text-xs text-espresso outline-none focus:ring-2 focus:ring-paros-orange"
+                />
+              </div>
+
+              {/* Email Nightly Report Toggle */}
+              <label className="flex items-center gap-3 p-3 bg-paros-cream rounded-xl border border-espresso cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={closingSendEmail}
+                  onChange={(e) => setClosingSendEmail(e.target.checked)}
+                  className="w-5 h-5 rounded border-2 border-espresso accent-paros-orange cursor-pointer"
+                />
+                <div className="flex flex-col">
+                  <span className="font-display text-xs font-black text-espresso">
+                    📧 Email Nightly Sales & Till Audit Report to Cafe Owner
+                  </span>
+                  <span className="font-body text-[10px] text-espresso/60">
+                    Sends full revenue breakdown, UPI vs Cash split, petty expenses & top items
+                  </span>
+                </div>
+              </label>
+
+              {/* Actions */}
+              <div className="flex items-center gap-3 mt-1">
+                <button
+                  type="button"
+                  onClick={() => setIsCloseShiftModalOpen(false)}
+                  className="w-1/3 py-3 rounded-xl border-2 border-espresso font-display text-xs font-black uppercase hover:bg-gray-100"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={closingLoading}
+                  className="brutal-btn w-2/3 py-3.5 bg-paros-orange text-white font-display font-black text-sm uppercase rounded-xl border-2 border-espresso shadow-brutal flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {closingLoading ? (
+                    <span>Closing Shift...</span>
+                  ) : (
+                    <>
+                      <span>Confirm & Close Shift</span>
+                      <span className="material-symbols-outlined text-[16px]">lock</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
