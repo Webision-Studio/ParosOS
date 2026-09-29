@@ -194,7 +194,11 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'No active shift found' }, { status: 404 });
       }
 
-      const counted = Number(countedCash);
+      const counted = Number(countedCash !== undefined ? countedCash : activeShift.expectedCash);
+      if (isNaN(counted) || counted < 0 || counted > 100000000) {
+        return NextResponse.json({ error: 'Valid positive counted cash amount required' }, { status: 400 });
+      }
+
       const discrepancy = counted - activeShift.expectedCash;
 
       const closed = await prisma.cashShift.update({
@@ -204,11 +208,21 @@ export async function POST(req: NextRequest) {
           countedCash: counted,
           discrepancy,
           closedAt: new Date(),
-          notes: notes || `Shift closed by owner. Discrepancy: ₹${discrepancy}`,
+          notes: notes ? String(notes).slice(0, 500).trim() : `Shift closed by owner. Discrepancy: ₹${discrepancy}`,
         },
       });
 
-      return NextResponse.json({ success: true, shift: closed });
+      // Automatically open next shift with the closing float cash
+      const nextShift = await prisma.cashShift.create({
+        data: {
+          cafeId: targetCafeId,
+          status: 'OPEN',
+          openingCash: counted,
+          openedAt: new Date(),
+        },
+      });
+
+      return NextResponse.json({ success: true, shift: closed, nextShift });
     }
 
     // 3. Add Menu Item

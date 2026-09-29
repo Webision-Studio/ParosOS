@@ -244,27 +244,33 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      const numSubtotal = Math.max(0, Number(subtotal) || 0);
-      const numDiscount = Math.max(0, Number(discount) || 0);
-      const numCgst = Math.max(0, Number(cgst) || 0);
-      const numSgst = Math.max(0, Number(sgst) || 0);
-      const numTotal = Math.max(0, Number(total) || 0);
+      // Server-side financial verification: compute subtotal from actual items in primaryOrder
+      const verifiedItemsSubtotal = (primaryOrder.items || []).reduce(
+        (sum, it) => sum + (Number(it.price) || 0) * (Number(it.quantity) || 1),
+        0
+      );
+      const finalSubtotal = verifiedItemsSubtotal > 0 ? verifiedItemsSubtotal : Math.max(0, Number(subtotal) || 0);
+      const finalDiscount = Math.min(finalSubtotal, Math.max(0, Number(discount) || 0));
+      const taxableAmount = Math.max(0, finalSubtotal - finalDiscount);
+      const finalCgst = Math.round(taxableAmount * 0.025 * 100) / 100;
+      const finalSgst = Math.round(taxableAmount * 0.025 * 100) / 100;
+      const finalTotal = Math.round(taxableAmount + finalCgst + finalSgst);
 
       const safeCustomerName = customerName ? String(customerName).slice(0, 80).trim() : null;
       const safeCustomerEmail = customerEmail && isValidEmail(customerEmail) ? String(customerEmail).trim().slice(0, 100) : null;
       const safeProcessedBy = processedBy ? String(processedBy).slice(0, 60).trim() : 'Primary Cashier';
 
-      // Create Bill attached to primaryOrder.id
+      // Create Bill attached to primaryOrder.id with strictly verified financial totals
       const bill = await prisma.bill.create({
         data: {
           cafeId: targetCafeId,
           orderId: primaryOrder.id,
           billNumber: `INV-${primaryOrder.orderNumber.replace('#', '')}-${Math.floor(100 + Math.random() * 900)}`,
-          subtotal: numSubtotal,
-          discount: numDiscount,
-          cgst: numCgst,
-          sgst: numSgst,
-          total: numTotal,
+          subtotal: finalSubtotal,
+          discount: finalDiscount,
+          cgst: finalCgst,
+          sgst: finalSgst,
+          total: finalTotal,
           paymentMethod: String(paymentMethod || 'UPI').slice(0, 20),
           paymentStatus: 'PAID',
           customerPhone: normalizedPhone || null,
@@ -277,23 +283,33 @@ export async function POST(req: NextRequest) {
       });
 
       if (normalizedPhone) {
-        await prisma.customer.upsert({
+        const existingCustomer = await prisma.customer.findUnique({
           where: { cafeId_phone: { cafeId: targetCafeId, phone: normalizedPhone } },
-          update: {
-            name: customerName || undefined,
-            email: customerEmail || undefined,
-            visitCount: { increment: 1 },
-            totalSpend: { increment: Number(total) },
-            lastVisitAt: new Date(),
-          },
-          create: {
-            cafeId: targetCafeId,
-            phone: normalizedPhone,
-            name: customerName || null,
-            email: customerEmail || null,
-            totalSpend: Number(total),
-          },
         });
+
+        if (existingCustomer) {
+          await prisma.customer.update({
+            where: { id: existingCustomer.id },
+            data: {
+              name: safeCustomerName || existingCustomer.name,
+              // Only update email if the customer record previously had no email (anti-poisoning)
+              email: existingCustomer.email || safeCustomerEmail || undefined,
+              visitCount: { increment: 1 },
+              totalSpend: { increment: finalTotal },
+              lastVisitAt: new Date(),
+            },
+          });
+        } else {
+          await prisma.customer.create({
+            data: {
+              cafeId: targetCafeId,
+              phone: normalizedPhone,
+              name: safeCustomerName,
+              email: safeCustomerEmail,
+              totalSpend: finalTotal,
+            },
+          });
+        }
       }
 
       // Dispatch Brevo digital receipt email if customer provided a valid email
@@ -363,7 +379,7 @@ export async function POST(req: NextRequest) {
         });
 
         if (activeShift) {
-          const updatedCashSales = activeShift.cashSales + Number(total);
+          const updatedCashSales = activeShift.cashSales + finalTotal;
           const updatedExpected = activeShift.openingCash + updatedCashSales - activeShift.pettyExpenses;
           await prisma.cashShift.update({
             where: { id: activeShift.id },
@@ -493,9 +509,13 @@ export async function POST(req: NextRequest) {
         orderBy: { openedAt: 'desc' },
       });
 
-      const openingCash = activeShift?.openingCash || 0;
-      const cashSales = activeShift?.cashSales || 0;
-      const pettyExpenses = activeShift?.pettyExpenses || 0;
+      if (!activeShift) {
+        return NextResponse.json({ error: 'No active open shift found to close' }, { status: 400 });
+      }
+
+      const openingCash = activeShift.openingCash || 0;
+      const cashSales = activeShift.cashSales || 0;
+      const pettyExpenses = activeShift.pettyExpenses || 0;
       const expectedCash = openingCash + cashSales - pettyExpenses;
 
       const counted = Number(countedCash !== undefined ? countedCash : expectedCash);
@@ -507,34 +527,16 @@ export async function POST(req: NextRequest) {
       const safeNotes = notes ? String(notes).slice(0, 500).trim() : null;
       const safeOperatorName = String(operatorName || 'Primary Cashier').slice(0, 60).trim();
 
-      let closedShift = null;
-      if (activeShift) {
-        closedShift = await prisma.cashShift.update({
-          where: { id: activeShift.id },
-          data: {
-            status: 'CLOSED',
-            countedCash: counted,
-            discrepancy,
-            notes: safeNotes,
-            closedAt: new Date(),
-          },
-        });
-      } else {
-        closedShift = await prisma.cashShift.create({
-          data: {
-            cafeId: targetCafeId,
-            status: 'CLOSED',
-            openingCash,
-            cashSales,
-            pettyExpenses,
-            expectedCash,
-            countedCash: counted,
-            discrepancy,
-            notes: safeNotes,
-            closedAt: new Date(),
-          },
-        });
-      }
+      const closedShift = await prisma.cashShift.update({
+        where: { id: activeShift.id },
+        data: {
+          status: 'CLOSED',
+          countedCash: counted,
+          discrepancy,
+          notes: safeNotes,
+          closedAt: new Date(),
+        },
+      });
 
       // Automatically open next shift with the closing float cash
       const nextShift = await prisma.cashShift.create({

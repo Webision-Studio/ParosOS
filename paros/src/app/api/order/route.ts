@@ -3,6 +3,29 @@ import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/auth-session';
 import { isValidEmail, sendCustomerReceiptEmail } from '@/lib/brevo';
 
+// Sliding window in-memory rate limiter to defend against ticket spamming and DDoS
+const orderRateLimitMap = new Map<string, { count: number; resetAt: number }>();
+
+function isRateLimited(key: string, limit: number, windowMs: number): boolean {
+  const now = Date.now();
+  if (orderRateLimitMap.size > 2000) {
+    for (const [k, v] of orderRateLimitMap.entries()) {
+      if (v.resetAt < now) orderRateLimitMap.delete(k);
+    }
+  }
+
+  const record = orderRateLimitMap.get(key);
+  if (!record || record.resetAt < now) {
+    orderRateLimitMap.set(key, { count: 1, resetAt: now + windowMs });
+    return false;
+  }
+  if (record.count >= limit) {
+    return true;
+  }
+  record.count += 1;
+  return false;
+}
+
 export async function GET(req: NextRequest) {
   try {
     const session = await getSession();
@@ -66,6 +89,14 @@ export async function POST(req: NextRequest) {
 
     // 1. Handle Customer Rating & Feedback Submission
     if (body.action === 'submit-feedback') {
+      const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || '127.0.0.1';
+      if (isRateLimited(`${clientIp}_feedback`, 6, 60000)) {
+        return NextResponse.json(
+          { error: 'Too many feedback requests. Please wait a minute before submitting again.' },
+          { status: 429 }
+        );
+      }
+
       const { orderId, rating, feedbackText, customerPhone, cafeId } = body;
 
       // Validate rating integer bounds (1 to 5)
@@ -133,6 +164,15 @@ export async function POST(req: NextRequest) {
 
     if (!cafe) {
       return NextResponse.json({ error: 'Cafe not found' }, { status: 404 });
+    }
+
+    // Velocity rate limit defense against ticket flooding & DoS
+    const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || '127.0.0.1';
+    if (isRateLimited(`${clientIp}_${cafe.id}_order`, 10, 60000)) {
+      return NextResponse.json(
+        { error: 'Order velocity limit reached. Please wait a minute before placing another order.' },
+        { status: 429 }
+      );
     }
 
     // Find table (case-insensitive & handles 'T4' vs '4' or 'Takeaway')
@@ -233,29 +273,37 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Upsert Customer record if phone is provided
+    // Upsert Customer record with email hijacking / profile poisoning defense
     if (normalizedPhone) {
-      await prisma.customer.upsert({
-        where: {
-          cafeId_phone: { cafeId: cafe.id, phone: normalizedPhone }
-        },
-        update: {
-          name: safeCustomerName !== `Table ${tableNumber} Guest` ? safeCustomerName : undefined,
-          email: safeCustomerEmail || undefined,
-          visitCount: { increment: 1 },
-          totalSpend: { increment: calculatedTotal },
-          lastVisitAt: new Date(),
-          isOptedInWhatsApp: whatsappOptIn !== false,
-        },
-        create: {
-          cafeId: cafe.id,
-          phone: normalizedPhone,
-          name: safeCustomerName !== `Table ${tableNumber} Guest` ? safeCustomerName : null,
-          email: safeCustomerEmail || null,
-          totalSpend: calculatedTotal,
-          isOptedInWhatsApp: whatsappOptIn !== false,
-        },
+      const existingCustomer = await prisma.customer.findUnique({
+        where: { cafeId_phone: { cafeId: cafe.id, phone: normalizedPhone } },
       });
+
+      if (existingCustomer) {
+        await prisma.customer.update({
+          where: { id: existingCustomer.id },
+          data: {
+            name: safeCustomerName !== `Table ${tableNumber} Guest` ? safeCustomerName : existingCustomer.name,
+            // Only update email if the customer record previously had no email (anti-poisoning)
+            email: existingCustomer.email || safeCustomerEmail || undefined,
+            visitCount: { increment: 1 },
+            totalSpend: { increment: calculatedTotal },
+            lastVisitAt: new Date(),
+            isOptedInWhatsApp: whatsappOptIn !== false,
+          },
+        });
+      } else {
+        await prisma.customer.create({
+          data: {
+            cafeId: cafe.id,
+            phone: normalizedPhone,
+            name: safeCustomerName !== `Table ${tableNumber} Guest` ? safeCustomerName : null,
+            email: safeCustomerEmail || null,
+            totalSpend: calculatedTotal,
+            isOptedInWhatsApp: whatsappOptIn !== false,
+          },
+        });
+      }
     }
 
     // Dispatch Brevo digital receipt if prepaid via UPI and valid email provided

@@ -197,13 +197,16 @@ export default function MenuCatalogPage() {
 
   async function handleImportCSV() {
     if (!csvData.trim()) return;
-    const lines = csvData.split('\n').filter(l => l.trim() !== '');
+    const lines = csvData.split('\n').filter(l => l.trim() !== '').slice(0, 100);
     let successCount = 0;
     
     for (const line of lines) {
       const parts = line.split(',').map(p => p.trim());
       if (parts.length >= 3) {
         const [name, price, category, isVegStr] = parts;
+        const cleanName = String(name || '').trim().slice(0, 100);
+        const cleanPrice = Number(price);
+        if (!cleanName || isNaN(cleanPrice) || cleanPrice < 0 || cleanPrice > 100000) continue;
         const isVeg = isVegStr ? isVegStr.toLowerCase() === 'true' : true;
         
         try {
@@ -212,8 +215,8 @@ export default function MenuCatalogPage() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               action: 'add-menu-item',
-              name,
-              price: Number(price),
+              name: cleanName,
+              price: cleanPrice,
               categoryName: category,
               isVeg,
             }),

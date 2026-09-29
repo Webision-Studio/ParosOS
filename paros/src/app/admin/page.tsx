@@ -177,20 +177,29 @@ export default function AdminFinancialDashboard() {
     }).catch(() => {});
   }
 
-  // Export Expenses CSV
+  // Export Expenses CSV with CSV Formula Injection (CWE-1236) Defense
   function exportExpensesCsv() {
     if (expenses.length === 0) {
       showToast('⚠️ No expenses to export yet.');
       return;
     }
+
+    const sanitizeCsvCell = (val: string) => {
+      const trimmed = String(val || '');
+      if (/^[=+\-@\t\r]/.test(trimmed)) {
+        return `'${trimmed}`.replace(/"/g, '""');
+      }
+      return trimmed.replace(/"/g, '""');
+    };
+
     const headers = ['Expense ID', 'Title', 'Category', 'Paid Via', 'Time', 'Amount (INR)'];
     const rows = expenses.map((e) => [
-      `"${e.id}"`,
-      `"${e.title.replace(/"/g, '""')}"`,
-      `"${e.category}"`,
-      `"${e.paidVia}"`,
-      `"${e.time}"`,
-      e.amount,
+      `"${sanitizeCsvCell(e.id)}"`,
+      `"${sanitizeCsvCell(e.title)}"`,
+      `"${sanitizeCsvCell(e.category)}"`,
+      `"${sanitizeCsvCell(e.paidVia)}"`,
+      `"${sanitizeCsvCell(e.time)}"`,
+      Number(e.amount) || 0,
     ]);
     const csvContent =
       'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
