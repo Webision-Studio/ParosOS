@@ -15,7 +15,7 @@ interface KdsTicket {
   id: string;
   orderNumber: string;
   tableLabel: string;
-  source: 'POS' | 'QR' | 'TAKEAWAY';
+  source: 'POS' | 'QR' | 'TAKEAWAY' | 'SWIGGY' | 'ZOMATO' | string;
   customerName?: string;
   elapsedSeconds: number;
   targetSeconds: number;
@@ -189,7 +189,7 @@ export default function KdsStudioPage() {
                 o.table?.tableNumber && o.table.tableNumber.toLowerCase() !== 'takeaway'
                   ? `TABLE ${o.table.tableNumber}`
                   : `TOKEN ${o.orderNumber}`,
-              source: (o.source as 'POS' | 'QR' | 'TAKEAWAY') || 'QR',
+              source: String(o.source || 'QR').toUpperCase(),
               customerName: o.customerName || 'Guest',
               elapsedSeconds: Math.max(0, elapsed),
               targetSeconds: target,
@@ -229,7 +229,7 @@ export default function KdsStudioPage() {
               id: o.id,
               orderNumber: o.orderNumber,
               tableLabel: o.table?.tableNumber ? `TABLE ${o.table.tableNumber}` : 'TAKEAWAY',
-              source: (o.source as 'POS' | 'QR' | 'TAKEAWAY') || 'QR',
+              source: String(o.source || 'QR').toUpperCase(),
               customerName: o.customerName || 'Guest',
               elapsedSeconds: Math.max(0, elapsed),
               targetSeconds: (o.dynamicPrepMinutes || 10) * 60,
@@ -582,6 +582,14 @@ export default function KdsStudioPage() {
                 <div
                   key={t.id}
                   className={`rounded-3xl border-3 border-espresso flex flex-col justify-between transition-all ${
+                    t.source === 'SWIGGY'
+                      ? 'border-t-8 border-t-orange-500'
+                      : t.source === 'ZOMATO'
+                      ? 'border-t-8 border-t-red-600'
+                      : t.source === 'TAKEAWAY' || t.tableLabel.toLowerCase().includes('token') || t.tableLabel.toLowerCase().includes('takeaway')
+                      ? 'border-t-8 border-t-amber-500'
+                      : 'border-t-8 border-t-emerald-600'
+                  } ${
                     isOverdue
                       ? 'bg-red-50 border-red-600 shadow-brutal-lg ring-2 ring-red-400'
                       : isReady
@@ -603,11 +611,31 @@ export default function KdsStudioPage() {
                         </span>
                       </div>
                       <p className="font-body text-xs text-espresso/80 font-semibold mt-0.5">
-                        {t.customerName} •{' '}
-                        <span className="font-mono text-[10px] uppercase font-bold text-espresso/60">
-                          {t.source}
-                        </span>
+                        {t.customerName}
                       </p>
+
+                      {/* Prominent KDS Packaging Badge */}
+                      {t.source === 'SWIGGY' ? (
+                        <div className="mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-orange-500 text-white font-display text-[10px] font-black uppercase border border-espresso shadow-xs">
+                          <span>🛵</span>
+                          <span>SWIGGY • PACK FOR RIDER</span>
+                        </div>
+                      ) : t.source === 'ZOMATO' ? (
+                        <div className="mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-red-600 text-white font-display text-[10px] font-black uppercase border border-espresso shadow-xs">
+                          <span>🔴</span>
+                          <span>ZOMATO • PACK FOR RIDER</span>
+                        </div>
+                      ) : t.source === 'TAKEAWAY' || t.tableLabel.toLowerCase().includes('token') || t.tableLabel.toLowerCase().includes('takeaway') ? (
+                        <div className="mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-400 text-espresso font-display text-[10px] font-black uppercase border border-espresso shadow-xs">
+                          <span>🛍️</span>
+                          <span>PARCEL • PACK IN BAG</span>
+                        </div>
+                      ) : (
+                        <div className="mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-100 text-emerald-950 font-display text-[10px] font-black uppercase border border-emerald-400 shadow-xs">
+                          <span>🍽️</span>
+                          <span>DINE-IN • SERVE AT TABLE</span>
+                        </div>
+                      )}
                     </div>
 
                     {/* Timer Badge */}

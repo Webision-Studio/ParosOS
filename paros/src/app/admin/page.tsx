@@ -12,6 +12,14 @@ interface ExpenseItem {
   time: string;
 }
 
+interface BestsellerItem {
+  rank: number;
+  name: string;
+  quantity: number;
+  revenue: number;
+  percentOfTotal: number;
+}
+
 export default function AdminFinancialDashboard() {
   const [activeDateTab, setActiveDateTab] = useState('today');
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
@@ -46,6 +54,9 @@ export default function AdminFinancialDashboard() {
   const [expenses, setExpenses] = useState<ExpenseItem[]>([]);
   const [expenseFilterCategory, setExpenseFilterCategory] = useState<string>('ALL');
 
+  // Top 5 Bestsellers State
+  const [bestsellers, setBestsellers] = useState<BestsellerItem[]>([]);
+
   // Push Notification / Offers state
   const [offerTitle, setOfferTitle] = useState('');
   const [offerBody, setOfferBody] = useState('');
@@ -76,6 +87,9 @@ export default function AdminFinancialDashboard() {
           if (data?.kpis) {
             setKpis(data.kpis);
             setCountedCash(String(data.kpis.currentDrawerCash));
+          }
+          if (data?.bestsellers) {
+            setBestsellers(data.bestsellers);
           }
           if (data?.expenses) {
             setExpenses(
@@ -345,6 +359,13 @@ export default function AdminFinancialDashboard() {
               <span>📦 Inventory & Recipes</span>
             </Link>
             <Link
+              href="/admin/bills"
+              className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-paros-yellow/40 transition-colors text-espresso font-bold"
+            >
+              <span className="material-symbols-outlined text-[20px]">receipt_long</span>
+              <span>🧾 Bill History</span>
+            </Link>
+            <Link
               href="/admin"
               className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-paros-orange text-white border-2 border-espresso shadow-brutal-sm font-black"
             >
@@ -546,6 +567,91 @@ export default function AdminFinancialDashboard() {
                 <span className="text-emerald-700">Net Profit Positive</span>
               </div>
             </div>
+          </div>
+
+          {/* ═══ TOP 5 BESTSELLING MENU ITEMS (ANALYTICS) ═══ */}
+          <div className="bg-white rounded-2xl border-2 border-espresso shadow-brutal p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b-2 border-espresso gap-2 mb-4">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-paros-orange text-[24px]">leaderboard</span>
+                <div>
+                  <h2 className="font-display text-lg font-black text-espresso">
+                    Top 5 Bestselling Menu Items
+                  </h2>
+                  <p className="font-body text-xs text-espresso/60">
+                    Highest volume & revenue contributors from live completed orders
+                  </p>
+                </div>
+              </div>
+              <span className="px-3 py-1 bg-paros-yellow text-espresso font-display text-xs font-black rounded-full border border-espresso w-fit shadow-xs">
+                ⭐ Star Performers
+              </span>
+            </div>
+
+            {bestsellers.length === 0 ? (
+              <div className="text-center py-8 text-espresso/50 font-display text-xs">
+                <span className="material-symbols-outlined text-[32px] text-espresso/30 block mb-1">auto_graph</span>
+                No completed order data available yet. Punch orders in POS or order via Table QR to see bestseller rankings!
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                {bestsellers.map((item) => {
+                  const getRankBadge = (rank: number) => {
+                    switch (rank) {
+                      case 1:
+                        return 'bg-amber-300 text-amber-950 border-amber-500 shadow-sm';
+                      case 2:
+                        return 'bg-slate-200 text-slate-900 border-slate-400 shadow-sm';
+                      case 3:
+                        return 'bg-amber-100 text-amber-900 border-amber-300 shadow-sm';
+                      default:
+                        return 'bg-paros-cream text-espresso border-espresso/30';
+                    }
+                  };
+
+                  return (
+                    <div
+                      key={item.name}
+                      className="p-4 bg-paros-cream rounded-xl border-2 border-espresso shadow-xs flex flex-col justify-between hover:-translate-y-0.5 transition-transform"
+                    >
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <span
+                            className={`w-7 h-7 rounded-lg border flex items-center justify-center font-display font-black text-xs ${getRankBadge(
+                              item.rank
+                            )}`}
+                          >
+                            #{item.rank}
+                          </span>
+                          <span className="px-2 py-0.5 bg-white border border-espresso/20 rounded-md font-mono text-[10px] font-bold text-espresso/70">
+                            {item.quantity} Sold
+                          </span>
+                        </div>
+                        <h3 className="font-display text-sm font-black text-espresso line-clamp-1" title={item.name}>
+                          {item.name}
+                        </h3>
+                        <p className="font-mono text-base font-black text-paros-orange mt-1">
+                          ₹{item.revenue.toLocaleString('en-IN')}
+                        </p>
+                      </div>
+
+                      <div className="mt-3 pt-2.5 border-t border-espresso/15">
+                        <div className="flex justify-between text-[10px] font-display font-bold text-espresso/60 mb-1">
+                          <span>Revenue Share</span>
+                          <span>{item.percentOfTotal}%</span>
+                        </div>
+                        <div className="w-full bg-white h-2 rounded-full border border-espresso/20 overflow-hidden">
+                          <div
+                            className="bg-paros-orange h-full rounded-full transition-all duration-500"
+                            style={{ width: `${Math.min(100, Math.max(8, item.percentOfTotal))}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* ═══ LIVE EXPENSES LOG ═══ */}

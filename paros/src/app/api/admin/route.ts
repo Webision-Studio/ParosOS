@@ -70,6 +70,43 @@ export async function GET(req: NextRequest) {
     const openingFloat = activeShift?.openingCash || 2000;
     const currentDrawerCash = openingFloat + (activeShift?.cashSales || 0) - (activeShift?.pettyExpenses || 0);
 
+    // Calculate Top 5 Bestselling Menu Items
+    const completedOrders = await prisma.order.findMany({
+      where: {
+        cafeId: cafe.id,
+        status: { in: ['COMPLETED', 'READY', 'SERVED', 'IN_PREP'] },
+      },
+      include: {
+        items: true,
+      },
+      take: 200,
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const itemStatsMap = new Map<string, { name: string; quantity: number; revenue: number }>();
+    let grandTotalItemSales = 0;
+
+    for (const ord of completedOrders) {
+      for (const it of ord.items) {
+        grandTotalItemSales += it.price * it.quantity;
+        const existing = itemStatsMap.get(it.name) || { name: it.name, quantity: 0, revenue: 0 };
+        existing.quantity += it.quantity;
+        existing.revenue += it.price * it.quantity;
+        itemStatsMap.set(it.name, existing);
+      }
+    }
+
+    const bestsellers = Array.from(itemStatsMap.values())
+      .sort((a, b) => b.quantity - a.quantity)
+      .slice(0, 5)
+      .map((item, index) => ({
+        rank: index + 1,
+        name: item.name,
+        quantity: item.quantity,
+        revenue: item.revenue,
+        percentOfTotal: grandTotalItemSales > 0 ? Math.round((item.revenue / grandTotalItemSales) * 100) : 0,
+      }));
+
     return NextResponse.json({
       cafe,
       kpis: {
@@ -87,6 +124,7 @@ export async function GET(req: NextRequest) {
       expenses,
       customers,
       menuItems,
+      bestsellers,
     });
   } catch (error) {
     console.error('Admin API error:', error);

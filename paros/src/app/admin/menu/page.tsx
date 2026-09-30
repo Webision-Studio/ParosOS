@@ -295,6 +295,10 @@ export default function MenuCatalogPage() {
               <span className="material-symbols-outlined text-[20px]">inventory_2</span>
               <span>📦 Inventory & Recipes</span>
             </Link>
+            <Link href="/admin/bills" className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-paros-yellow/40 transition-colors text-espresso font-bold">
+              <span className="material-symbols-outlined text-[20px]">receipt_long</span>
+              <span>🧾 Bill History</span>
+            </Link>
             <Link href="/admin" className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-paros-yellow/40 transition-colors text-espresso">
               <span className="material-symbols-outlined text-[20px]">monitoring</span>
               <span>Financial Analytics</span>
