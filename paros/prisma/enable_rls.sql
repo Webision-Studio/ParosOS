@@ -1,6 +1,5 @@
 -- ==============================================================================
 -- PAROS OS: SUPABASE POSTGRES ROW-LEVEL SECURITY (RLS) LOCKDOWN SCRIPT
--- Project ID: jbzzyclrklrlpnvgoqwp
 -- Description:
 --   Enables Row-Level Security on all public tables and revokes anon/authenticated
 --   PostgREST role permissions to eliminate the `rls_disabled_in_public` vulnerability.

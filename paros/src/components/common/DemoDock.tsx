@@ -46,7 +46,7 @@ export function DemoDock() {
   const currentRole = roles.find((r) => pathname.startsWith(r.href));
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end gap-2 font-display select-none">
+    <div className="hidden md:flex fixed bottom-4 right-4 z-50 flex-col items-end gap-2 font-display select-none">
       {/* Expanded Switcher Card */}
       {isOpen && (
         <div className="bg-white border-2 border-espresso rounded-2xl p-3 shadow-brutal-xl w-72 sm:w-80 flex flex-col gap-2.5 animate-in slide-in-from-bottom-3 duration-150">

@@ -326,7 +326,7 @@ export default function AdminBillsPage() {
       <aside className="print:hidden hidden lg:flex fixed left-0 top-0 h-full w-64 bg-white border-r-2 border-espresso z-50 flex-col justify-between py-6 px-4 shadow-brutal-sm">
         <div className="flex flex-col gap-6">
           {/* Brand */}
-          <Link href="/" className="flex items-center gap-2.5 px-2">
+          <Link href="/admin" className="flex items-center gap-2.5 px-2">
             <div className="w-10 h-10 bg-paros-orange text-white rounded-xl border-2 border-espresso flex items-center justify-center font-display font-black text-xl shadow-brutal-sm">
               P
             </div>
@@ -434,7 +434,7 @@ export default function AdminBillsPage() {
           <aside className="relative w-72 max-w-[85vw] h-full bg-white border-r-2 border-espresso flex flex-col justify-between py-6 px-4 shadow-brutal-xl z-10 animate-in slide-in-from-left duration-200">
             <div className="flex flex-col gap-5 overflow-y-auto">
               <div className="flex items-center justify-between px-1">
-                <Link href="/" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2">
+                <Link href="/admin" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2">
                   <div className="w-9 h-9 bg-paros-orange text-white rounded-xl border-2 border-espresso flex items-center justify-center font-display font-black text-lg shadow-brutal-sm">
                     P
                   </div>

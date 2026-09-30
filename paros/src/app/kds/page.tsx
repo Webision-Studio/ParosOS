@@ -259,7 +259,7 @@ export default function KdsStudioPage() {
 
   useEffect(() => {
     loadKdsOrders();
-    const interval = setInterval(loadKdsOrders, 1500);
+    const interval = setInterval(loadKdsOrders, 3500);
     return () => clearInterval(interval);
   }, []);
 

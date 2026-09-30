@@ -38,11 +38,40 @@ export async function POST(req: NextRequest) {
 
       const formattedPhone = `+91 ${cleanPhone.slice(0, 5)} ${cleanPhone.slice(5)}`;
 
-      // Look up existing user
-      let user = await prisma.user.findFirst({
-        where: { phone: formattedPhone },
-        include: { cafe: true },
+      // Look up existing user across phone variations or cafe phone
+      let user: any = await prisma.user.findFirst({
+        where: {
+          OR: [
+            { phone: formattedPhone },
+            { phone: cleanPhone },
+            { phone: `+91${cleanPhone}` },
+            { phone: { contains: cleanPhone } },
+            { cafe: { phone: { contains: cleanPhone } } },
+          ],
+        },
+        include: {
+          cafe: {
+            include: {
+              tables: true,
+              _count: {
+                select: { orders: true, menuItems: true },
+              },
+            },
+          },
+        },
       });
+
+      let hasExistingSetup = false;
+      if (user && user.cafe) {
+        const tableCount = user.cafe.tables ? user.cafe.tables.length : 0;
+        const menuCount = user.cafe._count ? user.cafe._count.menuItems : 0;
+        const orderCount = user.cafe._count ? user.cafe._count.orders : 0;
+        const isCustomName = Boolean(user.cafe.name && user.cafe.name !== 'My Cafe' && !user.cafe.name.endsWith("'s Cafe"));
+
+        if (tableCount > 0 || menuCount > 0 || orderCount > 0 || isCustomName) {
+          hasExistingSetup = true;
+        }
+      }
 
       // If user doesn't exist, create initial cafe & owner
       if (!user) {
@@ -67,6 +96,10 @@ export async function POST(req: NextRequest) {
         });
       }
 
+      if (!user) {
+        return NextResponse.json({ error: 'Failed to authenticate user' }, { status: 500 });
+      }
+
       // Set session cookie
       await createSession({
         userId: user.id,
@@ -78,6 +111,7 @@ export async function POST(req: NextRequest) {
 
       return NextResponse.json({
         success: true,
+        hasExistingSetup,
         user: {
           id: user.id,
           name: user.name,
@@ -95,10 +129,31 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Email is required' }, { status: 400 });
       }
 
-      let user = await prisma.user.findFirst({
+      let user: any = await prisma.user.findFirst({
         where: { email },
-        include: { cafe: true },
+        include: {
+          cafe: {
+            include: {
+              tables: true,
+              _count: {
+                select: { orders: true, menuItems: true },
+              },
+            },
+          },
+        },
       });
+
+      let hasExistingSetup = false;
+      if (user && user.cafe) {
+        const tableCount = user.cafe.tables ? user.cafe.tables.length : 0;
+        const menuCount = user.cafe._count ? user.cafe._count.menuItems : 0;
+        const orderCount = user.cafe._count ? user.cafe._count.orders : 0;
+        const isCustomName = Boolean(user.cafe.name && user.cafe.name !== 'My Cafe' && !user.cafe.name.endsWith("'s Cafe"));
+
+        if (tableCount > 0 || menuCount > 0 || orderCount > 0 || isCustomName) {
+          hasExistingSetup = true;
+        }
+      }
 
       if (!user) {
         const cafeSlug = `cafe-${email.split('@')[0]}-${Date.now().toString().slice(-4)}`;
@@ -122,6 +177,10 @@ export async function POST(req: NextRequest) {
         });
       }
 
+      if (!user) {
+        return NextResponse.json({ error: 'Failed to authenticate user' }, { status: 500 });
+      }
+
       await createSession({
         userId: user.id,
         cafeId: user.cafeId,
@@ -132,6 +191,7 @@ export async function POST(req: NextRequest) {
 
       return NextResponse.json({
         success: true,
+        hasExistingSetup,
         user: {
           id: user.id,
           name: user.name,

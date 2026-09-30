@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -10,8 +10,27 @@ type BusinessType = 'cafe' | 'bakery' | 'cloud';
 export default function OnboardingPage() {
   const router = useRouter();
 
-  // Step tracking
+  // Step tracking with browser history awareness
   const [step, setStep] = useState<Step>(1);
+
+  const goToStep = useCallback((newStep: Step) => {
+    setStep(newStep);
+    if (typeof window !== 'undefined') {
+      window.history.pushState({ step: newStep }, '', `?step=${newStep}`);
+    }
+  }, []);
+
+  useEffect(() => {
+    const handlePopState = (e: PopStateEvent) => {
+      if (e.state && typeof e.state.step === 'number') {
+        setStep(e.state.step as Step);
+      } else {
+        setStep(1);
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   // Step 1: Auth State
   const [phone, setPhone] = useState('9845011223');
@@ -21,8 +40,8 @@ export default function OnboardingPage() {
   const [authError, setAuthError] = useState('');
 
   // Step 2: Cafe Details
-  const [outletName, setOutletName] = useState('Third Wave Roasters');
-  const [city, setCity] = useState('Bandra West, Mumbai');
+  const [outletName, setOutletName] = useState('');
+  const [city, setCity] = useState('');
   const [businessType, setBusinessType] = useState<BusinessType>('cafe');
   const [tableCount, setTableCount] = useState(8);
   const [isCounterOnly, setIsCounterOnly] = useState(false);
@@ -82,7 +101,27 @@ export default function OnboardingPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Invalid OTP code');
 
-      setStep(2);
+      // If cafe is already active & configured, skip wizard directly to POS
+      if (data.hasExistingSetup) {
+        router.push('/pos');
+        return;
+      }
+
+      // Pre-fill state with existing cafe details if available
+      if (data.cafe) {
+        if (data.cafe.name && data.cafe.name !== 'My Cafe') setOutletName(data.cafe.name);
+        if (data.cafe.city) setCity(data.cafe.city);
+        if (data.cafe.closingTime) setClosingTime(data.cafe.closingTime);
+        if (data.cafe.googleReviewUrl) setGoogleReviewUrl(data.cafe.googleReviewUrl);
+        if (data.cafe.wifiName) setWifiName(data.cafe.wifiName);
+        if (data.cafe.wifiPassword) setWifiPassword(data.cafe.wifiPassword);
+        if (data.cafe.tables && data.cafe.tables.length > 0) {
+          const nonTakeaway = data.cafe.tables.filter((t: any) => t.tableNumber !== 'Takeaway');
+          if (nonTakeaway.length > 0) setTableCount(nonTakeaway.length);
+        }
+      }
+
+      goToStep(2);
     } catch (err: unknown) {
       if (err instanceof Error) {
         setAuthError(err.message);
@@ -106,7 +145,22 @@ export default function OnboardingPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Google login failed');
-      setStep(2);
+
+      if (data.hasExistingSetup) {
+        router.push('/pos');
+        return;
+      }
+
+      if (data.cafe) {
+        if (data.cafe.name && data.cafe.name !== 'My Cafe') setOutletName(data.cafe.name);
+        if (data.cafe.city) setCity(data.cafe.city);
+        if (data.cafe.closingTime) setClosingTime(data.cafe.closingTime);
+        if (data.cafe.googleReviewUrl) setGoogleReviewUrl(data.cafe.googleReviewUrl);
+        if (data.cafe.wifiName) setWifiName(data.cafe.wifiName);
+        if (data.cafe.wifiPassword) setWifiPassword(data.cafe.wifiPassword);
+      }
+
+      goToStep(2);
     } catch (err: unknown) {
       if (err instanceof Error) {
         setAuthError(err.message);
@@ -128,8 +182,8 @@ export default function OnboardingPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          outletName,
-          city,
+          outletName: outletName || 'Artisan Cafe',
+          city: city || 'Bandra West, Mumbai',
           businessType,
           tableCount: isCounterOnly ? 0 : tableCount,
           closingTime,
@@ -141,7 +195,7 @@ export default function OnboardingPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to save cafe setup');
 
-      setStep(3);
+      goToStep(3);
     } catch (err: unknown) {
       alert(err instanceof Error ? err.message : 'Error during setup');
     } finally {
@@ -155,14 +209,27 @@ export default function OnboardingPage() {
       <header className="sticky top-0 w-full z-50 bg-white/95 backdrop-blur-md border-b-2 border-espresso">
         <div className="max-w-[1240px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-2">
+            {step > 1 ? (
+              <button
+                type="button"
+                onClick={() => {
+                  if (step === 3) goToStep(2);
+                  else if (step === 2) goToStep(1);
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-2 border-espresso bg-white hover:bg-paros-yellow text-xs font-display font-black text-espresso shadow-brutal-sm"
+              >
+                <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+                <span>Back</span>
+              </button>
+            ) : null}
+            <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-paros-orange text-white flex items-center justify-center font-display font-black text-base border-2 border-espresso shadow-brutal-sm">
                 P
               </div>
               <span className="font-display text-xl font-black text-espresso tracking-tight">
                 PAROS<span className="text-paros-orange">.</span>
               </span>
-            </Link>
+            </div>
             <span className="hidden sm:inline-block w-px h-5 bg-espresso/20" />
             <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-paros-yellow/60 border border-espresso font-display text-xs font-bold uppercase">
               <span className="w-2 h-2 rounded-full bg-paros-matcha animate-pulse" />
@@ -551,14 +618,24 @@ export default function OnboardingPage() {
                   </div>
                 </div>
 
-                {/* CTA Button */}
-                <button
-                  type="submit"
-                  disabled={savingLoading}
-                  className="brutal-btn w-full py-4 px-6 bg-paros-orange text-white font-display font-black text-base uppercase rounded-xl border-2 border-espresso shadow-brutal-lg flex items-center justify-center gap-2"
-                >
-                  <span>{savingLoading ? 'Configuring Space...' : 'Launch My Cafe POS ➔'}</span>
-                </button>
+                {/* CTA Buttons */}
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => goToStep(1)}
+                    className="py-4 px-5 bg-white hover:bg-paros-yellow text-espresso font-display font-black text-sm uppercase rounded-xl border-2 border-espresso shadow-brutal flex items-center justify-center gap-1 shrink-0"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+                    <span>Back</span>
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={savingLoading}
+                    className="brutal-btn flex-1 py-4 px-6 bg-paros-orange text-white font-display font-black text-base uppercase rounded-xl border-2 border-espresso shadow-brutal-lg flex items-center justify-center gap-2"
+                  >
+                    <span>{savingLoading ? 'Configuring Space...' : 'Launch My Cafe POS ➔'}</span>
+                  </button>
+                </div>
               </form>
             </div>
           </div>

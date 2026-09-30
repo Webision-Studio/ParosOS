@@ -143,38 +143,32 @@ export async function POST(req: NextRequest) {
       where: { cafeId: finalCafeId },
     }).catch(() => {});
 
-    const tableCreations = [];
+    const tablesData = [];
 
     if (count > 0) {
       for (let i = 1; i <= count; i++) {
-        tableCreations.push(
-          prisma.table.create({
-            data: {
-              cafeId: finalCafeId,
-              zoneId: mainZone.id,
-              tableNumber: i.toString(),
-              capacity: 4,
-              currentStatus: 'AVAILABLE',
-            },
-          })
-        );
+        tablesData.push({
+          cafeId: finalCafeId,
+          zoneId: mainZone.id,
+          tableNumber: i.toString(),
+          capacity: 4,
+          currentStatus: 'AVAILABLE',
+        });
       }
     }
 
     // Always include Takeaway / Counter station
-    tableCreations.push(
-      prisma.table.create({
-        data: {
-          cafeId: finalCafeId,
-          zoneId: mainZone.id,
-          tableNumber: 'Takeaway',
-          capacity: 0,
-          currentStatus: 'AVAILABLE',
-        },
-      })
-    );
+    tablesData.push({
+      cafeId: finalCafeId,
+      zoneId: mainZone.id,
+      tableNumber: 'Takeaway',
+      capacity: 0,
+      currentStatus: 'AVAILABLE',
+    });
 
-    await Promise.all(tableCreations);
+    await prisma.table.createMany({
+      data: tablesData,
+    });
 
     // Update tenant qrMode flag based on table count
     updatedCafe = await prisma.tenant.update({
@@ -185,22 +179,24 @@ export async function POST(req: NextRequest) {
     // 3. Preload Menu Items if empty
     const existingItems = await prisma.menuItem.count({ where: { cafeId: finalCafeId } });
     if (existingItems === 0) {
-      const catCoffee = await prisma.category.create({
-        data: { cafeId: finalCafeId, name: 'Hot Coffee', icon: 'coffee', sortOrder: 1 },
-      });
-      const catIced = await prisma.category.create({
-        data: { cafeId: finalCafeId, name: 'Iced Brews', icon: 'local_drink', sortOrder: 2 },
-      });
-      const catBakery = await prisma.category.create({
-        data: { cafeId: finalCafeId, name: 'Bakery & Hearth', icon: 'bakery_dining', sortOrder: 3 },
-      });
-      const catToasties = await prisma.category.create({
-        data: { cafeId: finalCafeId, name: 'Artisanal Toast', icon: 'breakfast_dining', sortOrder: 4 },
-      });
+      const [catCoffee, catIced, catBakery, catToasties] = await Promise.all([
+        prisma.category.create({
+          data: { cafeId: finalCafeId, name: 'Hot Coffee', icon: 'coffee', sortOrder: 1 },
+        }),
+        prisma.category.create({
+          data: { cafeId: finalCafeId, name: 'Iced Brews', icon: 'local_drink', sortOrder: 2 },
+        }),
+        prisma.category.create({
+          data: { cafeId: finalCafeId, name: 'Bakery & Hearth', icon: 'bakery_dining', sortOrder: 3 },
+        }),
+        prisma.category.create({
+          data: { cafeId: finalCafeId, name: 'Artisanal Toast', icon: 'breakfast_dining', sortOrder: 4 },
+        }),
+      ]);
 
-      await Promise.all([
-        prisma.menuItem.create({
-          data: {
+      await prisma.menuItem.createMany({
+        data: [
+          {
             cafeId: finalCafeId,
             categoryId: catCoffee.id,
             name: 'Specialty Pour Over (Ratnagiri)',
@@ -210,9 +206,7 @@ export async function POST(req: NextRequest) {
             inStock: true,
             prepTimeMinutes: 5,
           },
-        }),
-        prisma.menuItem.create({
-          data: {
+          {
             cafeId: finalCafeId,
             categoryId: catCoffee.id,
             name: 'Flat White',
@@ -222,9 +216,7 @@ export async function POST(req: NextRequest) {
             inStock: true,
             prepTimeMinutes: 4,
           },
-        }),
-        prisma.menuItem.create({
-          data: {
+          {
             cafeId: finalCafeId,
             categoryId: catIced.id,
             name: 'Iced Oat Latte',
@@ -234,9 +226,7 @@ export async function POST(req: NextRequest) {
             inStock: true,
             prepTimeMinutes: 3,
           },
-        }),
-        prisma.menuItem.create({
-          data: {
+          {
             cafeId: finalCafeId,
             categoryId: catIced.id,
             name: 'Cold Brew with Tonic & Orange',
@@ -246,9 +236,7 @@ export async function POST(req: NextRequest) {
             inStock: true,
             prepTimeMinutes: 3,
           },
-        }),
-        prisma.menuItem.create({
-          data: {
+          {
             cafeId: finalCafeId,
             categoryId: catBakery.id,
             name: 'French Butter Croissant',
@@ -258,9 +246,7 @@ export async function POST(req: NextRequest) {
             inStock: true,
             prepTimeMinutes: 2,
           },
-        }),
-        prisma.menuItem.create({
-          data: {
+          {
             cafeId: finalCafeId,
             categoryId: catBakery.id,
             name: 'Almond Frangipane Tart',
@@ -270,9 +256,7 @@ export async function POST(req: NextRequest) {
             inStock: true,
             prepTimeMinutes: 3,
           },
-        }),
-        prisma.menuItem.create({
-          data: {
+          {
             cafeId: finalCafeId,
             categoryId: catToasties.id,
             name: 'Wild Herb Sourdough Toast',
@@ -282,9 +266,7 @@ export async function POST(req: NextRequest) {
             inStock: true,
             prepTimeMinutes: 5,
           },
-        }),
-        prisma.menuItem.create({
-          data: {
+          {
             cafeId: finalCafeId,
             categoryId: catToasties.id,
             name: 'Avocado & Danish Feta Toast',
@@ -294,8 +276,8 @@ export async function POST(req: NextRequest) {
             inStock: true,
             prepTimeMinutes: 6,
           },
-        }),
-      ]);
+        ],
+      });
     }
 
     // 4. Initialize Cash Register Shift
