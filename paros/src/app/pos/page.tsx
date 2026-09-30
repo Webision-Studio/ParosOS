@@ -72,6 +72,7 @@ export default function PosRegisterPage() {
 
   // POS View state: menu, floor, orders (expediter)
   const [activeView, setActiveView] = useState<'menu' | 'floor' | 'orders'>('menu');
+  const [mobilePanel, setMobilePanel] = useState<'catalog' | 'ticket'>('catalog');
   const [selectedTable, setSelectedTable] = useState<string>('1');
   const [selectedCategory, setSelectedCategory] = useState<string>('All Items');
   const [searchQuery, setSearchQuery] = useState('');
@@ -1014,7 +1015,7 @@ export default function PosRegisterPage() {
     <div className="min-h-screen bg-paros-cream text-espresso font-body flex flex-col">
       {/* ── Fixed Top Header ── */}
       <header className="sticky top-0 w-full z-40 bg-white/95 backdrop-blur-md border-b-2 border-espresso">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+        <div className="max-w-[1600px] mx-auto px-2 sm:px-6 min-h-16 py-2 flex items-center justify-between gap-2 sm:gap-4 flex-wrap lg:flex-nowrap">
           {/* Brand */}
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-2">
@@ -1168,9 +1169,39 @@ export default function PosRegisterPage() {
       </header>
 
       {/* ── Main POS Workspace ── */}
-      <div className="max-w-[1600px] w-full mx-auto p-3 sm:p-4 lg:p-6 flex-1 flex flex-col xl:flex-row gap-4">
+      <div className="max-w-[1600px] w-full mx-auto p-2 sm:p-4 lg:p-6 pb-24 xl:pb-6 flex-1 flex flex-col xl:flex-row gap-3 sm:gap-4">
+        {/* ── Mobile View Switcher (Catalog vs Ticket/Cart) ── */}
+        <div className="xl:hidden flex items-center p-1 bg-white border-2 border-espresso rounded-2xl shadow-brutal shrink-0">
+          <button
+            onClick={() => setMobilePanel('catalog')}
+            className={`flex-1 py-2.5 rounded-xl font-display font-black text-xs uppercase flex items-center justify-center gap-1.5 transition-all ${
+              mobilePanel === 'catalog'
+                ? 'bg-espresso text-white shadow-brutal-sm'
+                : 'text-espresso/70 hover:bg-paros-cream'
+            }`}
+          >
+            <span className="material-symbols-outlined text-[18px]">
+              {activeView === 'menu' ? 'coffee' : activeView === 'floor' ? 'table_bar' : 'soup_kitchen'}
+            </span>
+            <span>{activeView === 'menu' ? 'Menu Catalog' : activeView === 'floor' ? 'Floor Grid' : 'Expediter'}</span>
+          </button>
+          <button
+            onClick={() => setMobilePanel('ticket')}
+            className={`flex-1 py-2.5 rounded-xl font-display font-black text-xs uppercase flex items-center justify-center gap-1.5 transition-all ${
+              mobilePanel === 'ticket'
+                ? 'bg-paros-orange text-white shadow-brutal-sm'
+                : 'text-espresso/70 hover:bg-paros-cream'
+            }`}
+          >
+            <span className="material-symbols-outlined text-[18px]">shopping_cart</span>
+            <span>
+              Ticket {currentCart.length > 0 ? `(${currentCart.length} • ₹${Math.round(grandTotal)})` : '(0)'}
+            </span>
+          </button>
+        </div>
+
         {/* ═══ LEFT PANEL (60%): Menu Catalog / Floor Grid ═══ */}
-        <div className="w-full xl:w-[60%] flex flex-col gap-4">
+        <div className={`w-full xl:w-[60%] ${mobilePanel === 'catalog' ? 'flex' : 'hidden xl:flex'} flex-col gap-4`}>
           {/* ── HIGH PRIORITY KDS NOTIFICATION BANNER ── */}
           {readyNotification && (
             <div className="bg-paros-orange text-white p-3.5 rounded-2xl border-2 border-espresso shadow-brutal flex items-center justify-between gap-3 animate-in slide-in-from-top-4">
@@ -2045,8 +2076,19 @@ export default function PosRegisterPage() {
         </div>
 
         {/* ═══ RIGHT PANEL (40%): Active Table Ticket & Settle ═══ */}
-        <div className="w-full xl:w-[40%] flex flex-col gap-4">
+        <div className={`w-full xl:w-[40%] ${mobilePanel === 'ticket' ? 'flex' : 'hidden xl:flex'} flex-col gap-4`}>
           <div className="bg-white p-5 rounded-3xl border-2 border-espresso shadow-brutal-xl flex-1 flex flex-col justify-between">
+            {/* Mobile Back to Catalog Button */}
+            <div className="xl:hidden pb-3 border-b-2 border-dashed border-espresso/20 mb-3">
+              <button
+                onClick={() => setMobilePanel('catalog')}
+                className="brutal-btn w-full py-2.5 px-3 bg-paros-yellow hover:bg-paros-peach border-2 border-espresso rounded-xl font-display text-xs font-black uppercase shadow-brutal-sm flex items-center justify-center gap-1.5"
+              >
+                <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+                <span>Add More Dishes (Back to Catalog)</span>
+              </button>
+            </div>
+
             {/* Ticket Header */}
             <div>
               <div className="flex items-start justify-between pb-3 border-b-2 border-espresso mb-3">
@@ -2540,6 +2582,35 @@ export default function PosRegisterPage() {
           </div>
         </div>
       </div>
+
+      {/* ── Mobile Floating Cart Bar (Appears when in catalog and items are in cart) ── */}
+      {mobilePanel === 'catalog' && currentCart.length > 0 && (
+        <div className="xl:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t-2 border-espresso p-3 shadow-brutal-lg flex items-center justify-between gap-3 pb-safe animate-in slide-in-from-bottom-2">
+          <div className="flex items-center gap-2.5">
+            <span className="w-10 h-10 rounded-xl bg-paros-orange text-white flex items-center justify-center font-display font-black text-sm border-2 border-espresso shadow-brutal-sm">
+              {currentCart.reduce((sum, it) => sum + it.quantity, 0)}
+            </span>
+            <div>
+              <p className="font-display font-black text-sm text-espresso leading-tight">
+                ₹{grandTotal.toFixed(0)}{' '}
+                <span className="text-[11px] font-bold text-espresso/60">
+                  ({currentCart.length} {currentCart.length === 1 ? 'item' : 'items'})
+                </span>
+              </p>
+              <p className="font-mono text-[10px] text-espresso/70 uppercase">
+                {isCounterOnlyCafe || posMode === 'EXPRESS_COUNTER' ? `Token #${expressTokenSeq}` : `Table ${selectedTable}`}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setMobilePanel('ticket')}
+            className="brutal-btn px-4 py-2.5 bg-paros-matcha text-white font-display font-black text-xs uppercase rounded-xl border-2 border-espresso shadow-brutal flex items-center gap-1.5"
+          >
+            <span>Review & Settle</span>
+            <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+          </button>
+        </div>
+      )}
 
       {/* ════════════════════════════════════════════════════════════ */}
       {/* ── MODAL: BILL SETTLEMENT & WHATSAPP RECEIPT OVERLAY ── */}

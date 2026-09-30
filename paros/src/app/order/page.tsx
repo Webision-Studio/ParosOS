@@ -372,7 +372,7 @@ export default function TableQrOrderPage() {
   return (
     <div className="min-h-screen bg-paros-cream text-espresso font-body flex flex-col items-center select-none antialiased">
       {/* ── Mobile-Optimized Container Shell ── */}
-      <div className="w-full max-w-[460px] flex flex-col min-h-screen bg-paros-cream border-x-2 border-espresso shadow-brutal-xl">
+      <div className="w-full max-w-[460px] flex flex-col min-h-screen bg-paros-cream border-x-0 sm:border-x-2 border-espresso shadow-none sm:shadow-brutal-xl">
         {/* ── Top Brand Bar ── */}
         <header className="sticky top-0 bg-white/95 backdrop-blur-md px-4 py-3 border-b-2 border-espresso z-40 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -595,7 +595,7 @@ export default function TableQrOrderPage() {
 
             {/* Bottom Floating Cart Bar */}
             {cart.length > 0 ? (
-              <div className="sticky bottom-4 mt-auto bg-espresso text-white p-4 rounded-2xl border-2 border-espresso shadow-brutal-lg flex items-center justify-between">
+              <div className="sticky bottom-4 mt-auto bg-espresso text-white p-4 rounded-2xl border-2 border-espresso shadow-brutal-lg flex items-center justify-between pb-safe">
                 <div>
                   <p className="font-display font-black text-sm">{cart.length} Items in Cart</p>
                   <p className="font-mono text-xs text-white/70">₹{total} (Incl. GST)</p>

@@ -421,140 +421,188 @@ export default function KdsStudioPage() {
 
   return (
     <div className="min-h-screen bg-paros-cream text-espresso font-body flex flex-col select-none antialiased">
-      {/* ── Fixed KDS Header Bar ── */}
-      <header className="fixed top-0 left-0 right-0 h-18 bg-white z-50 flex items-center justify-between px-4 sm:px-6 border-b-2 border-espresso shadow-brutal-sm">
-        <div className="flex items-center gap-4">
-          <Link href="/pos" className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-paros-orange text-white flex items-center justify-center font-display font-black text-sm border-2 border-espresso shadow-brutal-sm">
-              <span className="material-symbols-outlined text-[20px]">skillet</span>
-            </div>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <span className="font-display text-lg font-black text-espresso tracking-tight">{cafeName}</span>
-                <span className="font-display text-[10px] font-black uppercase bg-paros-yellow px-1.5 py-0.5 rounded border border-espresso">
-                  KDS STUDIO
-                </span>
+      {/* ── Sticky KDS Header Bar ── */}
+      <header className="sticky top-0 left-0 right-0 bg-white z-50 border-b-2 border-espresso shadow-brutal-sm">
+        <div className="flex items-center justify-between px-3 sm:px-6 py-2 sm:py-3 gap-2">
+          <div className="flex items-center gap-3">
+            <Link href="/pos" className="flex items-center gap-2">
+              <div className="w-8 sm:w-9 h-8 sm:h-9 rounded-xl bg-paros-orange text-white flex items-center justify-center font-display font-black text-sm border-2 border-espresso shadow-brutal-sm">
+                <span className="material-symbols-outlined text-[18px] sm:text-[20px]">skillet</span>
               </div>
-              <div className="flex items-center gap-1.5 text-xs font-display font-bold text-paros-matcha">
-                <span className="w-2 h-2 rounded-full bg-paros-matcha animate-pulse" />
-                <span>Online • {tickets.length} Active Tickets</span>
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-display text-base sm:text-lg font-black text-espresso tracking-tight">{cafeName}</span>
+                  <span className="font-display text-[9px] sm:text-[10px] font-black uppercase bg-paros-yellow px-1.5 py-0.5 rounded border border-espresso">
+                    KDS
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 text-[11px] sm:text-xs font-display font-bold text-paros-matcha">
+                  <span className="w-2 h-2 rounded-full bg-paros-matcha animate-pulse" />
+                  <span>{tickets.length} Active Tickets</span>
+                </div>
               </div>
-            </div>
-          </Link>
+            </Link>
+          </div>
+
+          {/* Desktop Station Navigation Tabs */}
+          <nav className="hidden md:flex items-center gap-1 p-1 bg-paros-cream rounded-xl border-2 border-espresso shadow-brutal-sm">
+            <button
+              onClick={() => setStationFilter('all')}
+              className={`px-3 py-1.5 rounded-lg font-display text-xs font-black uppercase transition-all ${
+                stationFilter === 'all'
+                  ? 'bg-espresso text-white shadow-brutal-sm'
+                  : 'text-espresso hover:bg-paros-yellow/40'
+              }`}
+            >
+              All Stations ({tickets.length})
+            </button>
+            <button
+              onClick={() => setStationFilter('barista')}
+              className={`px-3 py-1.5 rounded-lg font-display text-xs font-black uppercase transition-all flex items-center gap-1 ${
+                stationFilter === 'barista'
+                  ? 'bg-espresso text-white shadow-brutal-sm'
+                  : 'text-espresso hover:bg-paros-yellow/40'
+              }`}
+            >
+              <span>☕ Barista / Brews</span>
+            </button>
+            <button
+              onClick={() => setStationFilter('kitchen')}
+              className={`px-3 py-1.5 rounded-lg font-display text-xs font-black uppercase transition-all flex items-center gap-1 ${
+                stationFilter === 'kitchen'
+                  ? 'bg-espresso text-white shadow-brutal-sm'
+                  : 'text-espresso hover:bg-paros-yellow/40'
+              }`}
+            >
+              <span>🍳 Kitchen & Hearth</span>
+            </button>
+            <button
+              onClick={() => setStationFilter('served')}
+              className={`px-3 py-1.5 rounded-lg font-display text-xs font-black uppercase transition-all flex items-center gap-1.5 ${
+                stationFilter === 'served'
+                  ? 'bg-paros-matcha text-white shadow-brutal-sm'
+                  : 'text-espresso hover:bg-paros-yellow/40'
+              }`}
+            >
+              <span className="material-symbols-outlined text-[16px]">task_alt</span>
+              <span>Handed to Runner ({servedTickets.length})</span>
+            </button>
+          </nav>
+
+          {/* Top Control Actions */}
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            {/* Chime Mute Toggle */}
+            <button
+              onClick={() => setChimeEnabled(!chimeEnabled)}
+              className={`p-2 rounded-xl border border-espresso transition-all shadow-brutal-sm ${
+                chimeEnabled ? 'bg-paros-mint text-emerald-800' : 'bg-red-100 text-red-700'
+              }`}
+              title={chimeEnabled ? 'Kitchen chime active' : 'Chime muted'}
+            >
+              <span className="material-symbols-outlined text-[18px]">
+                {chimeEnabled ? 'notifications_active' : 'notifications_off'}
+              </span>
+            </button>
+
+            {/* Recall Last Bumped */}
+            <button
+              onClick={recallLastTicket}
+              className="inline-flex items-center gap-1 px-2.5 sm:px-3 py-1.5 sm:py-2 bg-paros-cream hover:bg-paros-yellow text-espresso font-display text-xs font-black uppercase rounded-xl border border-espresso shadow-brutal-sm"
+              title="Recall last bumped ticket"
+            >
+              <span className="material-symbols-outlined text-[16px]">undo</span>
+              <span className="hidden sm:inline">Recall</span>
+            </button>
+
+            {/* Bump All Completed */}
+            <button
+              onClick={bumpAllCompleted}
+              className="hidden sm:inline-flex items-center gap-1 px-3 py-2 bg-white hover:bg-paros-cream text-espresso font-display text-xs font-black uppercase rounded-xl border border-espresso shadow-brutal-sm"
+            >
+              <span className="material-symbols-outlined text-[16px]">done_all</span>
+              <span>Bump Ready</span>
+            </button>
+
+            {/* Chef Operator Lock/Unlock Badge */}
+            {operator ? (
+              <button
+                onClick={handleLockTerminal}
+                title="Tap to lock KDS or switch chef"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-paros-mint hover:bg-paros-yellow rounded-xl border border-espresso font-display text-xs font-black text-espresso transition-colors shadow-brutal-sm"
+              >
+                <span className="material-symbols-outlined text-[16px] text-paros-matcha">skillet</span>
+                <span>{operator.name}</span>
+                <span className="material-symbols-outlined text-[13px] text-espresso/60">lock</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => setPinModalOpen(true)}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-paros-yellow rounded-xl border border-espresso font-display text-xs font-black text-espresso animate-pulse shadow-brutal-sm"
+              >
+                <span className="material-symbols-outlined text-[15px]">lock</span>
+                <span>PIN</span>
+              </button>
+            )}
+
+            {/* Return to POS */}
+            <Link
+              href="/pos"
+              className="brutal-btn px-2.5 sm:px-3 py-1.5 sm:py-2 bg-espresso text-white font-display text-xs font-black uppercase rounded-xl border border-espresso shadow-brutal-sm flex items-center gap-1"
+            >
+              <span className="material-symbols-outlined text-[16px]">point_of_sale</span>
+              <span className="hidden md:inline">Open POS</span>
+            </Link>
+          </div>
         </div>
 
-        {/* Station Navigation Tabs */}
-        <nav className="hidden md:flex items-center gap-1 p-1 bg-paros-cream rounded-xl border-2 border-espresso shadow-brutal-sm">
+        {/* ── Mobile Station Navigation Tab Bar (Swipable) ── */}
+        <div className="md:hidden flex items-center gap-1.5 px-3 py-2 bg-paros-cream border-t border-espresso/20 overflow-x-auto no-scrollbar">
           <button
             onClick={() => setStationFilter('all')}
-            className={`px-3 py-1.5 rounded-lg font-display text-xs font-black uppercase transition-all ${
+            className={`px-3 py-1.5 rounded-lg font-display text-xs font-black uppercase whitespace-nowrap transition-all ${
               stationFilter === 'all'
                 ? 'bg-espresso text-white shadow-brutal-sm'
-                : 'text-espresso hover:bg-paros-yellow/40'
+                : 'bg-white text-espresso border border-espresso'
             }`}
           >
-            All Stations ({tickets.length})
+            All ({tickets.length})
           </button>
           <button
             onClick={() => setStationFilter('barista')}
-            className={`px-3 py-1.5 rounded-lg font-display text-xs font-black uppercase transition-all flex items-center gap-1 ${
+            className={`px-3 py-1.5 rounded-lg font-display text-xs font-black uppercase whitespace-nowrap transition-all flex items-center gap-1 ${
               stationFilter === 'barista'
                 ? 'bg-espresso text-white shadow-brutal-sm'
-                : 'text-espresso hover:bg-paros-yellow/40'
+                : 'bg-white text-espresso border border-espresso'
             }`}
           >
-            <span>☕ Barista / Brews</span>
+            <span>☕ Barista</span>
           </button>
           <button
             onClick={() => setStationFilter('kitchen')}
-            className={`px-3 py-1.5 rounded-lg font-display text-xs font-black uppercase transition-all flex items-center gap-1 ${
+            className={`px-3 py-1.5 rounded-lg font-display text-xs font-black uppercase whitespace-nowrap transition-all flex items-center gap-1 ${
               stationFilter === 'kitchen'
                 ? 'bg-espresso text-white shadow-brutal-sm'
-                : 'text-espresso hover:bg-paros-yellow/40'
+                : 'bg-white text-espresso border border-espresso'
             }`}
           >
-            <span>🍳 Kitchen & Hearth</span>
+            <span>🍳 Kitchen</span>
           </button>
           <button
             onClick={() => setStationFilter('served')}
-            className={`px-3 py-1.5 rounded-lg font-display text-xs font-black uppercase transition-all flex items-center gap-1.5 ${
+            className={`px-3 py-1.5 rounded-lg font-display text-xs font-black uppercase whitespace-nowrap transition-all flex items-center gap-1 ${
               stationFilter === 'served'
                 ? 'bg-paros-matcha text-white shadow-brutal-sm'
-                : 'text-espresso hover:bg-paros-yellow/40'
+                : 'bg-white text-espresso border border-espresso'
             }`}
           >
-            <span className="material-symbols-outlined text-[16px]">task_alt</span>
-            <span>Handed to Runner ({servedTickets.length})</span>
+            <span className="material-symbols-outlined text-[14px]">task_alt</span>
+            <span>Runner ({servedTickets.length})</span>
           </button>
-        </nav>
-
-        {/* Top Control Actions */}
-        <div className="flex items-center gap-2">
-          {/* Chime Mute Toggle */}
-          <button
-            onClick={() => setChimeEnabled(!chimeEnabled)}
-            className={`p-2 rounded-xl border border-espresso transition-all shadow-brutal-sm ${
-              chimeEnabled ? 'bg-paros-mint text-emerald-800' : 'bg-red-100 text-red-700'
-            }`}
-            title={chimeEnabled ? 'Kitchen chime active' : 'Chime muted'}
-          >
-            <span className="material-symbols-outlined text-[18px]">
-              {chimeEnabled ? 'notifications_active' : 'notifications_off'}
-            </span>
-          </button>
-
-          {/* Recall Last Bumped */}
-          <button
-            onClick={recallLastTicket}
-            className="hidden sm:inline-flex items-center gap-1 px-3 py-2 bg-paros-cream hover:bg-paros-yellow text-espresso font-display text-xs font-black uppercase rounded-xl border border-espresso shadow-brutal-sm"
-          >
-            <span className="material-symbols-outlined text-[16px]">undo</span>
-            <span>Recall</span>
-          </button>
-
-          {/* Bump All Completed */}
-          <button
-            onClick={bumpAllCompleted}
-            className="hidden sm:inline-flex items-center gap-1 px-3 py-2 bg-white hover:bg-paros-cream text-espresso font-display text-xs font-black uppercase rounded-xl border border-espresso shadow-brutal-sm"
-          >
-            <span className="material-symbols-outlined text-[16px]">done_all</span>
-            <span>Bump Ready</span>
-          </button>
-
-          {/* Chef Operator Lock/Unlock Badge */}
-          {operator ? (
-            <button
-              onClick={handleLockTerminal}
-              title="Tap to lock KDS or switch chef"
-              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-paros-mint hover:bg-paros-yellow rounded-xl border border-espresso font-display text-xs font-black text-espresso transition-colors shadow-brutal-sm"
-            >
-              <span className="material-symbols-outlined text-[16px] text-paros-matcha">skillet</span>
-              <span>{operator.name}</span>
-              <span className="material-symbols-outlined text-[13px] text-espresso/60">lock</span>
-            </button>
-          ) : (
-            <button
-              onClick={() => setPinModalOpen(true)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-paros-yellow rounded-xl border border-espresso font-display text-xs font-black text-espresso animate-pulse shadow-brutal-sm"
-            >
-              <span className="material-symbols-outlined text-[15px]">lock</span>
-              <span>Chef PIN</span>
-            </button>
-          )}
-
-          {/* Return to POS */}
-          <Link
-            href="/pos"
-            className="brutal-btn px-3 py-2 bg-espresso text-white font-display text-xs font-black uppercase rounded-xl border border-espresso shadow-brutal-sm flex items-center gap-1"
-          >
-            <span className="material-symbols-outlined text-[16px]">point_of_sale</span>
-            <span className="hidden md:inline">Open POS</span>
-          </Link>
         </div>
       </header>
 
       {/* ── Main KDS Kanban Board ── */}
-      <main className="pt-22 pb-6 px-4 sm:px-6 flex-1 flex flex-col">
+      <main className="p-3 sm:p-6 pb-24 sm:pb-8 flex-1 flex flex-col">
         {filteredTickets.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center text-center p-8 bg-white rounded-3xl border-3 border-espresso shadow-brutal-lg max-w-xl mx-auto my-8">
             <div className="w-16 h-16 rounded-2xl bg-paros-mint flex items-center justify-center border-2 border-espresso shadow-brutal-sm mb-4">
@@ -888,9 +936,48 @@ export default function KdsStudioPage() {
         </div>
       )}
 
+      {/* ── Mobile Quick Navigation Bottom Bar ── */}
+      <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t-2 border-espresso shadow-brutal flex items-center justify-around py-2 px-1 pb-safe">
+        <Link
+          href="/pos"
+          className="flex flex-col items-center gap-0.5 text-espresso/70 hover:text-paros-orange font-display text-[10px] font-bold py-1 px-2 rounded-lg"
+        >
+          <span className="material-symbols-outlined text-[20px]">point_of_sale</span>
+          <span>Register</span>
+        </Link>
+        <Link
+          href="/kds"
+          className="flex flex-col items-center gap-0.5 text-paros-orange font-display text-[10px] font-black py-1 px-2 rounded-lg bg-paros-orange/10"
+        >
+          <span className="material-symbols-outlined text-[20px]">soup_kitchen</span>
+          <span>KDS</span>
+        </Link>
+        <Link
+          href="/admin/menu"
+          className="flex flex-col items-center gap-0.5 text-espresso/70 hover:text-paros-orange font-display text-[10px] font-bold py-1 px-2 rounded-lg"
+        >
+          <span className="material-symbols-outlined text-[20px]">restaurant_menu</span>
+          <span>Menu</span>
+        </Link>
+        <Link
+          href="/admin/bills"
+          className="flex flex-col items-center gap-0.5 text-espresso/70 hover:text-paros-orange font-display text-[10px] font-bold py-1 px-2 rounded-lg"
+        >
+          <span className="material-symbols-outlined text-[20px]">receipt_long</span>
+          <span>Bills</span>
+        </Link>
+        <Link
+          href="/admin"
+          className="flex flex-col items-center gap-0.5 text-espresso/70 hover:text-paros-orange font-display text-[10px] font-bold py-1 px-2 rounded-lg"
+        >
+          <span className="material-symbols-outlined text-[20px]">monitoring</span>
+          <span>Analytics</span>
+        </Link>
+      </nav>
+
       {/* Floating Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-espresso text-white px-5 py-3 rounded-2xl border-2 border-white shadow-brutal-lg flex items-center gap-2 font-display text-sm font-bold animate-bounce">
+        <div className="fixed bottom-20 sm:bottom-6 right-6 z-50 bg-espresso text-white px-5 py-3 rounded-2xl border-2 border-white shadow-brutal-lg flex items-center gap-2 font-display text-sm font-bold animate-bounce">
           <span className="material-symbols-outlined text-paros-matcha">check_circle</span>
           <span>{toastMessage}</span>
         </div>

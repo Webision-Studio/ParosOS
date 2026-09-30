@@ -26,6 +26,7 @@ export default function AdminFinancialDashboard() {
   const [isShiftModalOpen, setIsShiftModalOpen] = useState(false);
   const [isOfferModalOpen, setIsOfferModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Dynamic Cafe Metadata
   const [outletName, setOutletName] = useState('My Cafe');
@@ -283,8 +284,8 @@ export default function AdminFinancialDashboard() {
 
   return (
     <div className="min-h-screen bg-paros-cream text-espresso font-body flex antialiased select-none">
-      {/* ── Left Sidebar Navigation ── */}
-      <aside className="fixed left-0 top-0 h-full w-64 bg-white border-r-2 border-espresso z-50 flex flex-col justify-between py-6 px-4 shadow-brutal-sm">
+      {/* ── Left Sidebar Navigation (Desktop) ── */}
+      <aside className="hidden lg:flex fixed left-0 top-0 h-full w-64 bg-white border-r-2 border-espresso z-50 flex-col justify-between py-6 px-4 shadow-brutal-sm">
         <div className="flex flex-col gap-6">
           {/* Brand */}
           <Link href="/" className="flex items-center gap-2.5 px-2">
@@ -399,34 +400,188 @@ export default function AdminFinancialDashboard() {
         </div>
       </aside>
 
-      {/* ── Main Content Area (offset by 64) ── */}
-      <div className="pl-64 flex-1 flex flex-col min-h-screen">
+      {/* ── Mobile Navigation Drawer ── */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden flex">
+          <div
+            className="fixed inset-0 bg-espresso/50 backdrop-blur-xs transition-opacity"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          <aside className="relative w-72 max-w-[85vw] h-full bg-white border-r-2 border-espresso flex flex-col justify-between py-6 px-4 shadow-brutal-xl z-10 animate-in slide-in-from-left duration-200">
+            <div className="flex flex-col gap-5 overflow-y-auto">
+              <div className="flex items-center justify-between px-1">
+                <Link href="/" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2">
+                  <div className="w-9 h-9 bg-paros-orange text-white rounded-xl border-2 border-espresso flex items-center justify-center font-display font-black text-lg shadow-brutal-sm">
+                    P
+                  </div>
+                  <div>
+                    <p className="font-display text-lg font-black text-espresso tracking-tight leading-none">
+                      PAROS<span className="text-paros-orange">.</span>
+                    </p>
+                    <p className="font-display text-[9px] font-black uppercase text-espresso/60 mt-0.5">
+                      Hospitality OS
+                    </p>
+                  </div>
+                </Link>
+                <button
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-8 h-8 rounded-full bg-paros-cream border border-espresso flex items-center justify-center font-black text-xs hover:bg-paros-yellow"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Outlet Badge */}
+              <div className="p-2.5 bg-paros-cream rounded-xl border border-espresso flex items-center justify-between">
+                <div>
+                  <p className="font-display text-[9px] uppercase font-bold text-espresso/60">Active Outlet</p>
+                  <p className="font-display text-xs font-black text-espresso truncate">{outletName}</p>
+                </div>
+                <span className="material-symbols-outlined text-espresso/70 text-[18px]">storefront</span>
+              </div>
+
+              {/* Navigation Links */}
+              <nav className="flex flex-col gap-1 font-display text-xs font-bold">
+                <Link
+                  href="/pos"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-paros-yellow/40 transition-colors text-espresso"
+                >
+                  <span className="material-symbols-outlined text-[20px]">point_of_sale</span>
+                  <span>Register / POS</span>
+                </Link>
+                <Link
+                  href="/kds"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-paros-yellow/40 transition-colors text-espresso"
+                >
+                  <span className="material-symbols-outlined text-[20px]">soup_kitchen</span>
+                  <span>Kitchen KDS</span>
+                </Link>
+                <Link
+                  href="/order"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-paros-yellow/40 transition-colors text-espresso"
+                >
+                  <span className="material-symbols-outlined text-[20px]">qr_code_2</span>
+                  <span>Table QR Menu</span>
+                </Link>
+                <Link
+                  href="/admin/menu"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-paros-yellow/40 transition-colors text-espresso"
+                >
+                  <span className="material-symbols-outlined text-[20px]">restaurant_menu</span>
+                  <span>Menu Catalog</span>
+                </Link>
+                <Link
+                  href="/admin/qr"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-paros-yellow/40 transition-colors text-espresso"
+                >
+                  <span className="material-symbols-outlined text-[20px]">print</span>
+                  <span>🖨️ QR Print Studio</span>
+                </Link>
+                <Link
+                  href="/admin/inventory"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-paros-yellow/40 transition-colors text-espresso font-bold"
+                >
+                  <span className="material-symbols-outlined text-[20px]">inventory_2</span>
+                  <span>📦 Inventory & Recipes</span>
+                </Link>
+                <Link
+                  href="/admin/bills"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-paros-yellow/40 transition-colors text-espresso font-bold"
+                >
+                  <span className="material-symbols-outlined text-[20px]">receipt_long</span>
+                  <span>🧾 Bill History</span>
+                </Link>
+                <Link
+                  href="/admin"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-paros-orange text-white border-2 border-espresso shadow-brutal-sm font-black"
+                >
+                  <span className="material-symbols-outlined text-[20px]">monitoring</span>
+                  <span>Financial Analytics</span>
+                </Link>
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setIsShiftModalOpen(true);
+                  }}
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-paros-yellow/40 transition-colors text-espresso text-left"
+                >
+                  <span className="material-symbols-outlined text-[20px]">payments</span>
+                  <span>Cash Drawer & Audit</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setIsOfferModalOpen(true);
+                  }}
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-paros-yellow/40 transition-colors text-espresso text-left"
+                >
+                  <span className="material-symbols-outlined text-[20px]">campaign</span>
+                  <span>📢 Send Offers</span>
+                </button>
+              </nav>
+            </div>
+
+            <div className="pt-4 border-t border-espresso/20 flex items-center justify-between text-xs font-display font-bold">
+              <span className="text-paros-matcha flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-paros-matcha animate-pulse" />
+                Online
+              </span>
+              <span className="font-mono text-[10px] text-espresso/50">v3.2.0</span>
+            </div>
+          </aside>
+        </div>
+      )}
+
+      {/* ── Main Content Area (Responsive padding) ── */}
+      <div className="pl-0 lg:pl-64 flex-1 flex flex-col min-h-screen pb-20 lg:pb-0">
         {/* Top Operational Bar */}
-        <header className="sticky top-0 bg-white/95 backdrop-blur-md h-16 border-b-2 border-espresso z-40 px-6 flex items-center justify-between shadow-brutal-sm">
-          <div className="flex items-center gap-3">
-            <span className="font-display text-sm font-black text-espresso">
-              {outletName} • Control Room
-            </span>
-            <span className="px-2 py-0.5 rounded-full bg-paros-mint border border-espresso font-display text-[10px] font-black uppercase text-espresso flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-paros-matcha animate-pulse" />
-              Live Shift Active
-            </span>
+        <header className="sticky top-0 bg-white/95 backdrop-blur-md h-16 border-b-2 border-espresso z-40 px-3 sm:px-6 flex items-center justify-between shadow-brutal-sm">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="lg:hidden w-10 h-10 rounded-xl bg-paros-cream border-2 border-espresso flex items-center justify-center font-bold text-espresso shadow-xs hover:bg-paros-yellow transition-colors"
+              aria-label="Open Navigation Menu"
+            >
+              <span className="material-symbols-outlined text-[22px]">menu</span>
+            </button>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-display text-xs sm:text-sm font-black text-espresso truncate max-w-[140px] sm:max-w-none">
+                  {outletName}
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-paros-mint border border-espresso font-display text-[9px] sm:text-[10px] font-black uppercase text-espresso hidden sm:inline-flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-paros-matcha animate-pulse" />
+                  Live Shift
+                </span>
+              </div>
+              <p className="text-[10px] font-display font-bold text-espresso/60 hidden sm:block">Control Room</p>
+            </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3">
             <button
               onClick={() => setIsExpenseModalOpen(true)}
-              className="brutal-btn px-4 py-2 bg-paros-orange text-white font-display text-xs font-black uppercase rounded-xl border-2 border-espresso shadow-brutal-sm flex items-center gap-1.5"
+              className="brutal-btn px-2.5 sm:px-4 py-2 bg-paros-orange text-white font-display text-[11px] sm:text-xs font-black uppercase rounded-xl border-2 border-espresso shadow-brutal-sm flex items-center gap-1"
             >
               <span className="material-symbols-outlined text-[16px]">add_circle</span>
-              <span>Log Expense</span>
+              <span className="hidden sm:inline">Log Expense</span>
+              <span className="sm:hidden">+ Exp</span>
             </button>
             <button
               onClick={() => setIsShiftModalOpen(true)}
-              className="brutal-btn px-4 py-2 bg-espresso text-white font-display text-xs font-black uppercase rounded-xl border-2 border-espresso shadow-brutal-sm flex items-center gap-1.5"
+              className="brutal-btn px-2.5 sm:px-4 py-2 bg-espresso text-white font-display text-[11px] sm:text-xs font-black uppercase rounded-xl border-2 border-espresso shadow-brutal-sm flex items-center gap-1"
             >
               <span className="material-symbols-outlined text-[16px]">point_of_sale</span>
-              <span>Close Shift (Z-Report)</span>
+              <span className="hidden sm:inline">Close Shift (Z-Report)</span>
+              <span className="sm:hidden">Z-Report</span>
             </button>
             <button
               onClick={async () => {
@@ -436,17 +591,17 @@ export default function AdminFinancialDashboard() {
                   window.location.href = '/onboarding';
                 }
               }}
-              className="px-3 py-2 bg-red-100 hover:bg-red-200 text-red-700 font-display text-xs font-black uppercase rounded-xl border border-espresso shadow-brutal-sm flex items-center gap-1"
+              className="hidden md:flex px-2.5 sm:px-3 py-2 bg-red-100 hover:bg-red-200 text-red-700 font-display text-[11px] sm:text-xs font-black uppercase rounded-xl border border-espresso shadow-brutal-sm items-center gap-1"
               title="Reset all database records and cache"
             >
               <span className="material-symbols-outlined text-[16px]">cleaning_services</span>
-              <span>Reset DB</span>
+              <span>Reset</span>
             </button>
           </div>
         </header>
 
         {/* ── Workspace ── */}
-        <main className="p-6 max-w-[1400px] w-full mx-auto flex flex-col gap-6">
+        <main className="p-3 sm:p-6 max-w-[1400px] w-full mx-auto flex flex-col gap-4 sm:gap-6">
           {/* Date Filter & Control Bar */}
           <div className="bg-white p-4 rounded-2xl border-2 border-espresso shadow-brutal flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-2">
@@ -1090,6 +1245,45 @@ export default function AdminFinancialDashboard() {
           </div>
         </div>
       )}
+
+      {/* ── Mobile Quick Navigation Bottom Bar ── */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t-2 border-espresso shadow-brutal flex items-center justify-around py-2 px-1 pb-safe">
+        <Link
+          href="/pos"
+          className="flex flex-col items-center gap-0.5 text-espresso/70 hover:text-paros-orange font-display text-[10px] font-bold py-1 px-2 rounded-lg"
+        >
+          <span className="material-symbols-outlined text-[20px]">point_of_sale</span>
+          <span>Register</span>
+        </Link>
+        <Link
+          href="/kds"
+          className="flex flex-col items-center gap-0.5 text-espresso/70 hover:text-paros-orange font-display text-[10px] font-bold py-1 px-2 rounded-lg"
+        >
+          <span className="material-symbols-outlined text-[20px]">soup_kitchen</span>
+          <span>KDS</span>
+        </Link>
+        <Link
+          href="/admin/menu"
+          className="flex flex-col items-center gap-0.5 text-espresso/70 hover:text-paros-orange font-display text-[10px] font-bold py-1 px-2 rounded-lg"
+        >
+          <span className="material-symbols-outlined text-[20px]">restaurant_menu</span>
+          <span>Menu</span>
+        </Link>
+        <Link
+          href="/admin/bills"
+          className="flex flex-col items-center gap-0.5 text-espresso/70 hover:text-paros-orange font-display text-[10px] font-bold py-1 px-2 rounded-lg"
+        >
+          <span className="material-symbols-outlined text-[20px]">receipt_long</span>
+          <span>Bills</span>
+        </Link>
+        <Link
+          href="/admin"
+          className="flex flex-col items-center gap-0.5 text-paros-orange font-display text-[10px] font-black py-1 px-2 rounded-lg bg-paros-orange/10"
+        >
+          <span className="material-symbols-outlined text-[20px]">monitoring</span>
+          <span>Analytics</span>
+        </Link>
+      </nav>
 
       {/* Toast Notification */}
       {toastMessage && (

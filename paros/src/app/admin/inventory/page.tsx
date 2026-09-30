@@ -49,6 +49,7 @@ interface CouponData {
 export default function InventoryPage() {
   const [activeTab, setActiveTab] = useState<'inventory' | 'coupons'>('inventory');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [outletName, setOutletName] = useState('Artisan Roastery');
 
   // Inventory Items State
@@ -286,8 +287,8 @@ export default function InventoryPage() {
 
   return (
     <div className="min-h-screen bg-paros-cream text-espresso font-body flex antialiased select-none">
-      {/* ── Left Sidebar Navigation ── */}
-      <aside className="fixed left-0 top-0 h-full w-64 bg-white border-r-2 border-espresso z-50 flex flex-col justify-between py-6 px-4 shadow-brutal-sm">
+      {/* ── Left Sidebar Navigation (Desktop) ── */}
+      <aside className="hidden lg:flex fixed left-0 top-0 h-full w-64 bg-white border-r-2 border-espresso z-50 flex-col justify-between py-6 px-4 shadow-brutal-sm">
         <div className="flex flex-col gap-6">
           {/* Brand */}
           <Link href="/" className="flex items-center gap-2.5 px-2">
@@ -381,53 +382,182 @@ export default function InventoryPage() {
         </div>
       </aside>
 
+      {/* ── Mobile Navigation Drawer ── */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden flex">
+          <div
+            className="fixed inset-0 bg-espresso/50 backdrop-blur-xs transition-opacity"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          <aside className="relative w-72 max-w-[85vw] h-full bg-white border-r-2 border-espresso flex flex-col justify-between py-6 px-4 shadow-brutal-xl z-10 animate-in slide-in-from-left duration-200">
+            <div className="flex flex-col gap-5 overflow-y-auto">
+              <div className="flex items-center justify-between px-1">
+                <Link href="/" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2">
+                  <div className="w-9 h-9 bg-paros-orange text-white rounded-xl border-2 border-espresso flex items-center justify-center font-display font-black text-lg shadow-brutal-sm">
+                    P
+                  </div>
+                  <div>
+                    <p className="font-display text-lg font-black text-espresso tracking-tight leading-none">
+                      PAROS<span className="text-paros-orange">.</span>
+                    </p>
+                    <p className="font-display text-[9px] font-black uppercase text-espresso/60 mt-0.5">
+                      Hospitality OS
+                    </p>
+                  </div>
+                </Link>
+                <button
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-8 h-8 rounded-full bg-paros-cream border border-espresso flex items-center justify-center font-black text-xs hover:bg-paros-yellow"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Outlet Badge */}
+              <div className="p-2.5 bg-paros-cream rounded-xl border border-espresso flex items-center justify-between">
+                <div>
+                  <p className="font-display text-[9px] uppercase font-bold text-espresso/60">Active Outlet</p>
+                  <p className="font-display text-xs font-black text-espresso truncate">{outletName}</p>
+                </div>
+                <span className="material-symbols-outlined text-espresso/70 text-[18px]">storefront</span>
+              </div>
+
+              {/* Navigation Links */}
+              <nav className="flex flex-col gap-1 font-display text-xs font-bold">
+                <Link
+                  href="/pos"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-paros-yellow/40 transition-colors text-espresso"
+                >
+                  <span className="material-symbols-outlined text-[20px]">point_of_sale</span>
+                  <span>Register / POS</span>
+                </Link>
+                <Link
+                  href="/kds"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-paros-yellow/40 transition-colors text-espresso"
+                >
+                  <span className="material-symbols-outlined text-[20px]">soup_kitchen</span>
+                  <span>Kitchen KDS</span>
+                </Link>
+                <Link
+                  href="/order"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-paros-yellow/40 transition-colors text-espresso"
+                >
+                  <span className="material-symbols-outlined text-[20px]">qr_code_2</span>
+                  <span>Table QR Menu</span>
+                </Link>
+                <Link
+                  href="/admin/menu"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-paros-yellow/40 transition-colors text-espresso"
+                >
+                  <span className="material-symbols-outlined text-[20px]">restaurant_menu</span>
+                  <span>Menu Catalog</span>
+                </Link>
+                <Link
+                  href="/admin/qr"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-paros-yellow/40 transition-colors text-espresso"
+                >
+                  <span className="material-symbols-outlined text-[20px]">print</span>
+                  <span>🖨️ QR Print Studio</span>
+                </Link>
+                <Link
+                  href="/admin/inventory"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-paros-orange text-white border-2 border-espresso shadow-brutal-sm font-black"
+                >
+                  <span className="material-symbols-outlined text-[20px]">inventory_2</span>
+                  <span>📦 Inventory & Recipes</span>
+                </Link>
+                <Link
+                  href="/admin/bills"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-paros-yellow/40 transition-colors text-espresso font-bold"
+                >
+                  <span className="material-symbols-outlined text-[20px]">receipt_long</span>
+                  <span>🧾 Bill History</span>
+                </Link>
+                <Link
+                  href="/admin"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-paros-yellow/40 transition-colors text-espresso font-bold"
+                >
+                  <span className="material-symbols-outlined text-[20px]">monitoring</span>
+                  <span>Financial Analytics</span>
+                </Link>
+              </nav>
+            </div>
+
+            <div className="pt-4 border-t border-espresso/20 flex items-center justify-between text-xs font-display font-bold">
+              <span className="text-paros-matcha flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-paros-matcha animate-pulse" />
+                Online
+              </span>
+              <span className="font-mono text-[10px] text-espresso/50">v2.4</span>
+            </div>
+          </aside>
+        </div>
+      )}
+
       {/* ── Main Content Area ── */}
-      <main className="ml-64 flex-1 flex flex-col min-w-0 p-8">
+      <main className="ml-0 lg:ml-64 flex-1 flex flex-col min-w-0 p-3 sm:p-8 pb-20 lg:pb-8">
         {/* Top Header */}
         <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b-2 border-espresso">
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="font-display text-3xl font-black tracking-tight text-espresso">
-                Inventory & Recipe Portioning
-              </h1>
-              <span className="px-3 py-1 bg-paros-mint text-espresso border-2 border-espresso rounded-full text-xs font-black uppercase shadow-brutal-sm">
-                Phase 3 Engine
-              </span>
+          <div className="flex items-start gap-2.5">
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="lg:hidden w-10 h-10 rounded-xl bg-paros-cream border-2 border-espresso flex items-center justify-center font-bold text-espresso shadow-xs hover:bg-paros-yellow transition-colors shrink-0 mt-0.5"
+              aria-label="Open Navigation Menu"
+            >
+              <span className="material-symbols-outlined text-[22px]">menu</span>
+            </button>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="font-display text-xl sm:text-3xl font-black tracking-tight text-espresso">
+                  Inventory & Recipes
+                </h1>
+                <span className="px-2 sm:px-3 py-0.5 sm:py-1 bg-paros-mint text-espresso border-2 border-espresso rounded-full text-[10px] sm:text-xs font-black uppercase shadow-xs">
+                  Stock Control
+                </span>
+              </div>
+              <p className="text-xs sm:text-sm text-espresso/70 mt-1">
+                Raw materials, automated portion deduction, low-stock alerts, and loyalty coupons.
+              </p>
             </div>
-            <p className="text-sm text-espresso/70 mt-1">
-              Raw materials, automated portion deduction, low-stock alerts, and loyalty coupons.
-            </p>
           </div>
 
           {/* Action Tabs & Buttons */}
-          <div className="flex items-center gap-3 shrink-0">
-            <div className="inline-flex p-1 bg-white border-2 border-espresso rounded-xl shadow-brutal-sm">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto justify-between sm:justify-end">
+            <div className="inline-flex p-1 bg-white border-2 border-espresso rounded-xl shadow-xs">
               <button
                 onClick={() => setActiveTab('inventory')}
-                className={`px-4 py-2 rounded-lg font-display font-black text-xs uppercase transition-all ${
+                className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg font-display font-black text-xs uppercase transition-all ${
                   activeTab === 'inventory'
-                    ? 'bg-paros-orange text-white border border-espresso shadow-brutal-sm'
+                    ? 'bg-paros-orange text-white border border-espresso shadow-xs'
                     : 'text-espresso hover:bg-paros-yellow/40'
                 }`}
               >
-                📦 Raw Materials
+                📦 Materials
               </button>
               <button
                 onClick={() => setActiveTab('coupons')}
-                className={`px-4 py-2 rounded-lg font-display font-black text-xs uppercase transition-all ${
+                className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg font-display font-black text-xs uppercase transition-all ${
                   activeTab === 'coupons'
-                    ? 'bg-paros-orange text-white border border-espresso shadow-brutal-sm'
+                    ? 'bg-paros-orange text-white border border-espresso shadow-xs'
                     : 'text-espresso hover:bg-paros-yellow/40'
                 }`}
               >
-                🎟️ Loyalty & Coupons
+                🎟️ Coupons
               </button>
             </div>
 
             {activeTab === 'inventory' ? (
               <button
                 onClick={() => setIsAddModalOpen(true)}
-                className="brutal-btn inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border-2 border-espresso bg-paros-yellow font-display font-black text-xs uppercase shadow-brutal-sm"
+                className="brutal-btn inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border-2 border-espresso bg-paros-yellow font-display font-black text-xs uppercase shadow-brutal-sm"
               >
                 <span className="material-symbols-outlined text-[18px]">add_circle</span>
                 <span>Add Material</span>
@@ -435,7 +565,7 @@ export default function InventoryPage() {
             ) : (
               <button
                 onClick={() => setIsCouponModalOpen(true)}
-                className="brutal-btn inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border-2 border-espresso bg-paros-mint font-display font-black text-xs uppercase shadow-brutal-sm"
+                className="brutal-btn inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border-2 border-espresso bg-paros-mint font-display font-black text-xs uppercase shadow-brutal-sm"
               >
                 <span className="material-symbols-outlined text-[18px]">add_circle</span>
                 <span>Create Coupon</span>
@@ -1100,9 +1230,48 @@ export default function InventoryPage() {
         </div>
       )}
 
+      {/* ── Mobile Quick Navigation Bottom Bar ── */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t-2 border-espresso shadow-brutal flex items-center justify-around py-2 px-1 pb-safe">
+        <Link
+          href="/pos"
+          className="flex flex-col items-center gap-0.5 text-espresso/70 hover:text-paros-orange font-display text-[10px] font-bold py-1 px-2 rounded-lg"
+        >
+          <span className="material-symbols-outlined text-[20px]">point_of_sale</span>
+          <span>Register</span>
+        </Link>
+        <Link
+          href="/admin/menu"
+          className="flex flex-col items-center gap-0.5 text-espresso/70 hover:text-paros-orange font-display text-[10px] font-bold py-1 px-2 rounded-lg"
+        >
+          <span className="material-symbols-outlined text-[20px]">restaurant_menu</span>
+          <span>Menu</span>
+        </Link>
+        <Link
+          href="/admin/inventory"
+          className="flex flex-col items-center gap-0.5 text-paros-orange font-display text-[10px] font-black py-1 px-2 rounded-lg bg-paros-orange/10"
+        >
+          <span className="material-symbols-outlined text-[20px]">inventory_2</span>
+          <span>Stock</span>
+        </Link>
+        <Link
+          href="/admin/bills"
+          className="flex flex-col items-center gap-0.5 text-espresso/70 hover:text-paros-orange font-display text-[10px] font-bold py-1 px-2 rounded-lg"
+        >
+          <span className="material-symbols-outlined text-[20px]">receipt_long</span>
+          <span>Bills</span>
+        </Link>
+        <Link
+          href="/admin"
+          className="flex flex-col items-center gap-0.5 text-espresso/70 hover:text-paros-orange font-display text-[10px] font-bold py-1 px-2 rounded-lg"
+        >
+          <span className="material-symbols-outlined text-[20px]">monitoring</span>
+          <span>Analytics</span>
+        </Link>
+      </nav>
+
       {/* Floating Toast Alert */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-espresso text-white px-5 py-3 rounded-2xl border-2 border-espresso shadow-brutal font-display font-black text-sm animate-in fade-in slide-in-from-bottom-5">
+        <div className="fixed bottom-20 lg:bottom-6 right-6 z-50 bg-espresso text-white px-5 py-3 rounded-2xl border-2 border-espresso shadow-brutal font-display font-black text-sm animate-in fade-in slide-in-from-bottom-5">
           {toastMessage}
         </div>
       )}

@@ -198,7 +198,7 @@ export default function OnboardingPage() {
       </header>
 
       {/* ── Main Container ── */}
-      <main className="flex-1 flex flex-col items-center justify-center py-10 px-4 sm:px-6">
+      <main className="flex-1 flex flex-col items-center justify-center py-6 sm:py-10 px-3 sm:px-6">
         {/* ══ STEP 1: AUTH & VERIFICATION ══ */}
         {step === 1 && (
           <div className="w-full max-w-[580px] flex flex-col items-center">
@@ -215,7 +215,7 @@ export default function OnboardingPage() {
             </div>
 
             {/* Card */}
-            <div className="w-full bg-white rounded-3xl border-2 border-espresso shadow-brutal-xl overflow-hidden p-6 sm:p-10 text-center">
+            <div className="w-full bg-white rounded-3xl border-2 border-espresso shadow-brutal-xl overflow-hidden p-4 sm:p-10 text-center">
               <span className="sticker-badge inline-block bg-paros-yellow text-espresso border-2 border-espresso px-3.5 py-1 rounded-full font-display text-xs font-black uppercase mb-4 shadow-brutal-sm">
                 ⚡ Instant 14-Day Free Access • No Card
               </span>
@@ -341,15 +341,15 @@ export default function OnboardingPage() {
             </div>
 
             {/* Card */}
-            <div className="w-full bg-white rounded-3xl border-2 border-espresso shadow-brutal-xl p-6 sm:p-10">
-              <h1 className="font-display text-3xl font-black text-espresso tracking-tight mb-1">
+            <div className="w-full bg-white rounded-3xl border-2 border-espresso shadow-brutal-xl p-4 sm:p-10">
+              <h1 className="font-display text-2xl sm:text-3xl font-black text-espresso tracking-tight mb-1">
                 Tell us about your space
               </h1>
-              <p className="font-body text-sm text-espresso/70 mb-8">
+              <p className="font-body text-sm text-espresso/70 mb-6 sm:mb-8">
                 Customize Paros for your exact counter and dining workflow.
               </p>
 
-              <form onSubmit={handleSaveCafe} className="flex flex-col gap-6">
+              <form onSubmit={handleSaveCafe} className="flex flex-col gap-5 sm:gap-6">
                 {/* Outlet Name */}
                 <div className="flex flex-col gap-2">
                   <label className="font-display text-xs font-black uppercase text-espresso">
@@ -365,9 +365,9 @@ export default function OnboardingPage() {
                       onChange={(e) => setOutletName(e.target.value)}
                       placeholder="e.g. Third Wave Roasters, Bandra"
                       required
-                      className="w-full pl-11 pr-32 py-3 bg-paros-cream border-2 border-espresso rounded-xl font-display text-base font-bold text-espresso outline-none shadow-brutal-sm"
+                      className="w-full pl-11 pr-3 sm:pr-32 py-3 bg-paros-cream border-2 border-espresso rounded-xl font-display text-base font-bold text-espresso outline-none shadow-brutal-sm"
                     />
-                    <div className="absolute right-3 bg-paros-yellow px-2 py-0.5 rounded border border-espresso font-display text-[10px] font-black uppercase">
+                    <div className="hidden sm:block absolute right-3 bg-paros-yellow px-2 py-0.5 rounded border border-espresso font-display text-[10px] font-black uppercase">
                       Mumbai, MH
                     </div>
                   </div>
@@ -591,17 +591,17 @@ export default function OnboardingPage() {
             </p>
 
             {/* Sample Menu Cards */}
-            <div className="w-full bg-white rounded-3xl border-2 border-espresso shadow-brutal p-6 mb-6">
+            <div className="w-full bg-white rounded-3xl border-2 border-espresso shadow-brutal p-4 sm:p-6 mb-6">
               <div className="flex items-center justify-between pb-3 mb-4 border-b-2 border-espresso">
-                <span className="font-display text-sm font-black text-espresso uppercase">
+                <span className="font-display text-xs sm:text-sm font-black text-espresso uppercase">
                   ⚡ Auto-Provisioned Sample Menu
                 </span>
-                <span className="text-xs font-display font-bold text-paros-matcha">
+                <span className="text-[11px] sm:text-xs font-display font-bold text-paros-matcha">
                   5 Items Live on POS & QR
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3">
                 {[
                   { name: 'Flat White (Oat)', price: '₹260', icon: '☕', meta: 'Beverage • Double Ristretto' },
                   { name: 'Butter Croissant', price: '₹180', icon: '🥐', meta: 'Bakery • 27 Laminated Layers' },
