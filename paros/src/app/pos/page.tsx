@@ -73,6 +73,7 @@ export default function PosRegisterPage() {
   // POS View state: menu, floor, orders (expediter)
   const [activeView, setActiveView] = useState<'menu' | 'floor' | 'orders'>('menu');
   const [mobilePanel, setMobilePanel] = useState<'catalog' | 'ticket'>('catalog');
+  const [isMobileToolsOpen, setIsMobileToolsOpen] = useState(false);
   const [selectedTable, setSelectedTable] = useState<string>('1');
   const [selectedCategory, setSelectedCategory] = useState<string>('All Items');
   const [searchQuery, setSearchQuery] = useState('');
@@ -521,6 +522,18 @@ export default function PosRegisterPage() {
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, []);
+
+  // Dynamically extract categories from menu items
+  const dynamicCategories = useMemo(() => {
+    const cats = new Set<string>();
+    menuItems.forEach((item) => {
+      if (item.category?.name) cats.add(item.category.name);
+    });
+    if (cats.size === 0) {
+      return ['All Items', 'Hot Coffee', 'Iced Brews', 'Bakery & Hearth', 'Artisanal Toast'];
+    }
+    return ['All Items', ...Array.from(cats)];
+  }, [menuItems]);
 
   // Filter items
   const filteredItems = useMemo(() => {
@@ -1015,7 +1028,8 @@ export default function PosRegisterPage() {
     <div className="min-h-screen bg-paros-cream text-espresso font-body flex flex-col">
       {/* ── Fixed Top Header ── */}
       <header className="sticky top-0 w-full z-40 bg-white/95 backdrop-blur-md border-b-2 border-espresso">
-        <div className="max-w-[1600px] mx-auto px-2 sm:px-6 min-h-16 py-2 flex items-center justify-between gap-2 sm:gap-4 flex-wrap lg:flex-nowrap">
+        {/* ── Desktop Top Bar (lg:flex) ── */}
+        <div className="hidden lg:flex max-w-[1600px] mx-auto px-4 sm:px-6 min-h-16 py-2 items-center justify-between gap-4">
           {/* Brand */}
           <div className="flex items-center gap-3">
             <Link href="/pos" className="flex items-center gap-2">
@@ -1033,11 +1047,11 @@ export default function PosRegisterPage() {
             </div>
 
             {isCounterOnlyCafe ? (
-              <span className="hidden lg:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-paros-mint border border-espresso font-display text-[10px] font-black uppercase text-emerald-950 shadow-xs">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-paros-mint border border-espresso font-display text-[10px] font-black uppercase text-emerald-950 shadow-xs">
                 ⚡ Express Token Mode (0 Tables)
               </span>
             ) : (
-              <div className="hidden lg:flex items-center p-0.5 bg-paros-cream border border-espresso rounded-xl shadow-xs">
+              <div className="flex items-center p-0.5 bg-paros-cream border border-espresso rounded-xl shadow-xs">
                 <button
                   onClick={() => {
                     setPosMode('DINE_IN');
@@ -1166,40 +1180,149 @@ export default function PosRegisterPage() {
             </button>
           </div>
         </div>
+
+        {/* ── Dedicated Mobile Top Bar (lg:hidden) ── */}
+        <div className="lg:hidden px-2.5 sm:px-4 py-2 flex items-center justify-between gap-2">
+          {/* Brand & Cafe Name */}
+          <div className="flex items-center gap-2 min-w-0">
+            <Link href="/pos" className="flex items-center gap-1.5 shrink-0">
+              <div className="w-7 h-7 rounded-lg bg-paros-orange text-white flex items-center justify-center font-display font-black text-sm border-2 border-espresso shadow-brutal-sm">
+                P
+              </div>
+              <span className="font-display text-base font-black text-espresso tracking-tight">
+                PAROS<span className="text-paros-orange">.</span>
+              </span>
+            </Link>
+            <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-paros-yellow border border-espresso font-display text-[10px] font-bold uppercase truncate max-w-[120px]">
+              <span className="w-1.5 h-1.5 rounded-full bg-paros-matcha animate-ping shrink-0" />
+              <span className="truncate">{cafeName}</span>
+            </div>
+          </div>
+
+          {/* Quick Actions Right */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            {/* Till Cash Pill */}
+            <button
+              onClick={() => setIsExpenseModalOpen(true)}
+              title="Till Cash Float (tap to log expense)"
+              className="flex items-center gap-1 px-2 py-1 bg-paros-cream active:bg-paros-yellow rounded-xl border border-espresso font-display text-[11px] font-bold shadow-brutal-sm"
+            >
+              <span className="material-symbols-outlined text-[13px] text-paros-orange">point_of_sale</span>
+              <span className="font-mono font-black text-espresso">₹{drawerCash.toLocaleString('en-IN')}</span>
+            </button>
+
+            {/* Operator Lock / PIN */}
+            {operator ? (
+              <button
+                onClick={handleLockTerminal}
+                title="Cashier Terminal Locked (tap to switch)"
+                className="flex items-center gap-1 px-2 py-1 bg-paros-mint rounded-xl border border-espresso font-display text-[10px] font-black text-espresso shadow-brutal-sm"
+              >
+                <span className="material-symbols-outlined text-[13px] text-paros-matcha">badge</span>
+                <span className="max-w-[48px] truncate">{operator.name.split(' ')[0]}</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => setPinModalOpen(true)}
+                className="flex items-center gap-1 px-2 py-1 bg-paros-yellow rounded-xl border border-espresso font-display text-[10px] font-black text-espresso shadow-brutal-sm animate-pulse"
+              >
+                <span className="material-symbols-outlined text-[13px]">lock</span>
+                <span>PIN</span>
+              </button>
+            )}
+
+            {/* Mobile More / Tools Drawer Trigger */}
+            <button
+              onClick={() => setIsMobileToolsOpen(true)}
+              title="Open POS Tools & Switch Mode"
+              className="w-7 h-7 rounded-xl bg-white active:bg-paros-yellow border-2 border-espresso shadow-brutal-sm flex items-center justify-center text-espresso"
+            >
+              <span className="material-symbols-outlined text-[17px]">more_vert</span>
+            </button>
+          </div>
+        </div>
+
+        {/* ── Mobile Unified 4-Tab Navigation Bar (xl:hidden) ── */}
+        <div className="xl:hidden px-2.5 pb-2">
+          <div className="flex items-center p-1 bg-paros-cream border-2 border-espresso rounded-2xl shadow-brutal-sm gap-1">
+            {/* Menu Tab */}
+            <button
+              onClick={() => {
+                setMobilePanel('catalog');
+                setActiveView('menu');
+              }}
+              className={`flex-1 py-1.5 sm:py-2 rounded-xl font-display font-black text-xs uppercase flex items-center justify-center gap-1 transition-all ${
+                mobilePanel === 'catalog' && activeView === 'menu'
+                  ? 'bg-paros-orange text-white shadow-brutal-sm'
+                  : 'text-espresso/70 hover:bg-white'
+              }`}
+            >
+              <span className="material-symbols-outlined text-[17px]">coffee</span>
+              <span>Menu</span>
+            </button>
+
+            {/* Tables / Tokens Tab */}
+            <button
+              onClick={() => {
+                setMobilePanel('catalog');
+                setActiveView('floor');
+              }}
+              className={`flex-1 py-1.5 sm:py-2 rounded-xl font-display font-black text-xs uppercase flex items-center justify-center gap-1 transition-all ${
+                mobilePanel === 'catalog' && activeView === 'floor'
+                  ? 'bg-paros-orange text-white shadow-brutal-sm'
+                  : 'text-espresso/70 hover:bg-white'
+              }`}
+            >
+              <span className="material-symbols-outlined text-[17px]">
+                {isCounterOnlyCafe || posMode === 'EXPRESS_COUNTER' ? 'receipt_long' : 'table_bar'}
+              </span>
+              <span>{isCounterOnlyCafe || posMode === 'EXPRESS_COUNTER' ? 'Tokens' : 'Tables'}</span>
+            </button>
+
+            {/* Expediter Pass Tab */}
+            <button
+              onClick={() => {
+                setMobilePanel('catalog');
+                setActiveView('orders');
+              }}
+              className={`flex-1 py-1.5 sm:py-2 rounded-xl font-display font-black text-xs uppercase flex items-center justify-center gap-1 transition-all relative ${
+                mobilePanel === 'catalog' && activeView === 'orders'
+                  ? 'bg-paros-orange text-white shadow-brutal-sm'
+                  : 'text-espresso/70 hover:bg-white'
+              }`}
+            >
+              <span className="material-symbols-outlined text-[17px]">soup_kitchen</span>
+              <span>Pass</span>
+              {liveOrders.filter((o) => o.status !== 'COMPLETED').length > 0 && (
+                <span className="px-1 py-0.2 rounded-full bg-paros-yellow text-espresso border border-espresso font-mono text-[9px] font-black leading-none">
+                  {liveOrders.filter((o) => o.status !== 'COMPLETED').length}
+                </span>
+              )}
+            </button>
+
+            {/* Ticket Tab */}
+            <button
+              onClick={() => setMobilePanel('ticket')}
+              className={`flex-1 py-1.5 sm:py-2 rounded-xl font-display font-black text-xs uppercase flex items-center justify-center gap-1 transition-all relative ${
+                mobilePanel === 'ticket'
+                  ? 'bg-espresso text-white shadow-brutal-sm'
+                  : 'text-espresso/70 hover:bg-white'
+              }`}
+            >
+              <span className="material-symbols-outlined text-[17px]">shopping_cart</span>
+              <span>Ticket</span>
+              {currentCart.length > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full bg-paros-orange text-white font-mono text-[10px] font-black leading-none animate-pulse">
+                  {currentCart.reduce((sum, it) => sum + it.quantity, 0)}
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
       </header>
 
       {/* ── Main POS Workspace ── */}
       <div className="max-w-[1600px] w-full mx-auto p-2 sm:p-4 lg:p-6 pb-24 xl:pb-6 flex-1 flex flex-col xl:flex-row gap-3 sm:gap-4">
-        {/* ── Mobile View Switcher (Catalog vs Ticket/Cart) ── */}
-        <div className="xl:hidden flex items-center p-1 bg-white border-2 border-espresso rounded-2xl shadow-brutal shrink-0">
-          <button
-            onClick={() => setMobilePanel('catalog')}
-            className={`flex-1 py-2.5 rounded-xl font-display font-black text-xs uppercase flex items-center justify-center gap-1.5 transition-all ${
-              mobilePanel === 'catalog'
-                ? 'bg-espresso text-white shadow-brutal-sm'
-                : 'text-espresso/70 hover:bg-paros-cream'
-            }`}
-          >
-            <span className="material-symbols-outlined text-[18px]">
-              {activeView === 'menu' ? 'coffee' : activeView === 'floor' ? 'table_bar' : 'soup_kitchen'}
-            </span>
-            <span>{activeView === 'menu' ? 'Menu Catalog' : activeView === 'floor' ? 'Floor Grid' : 'Expediter'}</span>
-          </button>
-          <button
-            onClick={() => setMobilePanel('ticket')}
-            className={`flex-1 py-2.5 rounded-xl font-display font-black text-xs uppercase flex items-center justify-center gap-1.5 transition-all ${
-              mobilePanel === 'ticket'
-                ? 'bg-paros-orange text-white shadow-brutal-sm'
-                : 'text-espresso/70 hover:bg-paros-cream'
-            }`}
-          >
-            <span className="material-symbols-outlined text-[18px]">shopping_cart</span>
-            <span>
-              Ticket {currentCart.length > 0 ? `(${currentCart.length} • ₹${Math.round(grandTotal)})` : '(0)'}
-            </span>
-          </button>
-        </div>
-
         {/* ═══ LEFT PANEL (60%): Menu Catalog / Floor Grid ═══ */}
         <div className={`w-full xl:w-[60%] ${mobilePanel === 'catalog' ? 'flex' : 'hidden xl:flex'} flex-col gap-4`}>
           {/* ── HIGH PRIORITY KDS NOTIFICATION BANNER ── */}
@@ -1257,8 +1380,8 @@ export default function PosRegisterPage() {
             </div>
           )}
 
-          {/* Top Operational Strip */}
-          <div className="bg-white p-3.5 rounded-2xl border-2 border-espresso shadow-brutal flex flex-wrap items-center justify-between gap-3">
+          {/* Top Operational Strip: Visible on desktop; on mobile the 4-tab bar handles view selection */}
+          <div className="hidden xl:flex bg-white p-3.5 rounded-2xl border-2 border-espresso shadow-brutal flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-paros-orange text-white flex items-center justify-center font-display font-black text-sm border-2 border-espresso shadow-brutal-sm">
                 P
@@ -1437,7 +1560,7 @@ export default function PosRegisterPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-4 sm:grid-cols-9 gap-2">
+              <div className="flex sm:grid sm:grid-cols-9 gap-2 overflow-x-auto no-scrollbar pb-1">
                 {tables.map((t) => {
                   const tableAmt = getTableAmount(t.tableNumber);
                   const hasItems = (tableCarts[t.tableNumber]?.length || 0) > 0;
@@ -1449,7 +1572,7 @@ export default function PosRegisterPage() {
                     <button
                       key={t.id}
                       onClick={() => setSelectedTable(t.tableNumber)}
-                      className={`p-2 rounded-xl border-2 border-espresso transition-all text-center flex flex-col justify-between ${
+                      className={`min-w-[68px] sm:min-w-0 shrink-0 sm:shrink p-2 rounded-xl border-2 border-espresso transition-all text-center flex flex-col justify-between ${
                         isSelected
                           ? 'bg-paros-orange text-white shadow-brutal ring-2 ring-espresso scale-105'
                           : isReady
@@ -1980,96 +2103,138 @@ export default function PosRegisterPage() {
             )
           ) : (
             /* ═══ VIEW MODE: MENU CATALOG ═══ */
-            <div className="bg-white p-4 rounded-2xl border-2 border-espresso shadow-brutal flex-1 flex flex-col gap-3">
+            <div className="bg-white p-3 sm:p-4 rounded-2xl border-2 border-espresso shadow-brutal flex-1 flex flex-col gap-2.5 sm:gap-3">
               {/* Search Bar */}
-              <div className="flex items-center gap-2">
-                <div className="relative flex-1">
-                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-espresso/60 text-[20px]">
-                    search
-                  </span>
-                  <input
-                    id="posSearchInput"
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Quick search dish or press '/' key..."
-                    className="w-full pl-10 pr-10 py-2.5 bg-paros-cream border-2 border-espresso rounded-xl font-display text-sm font-bold text-espresso outline-none shadow-brutal-sm"
-                  />
-                  <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-espresso/50 text-[18px]">
+              <div className="relative">
+                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-espresso/60 text-[18px]">
+                  search
+                </span>
+                <input
+                  id="posSearchInput"
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Quick search dish or press '/' key..."
+                  className="w-full pl-9 pr-9 py-2 sm:py-2.5 bg-paros-cream border-2 border-espresso rounded-xl font-display text-xs sm:text-sm font-bold text-espresso outline-none shadow-brutal-sm"
+                />
+                {searchQuery ? (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-espresso/50 hover:text-espresso font-black text-xs w-5 h-5 flex items-center justify-center rounded-full bg-white border border-espresso"
+                    title="Clear search"
+                  >
+                    ✕
+                  </button>
+                ) : (
+                  <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-espresso/40 text-[16px]">
                     barcode_scanner
                   </span>
-                </div>
-              </div>
-
-              {/* Category Filter Pills */}
-              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
-                {['All Items', 'Hot Coffee', 'Iced Brews', 'Bakery & Hearth', 'Artisanal Toast'].map(
-                  (cat) => (
-                    <button
-                      key={cat}
-                      onClick={() => setSelectedCategory(cat)}
-                      className={`px-3.5 py-1.5 rounded-full border-2 border-espresso font-display text-xs font-black uppercase whitespace-nowrap transition-all ${
-                        selectedCategory === cat
-                          ? 'bg-espresso text-white shadow-brutal-sm'
-                          : 'bg-white hover:bg-paros-yellow text-espresso shadow-brutal-sm'
-                      }`}
-                    >
-                      {cat}
-                    </button>
-                  )
                 )}
               </div>
 
-              {/* Menu Items Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 overflow-y-auto max-h-[440px] pr-1">
-                {filteredItems.map((item) => (
-                  <div
-                    key={item.id}
-                    className="bg-paros-cream p-3 rounded-2xl border-2 border-espresso shadow-brutal-sm flex flex-col justify-between hover:bg-white transition-all group"
+              {/* Category Filter Pills (Dynamically loaded) */}
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar -mx-1 px-1 py-0.5">
+                {dynamicCategories.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setSelectedCategory(cat)}
+                    className={`px-3 py-1.5 rounded-full border-2 border-espresso font-display text-[11px] sm:text-xs font-black uppercase whitespace-nowrap transition-all ${
+                      selectedCategory === cat
+                        ? 'bg-espresso text-white shadow-brutal-sm'
+                        : 'bg-white hover:bg-paros-yellow text-espresso shadow-brutal-sm'
+                    }`}
                   >
-                    <div>
-                      <div className="flex items-start justify-between gap-1 mb-1">
-                        <div className="flex items-center gap-1.5">
-                          <span
-                            className={`w-2.5 h-2.5 rounded-full ring-2 ${
-                              item.isVeg
-                                ? 'bg-paros-matcha ring-paros-matcha/30'
-                                : 'bg-red-500 ring-red-500/30'
-                            }`}
-                          />
-                          <span className="font-display text-sm font-bold text-espresso leading-tight">
-                            {item.name}
+                    {cat}
+                  </button>
+                ))}
+              </div>
+
+              {/* Menu Items Grid: 2-Columns on Mobile for High Information Density */}
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 flex-1 overflow-y-auto max-h-[580px] xl:max-h-[460px] pr-0.5">
+                {filteredItems.map((item) => {
+                  const cartItem = currentCart.find((it) => it.name === item.name);
+                  const inCartQty = cartItem?.quantity || 0;
+
+                  return (
+                    <div
+                      key={item.id}
+                      className={`p-2.5 sm:p-3 rounded-2xl border-2 border-espresso flex flex-col justify-between transition-all group ${
+                        inCartQty > 0
+                          ? 'bg-paros-yellow/40 border-espresso shadow-brutal-sm ring-1 ring-espresso'
+                          : 'bg-paros-cream hover:bg-white shadow-brutal-sm'
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-start justify-between gap-1 mb-1">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span
+                              className={`w-2 h-2 rounded-full shrink-0 ring-2 ${
+                                item.isVeg
+                                  ? 'bg-paros-matcha ring-paros-matcha/30'
+                                  : 'bg-red-500 ring-red-500/30'
+                              }`}
+                            />
+                            <span className="font-display text-xs sm:text-sm font-bold text-espresso leading-snug line-clamp-2">
+                              {item.name}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-baseline justify-between mt-1 mb-1">
+                          <span className="font-display font-black text-xs sm:text-sm text-espresso tabular-nums">
+                            ₹{item.price}
+                          </span>
+                          <span className="font-mono text-[9px] text-espresso/60 font-bold uppercase truncate max-w-[80px]">
+                            {item.category?.name || 'Cafe Item'}
                           </span>
                         </div>
-                        <span className="font-display font-black text-sm text-espresso tabular-nums">
-                          ₹{item.price}
-                        </span>
-                      </div>
-                      {item.description && (
-                        <p className="font-body text-xs text-espresso/70 line-clamp-2">
-                          {item.description}
-                        </p>
-                      )}
-                    </div>
 
-                    <div className="mt-3 pt-2 border-t border-dashed border-espresso/20 flex items-center justify-between">
-                      <span className="font-mono text-[10px] text-espresso/60 font-bold uppercase">
-                        {item.category?.name || 'Cafe Item'}
-                      </span>
-                      <button
-                        onClick={() => addToCart(item)}
-                        className="brutal-btn px-3 py-1 bg-paros-orange text-white font-display text-xs font-black uppercase rounded-lg border-2 border-espresso shadow-brutal-sm flex items-center gap-1"
-                      >
-                        <span className="material-symbols-outlined text-[14px]">add</span>
-                        <span>
-                          {isCounterOnlyCafe || posMode === 'EXPRESS_COUNTER'
-                            ? `Add to Token #${expressTokenSeq}`
-                            : `Add to Table ${selectedTable}`}
-                        </span>
-                      </button>
+                        {item.description && (
+                          <p className="hidden sm:block font-body text-[11px] text-espresso/70 line-clamp-1 mb-1">
+                            {item.description}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Add Button or Inline Stepper */}
+                      <div className="mt-2 pt-1.5 border-t border-dashed border-espresso/20">
+                        {inCartQty === 0 ? (
+                          <button
+                            onClick={() => addToCart(item)}
+                            className="brutal-btn w-full py-1.5 sm:py-2 bg-paros-orange text-white font-display text-[11px] sm:text-xs font-black uppercase rounded-xl border-2 border-espresso shadow-brutal-sm flex items-center justify-center gap-1 active:scale-95"
+                          >
+                            <span className="material-symbols-outlined text-[15px]">add</span>
+                            <span>Add</span>
+                          </button>
+                        ) : (
+                          <div className="flex items-center justify-between w-full bg-white border-2 border-espresso rounded-xl shadow-brutal-sm p-0.5">
+                            <button
+                              onClick={() => {
+                                if (cartItem) updateQty(cartItem.id, -1);
+                              }}
+                              className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center bg-paros-cream hover:bg-red-100 rounded-lg border border-espresso font-black text-sm text-espresso active:scale-95 transition-all"
+                              title="Reduce quantity"
+                            >
+                              -
+                            </button>
+                            <span className="font-display font-black text-xs sm:text-sm text-espresso tabular-nums px-1">
+                              {inCartQty}
+                            </span>
+                            <button
+                              onClick={() => {
+                                if (cartItem) updateQty(cartItem.id, 1);
+                              }}
+                              className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center bg-paros-orange text-white rounded-lg border border-espresso font-black text-sm active:scale-95 transition-all"
+                              title="Add more"
+                            >
+                              +
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -2079,21 +2244,35 @@ export default function PosRegisterPage() {
         <div className={`w-full xl:w-[40%] ${mobilePanel === 'ticket' ? 'flex' : 'hidden xl:flex'} flex-col gap-4`}>
           <div className="bg-white p-5 rounded-3xl border-2 border-espresso shadow-brutal-xl flex-1 flex flex-col justify-between">
             {/* Mobile Back to Catalog Button */}
-            <div className="xl:hidden pb-3 border-b-2 border-dashed border-espresso/20 mb-3">
+            <div className="xl:hidden pb-3 border-b-2 border-dashed border-espresso/20 mb-3 flex items-center justify-between gap-2">
               <button
                 onClick={() => setMobilePanel('catalog')}
-                className="brutal-btn w-full py-2.5 px-3 bg-paros-yellow hover:bg-paros-peach border-2 border-espresso rounded-xl font-display text-xs font-black uppercase shadow-brutal-sm flex items-center justify-center gap-1.5"
+                className="brutal-btn flex-1 py-2.5 px-3 bg-paros-yellow hover:bg-paros-peach border-2 border-espresso rounded-xl font-display text-xs font-black uppercase shadow-brutal-sm flex items-center justify-center gap-1.5 active:scale-95"
               >
                 <span className="material-symbols-outlined text-[16px]">arrow_back</span>
-                <span>Add More Dishes (Back to Catalog)</span>
+                <span>Add More Dishes (Back to Menu)</span>
               </button>
+              {currentCart.length > 0 && (
+                <button
+                  onClick={() => {
+                    if (confirm('Clear all items from this order?')) {
+                      setTableCarts((prev) => ({ ...prev, [currentTableId]: [] }));
+                      showToast('Cart cleared');
+                    }
+                  }}
+                  className="py-2.5 px-3 bg-red-100 hover:bg-red-200 text-red-700 border-2 border-espresso rounded-xl font-display text-xs font-black uppercase shadow-brutal-sm flex items-center justify-center gap-1 active:scale-95"
+                  title="Clear Cart"
+                >
+                  <span className="material-symbols-outlined text-[16px]">delete_sweep</span>
+                </button>
+              )}
             </div>
 
             {/* Ticket Header */}
             <div>
               <div className="flex items-start justify-between pb-3 border-b-2 border-espresso mb-3">
-                <div>
-                  <div className="flex items-center gap-2">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className="material-symbols-outlined text-paros-orange text-[22px]">
                       {isCounterOnlyCafe || posMode === 'EXPRESS_COUNTER' ? 'bolt' : 'restaurant'}
                     </span>
@@ -2113,10 +2292,10 @@ export default function PosRegisterPage() {
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 mt-1">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
                     <input
                       type="text"
-                      placeholder={isCounterOnlyCafe || posMode === 'EXPRESS_COUNTER' ? "Customer (optional)" : "Guest Name (optional)"}
+                      placeholder={isCounterOnlyCafe || posMode === 'EXPRESS_COUNTER' ? "Customer Name (optional)" : "Guest Name (optional)"}
                       value={currentCustomer.name}
                       onChange={(e) =>
                         setTableCustomers((prev) => ({
@@ -2124,11 +2303,11 @@ export default function PosRegisterPage() {
                           [currentTableId]: { ...currentCustomer, name: e.target.value },
                         }))
                       }
-                      className="px-2 py-0.5 bg-paros-cream border border-espresso rounded font-body text-xs font-semibold text-espresso outline-none w-36"
+                      className="w-full px-2.5 py-1.5 bg-paros-cream border border-espresso rounded-xl font-body text-xs font-semibold text-espresso outline-none"
                     />
                     <input
                       type="tel"
-                      placeholder="Phone (WhatsApp)"
+                      placeholder="WhatsApp Number (e.g. 98450...)"
                       value={currentCustomer.phone}
                       onChange={(e) =>
                         setTableCustomers((prev) => ({
@@ -2136,7 +2315,7 @@ export default function PosRegisterPage() {
                           [currentTableId]: { ...currentCustomer, phone: e.target.value },
                         }))
                       }
-                      className="px-2 py-0.5 bg-paros-cream border border-espresso rounded font-mono text-xs font-semibold text-espresso outline-none w-36"
+                      className="w-full px-2.5 py-1.5 bg-paros-cream border border-espresso rounded-xl font-mono text-xs font-semibold text-espresso outline-none"
                     />
                   </div>
 
@@ -2277,7 +2456,7 @@ export default function PosRegisterPage() {
               </div>
 
               {/* Cart List */}
-              <div className="flex flex-col gap-2.5 max-h-[220px] overflow-y-auto pr-1">
+              <div className="flex flex-col gap-2.5 max-h-[38vh] xl:max-h-[220px] overflow-y-auto pr-1">
                 {currentCart.length === 0 ? (
                   <div className="py-10 px-4 text-center bg-paros-cream/50 rounded-2xl border-2 border-dashed border-espresso/30 flex flex-col items-center justify-center gap-2">
                     <span className="material-symbols-outlined text-espresso/40 text-[32px]">
@@ -2510,32 +2689,6 @@ export default function PosRegisterPage() {
                 </div>
               )}
 
-              {/* PRIMARY SETTLEMENT BUTTONS (Triggers Modal) */}
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={() => handleSettle('CASH')}
-                  className="brutal-btn py-3.5 font-display font-black text-xs sm:text-sm uppercase rounded-xl border-2 border-espresso shadow-brutal flex items-center justify-center gap-1.5 bg-espresso text-white hover:bg-espresso/90 transition-all"
-                >
-                  <span className="material-symbols-outlined text-[18px]">payments</span>
-                  <span>
-                    {isCounterOnlyCafe || posMode === 'EXPRESS_COUNTER'
-                      ? `CASH & TOKEN #${expressTokenSeq}`
-                      : `SETTLE CASH ${grandTotal > 0 ? `₹${grandTotal}` : ''}`}
-                  </span>
-                </button>
-                <button
-                  onClick={() => handleSettle('UPI')}
-                  className="brutal-btn py-3.5 font-display font-black text-xs sm:text-sm uppercase rounded-xl border-2 border-espresso shadow-brutal flex items-center justify-center gap-1.5 bg-paros-matcha text-white hover:bg-emerald-700 transition-all"
-                >
-                  <span className="material-symbols-outlined text-[18px]">qr_code_scanner</span>
-                  <span>
-                    {isCounterOnlyCafe || posMode === 'EXPRESS_COUNTER'
-                      ? `UPI & TOKEN #${expressTokenSeq}`
-                      : 'CONFIRM UPI PAID'}
-                  </span>
-                </button>
-              </div>
-
               {/* Secondary Peripheral Row */}
               <div className="grid grid-cols-2 gap-2">
                 <button
@@ -2578,6 +2731,34 @@ export default function PosRegisterPage() {
                   <span>Print KOT Slip</span>
                 </button>
               </div>
+
+              {/* PRIMARY SETTLEMENT BUTTONS (Sticky on mobile for instant thumb access) */}
+              <div className="sticky bottom-0 bg-white/95 backdrop-blur-md pt-2 pb-safe border-t-2 border-espresso -mx-5 -mb-5 px-5 pb-3">
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => handleSettle('CASH')}
+                    className="brutal-btn py-3 sm:py-3.5 font-display font-black text-xs sm:text-sm uppercase rounded-xl border-2 border-espresso shadow-brutal flex items-center justify-center gap-1.5 bg-espresso text-white hover:bg-espresso/90 active:scale-98 transition-all"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">payments</span>
+                    <span className="truncate">
+                      {isCounterOnlyCafe || posMode === 'EXPRESS_COUNTER'
+                        ? `CASH • #${expressTokenSeq}`
+                        : `SETTLE CASH ${grandTotal > 0 ? `₹${grandTotal}` : ''}`}
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => handleSettle('UPI')}
+                    className="brutal-btn py-3 sm:py-3.5 font-display font-black text-xs sm:text-sm uppercase rounded-xl border-2 border-espresso shadow-brutal flex items-center justify-center gap-1.5 bg-paros-matcha text-white hover:bg-emerald-700 active:scale-98 transition-all"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">qr_code_scanner</span>
+                    <span className="truncate">
+                      {isCounterOnlyCafe || posMode === 'EXPRESS_COUNTER'
+                        ? `UPI • #${expressTokenSeq}`
+                        : 'CONFIRM UPI'}
+                    </span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -2613,11 +2794,170 @@ export default function PosRegisterPage() {
       )}
 
       {/* ════════════════════════════════════════════════════════════ */}
+      {/* ── MOBILE QUICK TOOLS DRAWER / SHEET ── */}
+      {/* ════════════════════════════════════════════════════════════ */}
+      {isMobileToolsOpen && (
+        <div className="fixed inset-0 z-50 flex flex-col justify-end bg-espresso/60 backdrop-blur-sm p-3 pb-safe animate-in fade-in-50">
+          <div className="bg-white rounded-3xl border-3 border-espresso shadow-brutal-xl p-5 flex flex-col gap-4 max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom-5">
+            {/* Header */}
+            <div className="flex items-center justify-between pb-3 border-b-2 border-espresso">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-paros-orange text-white flex items-center justify-center font-black text-sm border-2 border-espresso shadow-brutal-sm">
+                  ⚙️
+                </div>
+                <div>
+                  <h3 className="font-display text-base font-black text-espresso">POS Register Settings</h3>
+                  <p className="font-body text-[11px] text-espresso/60">{cafeName} • {currentTime}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsMobileToolsOpen(false)}
+                className="w-8 h-8 rounded-full bg-paros-cream border border-espresso flex items-center justify-center font-black text-sm hover:bg-paros-orange hover:text-white transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* POS Mode Switcher (Dine-in vs Counter Rush) */}
+            {!isCounterOnlyCafe && (
+              <div className="flex flex-col gap-1.5">
+                <label className="font-display text-[11px] font-black uppercase text-espresso/70">
+                  Operation Mode:
+                </label>
+                <div className="grid grid-cols-2 gap-2 p-1 bg-paros-cream border-2 border-espresso rounded-2xl">
+                  <button
+                    onClick={() => {
+                      setPosMode('DINE_IN');
+                      const firstPhysical = tables.find((t) => t.tableNumber.toLowerCase() !== 'takeaway');
+                      if (firstPhysical) setSelectedTable(firstPhysical.tableNumber);
+                      setIsMobileToolsOpen(false);
+                      showToast('Switched to Dine-In Mode');
+                    }}
+                    className={`py-2 rounded-xl font-display text-xs font-black uppercase transition-all flex items-center justify-center gap-1.5 ${
+                      posMode === 'DINE_IN'
+                        ? 'bg-paros-orange text-white border-2 border-espresso shadow-brutal-sm'
+                        : 'text-espresso hover:bg-paros-yellow/40'
+                    }`}
+                  >
+                    <span>🪑 Dine-In</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setPosMode('EXPRESS_COUNTER');
+                      setSelectedTable('Takeaway');
+                      setIsMobileToolsOpen(false);
+                      showToast('Switched to Express Counter Rush');
+                    }}
+                    className={`py-2 rounded-xl font-display text-xs font-black uppercase transition-all flex items-center justify-center gap-1.5 ${
+                      posMode === 'EXPRESS_COUNTER'
+                        ? 'bg-paros-orange text-white border-2 border-espresso shadow-brutal-sm'
+                        : 'text-espresso hover:bg-paros-yellow/40'
+                    }`}
+                  >
+                    <span>⚡ Counter Rush</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Cash & Shift Actions */}
+            <div className="flex flex-col gap-1.5">
+              <label className="font-display text-[11px] font-black uppercase text-espresso/70">
+                Cash & Till Actions:
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => {
+                    setIsMobileToolsOpen(false);
+                    setIsExpenseModalOpen(true);
+                  }}
+                  className="p-3 bg-paros-cream hover:bg-paros-yellow rounded-2xl border-2 border-espresso font-display text-xs font-bold text-left shadow-brutal-sm flex flex-col gap-1 active:scale-95 transition-all"
+                >
+                  <span className="material-symbols-outlined text-paros-orange text-[20px]">payments</span>
+                  <span className="font-black text-espresso">+ Log Expense</span>
+                  <span className="text-[10px] text-espresso/60">From till cash float</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setIsMobileToolsOpen(false);
+                    setIsCloseShiftModalOpen(true);
+                  }}
+                  className="p-3 bg-paros-yellow hover:bg-amber-300 rounded-2xl border-2 border-espresso font-display text-xs font-bold text-left shadow-brutal-sm flex flex-col gap-1 active:scale-95 transition-all"
+                >
+                  <span className="material-symbols-outlined text-amber-900 text-[20px]">lock_clock</span>
+                  <span className="font-black text-espresso">End Shift / EOD</span>
+                  <span className="text-[10px] text-espresso/60">Till count & sales audit</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Navigation Shortcuts */}
+            <div className="flex flex-col gap-1.5">
+              <label className="font-display text-[11px] font-black uppercase text-espresso/70">
+                Quick Shortcuts:
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                <Link
+                  href="/order"
+                  target="_blank"
+                  onClick={() => setIsMobileToolsOpen(false)}
+                  className="p-2.5 bg-paros-mint rounded-2xl border-2 border-espresso text-center shadow-brutal-sm flex flex-col items-center gap-1 active:scale-95"
+                >
+                  <span className="material-symbols-outlined text-[20px]">smartphone</span>
+                  <span className="font-display text-[11px] font-black uppercase">Guest QR ↗</span>
+                </Link>
+                <Link
+                  href="/kds"
+                  onClick={() => setIsMobileToolsOpen(false)}
+                  className="p-2.5 bg-white rounded-2xl border-2 border-espresso text-center shadow-brutal-sm flex flex-col items-center gap-1 active:scale-95"
+                >
+                  <span className="material-symbols-outlined text-[20px]">soup_kitchen</span>
+                  <span className="font-display text-[11px] font-black uppercase">KDS Screen</span>
+                </Link>
+                <Link
+                  href="/admin"
+                  onClick={() => setIsMobileToolsOpen(false)}
+                  className="p-2.5 bg-white rounded-2xl border-2 border-espresso text-center shadow-brutal-sm flex flex-col items-center gap-1 active:scale-95"
+                >
+                  <span className="material-symbols-outlined text-[20px]">analytics</span>
+                  <span className="font-display text-[11px] font-black uppercase">Z-Report</span>
+                </Link>
+              </div>
+            </div>
+
+            {/* Cashier & Reset */}
+            <div className="pt-2 border-t border-dashed border-espresso/20 flex items-center justify-between gap-2">
+              <button
+                onClick={() => {
+                  setIsMobileToolsOpen(false);
+                  handleLockTerminal();
+                }}
+                className="flex-1 py-2.5 bg-paros-cream hover:bg-paros-yellow border-2 border-espresso rounded-xl font-display text-xs font-black uppercase shadow-brutal-sm flex items-center justify-center gap-1.5 active:scale-95"
+              >
+                <span className="material-symbols-outlined text-[16px]">lock</span>
+                <span>Lock Terminal</span>
+              </button>
+              <button
+                onClick={() => {
+                  setIsMobileToolsOpen(false);
+                  setShowResetModal(true);
+                }}
+                className="py-2.5 px-3 bg-red-100 hover:bg-red-200 text-red-700 border-2 border-espresso rounded-xl font-display text-xs font-black uppercase shadow-brutal-sm flex items-center justify-center gap-1 active:scale-95"
+              >
+                <span className="material-symbols-outlined text-[16px]">cleaning_services</span>
+                <span>Reset</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ════════════════════════════════════════════════════════════ */}
       {/* ── MODAL: BILL SETTLEMENT & WHATSAPP RECEIPT OVERLAY ── */}
       {/* ════════════════════════════════════════════════════════════ */}
       {settledBill && (
-        <div className="fixed inset-0 bg-espresso/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl border-3 border-espresso shadow-brutal-xl p-6 sm:p-8 w-full max-w-lg flex flex-col gap-4 animate-in zoom-in-95">
+        <div className="fixed inset-0 bg-espresso/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-3xl border-3 border-espresso shadow-brutal-xl p-4 sm:p-8 w-full max-w-lg flex flex-col gap-3 sm:gap-4 animate-in zoom-in-95 max-h-[92vh] overflow-y-auto">
             {/* Success Header */}
             <div className="flex items-center justify-between pb-3 border-b-2 border-espresso">
               <div className="flex items-center gap-2.5">
@@ -2796,8 +3136,8 @@ export default function PosRegisterPage() {
       {/* ── MODAL: WIPE SYSTEM & REGISTER NEW CAFE OVERLAY ── */}
       {/* ════════════════════════════════════════════════════════════ */}
       {showResetModal && (
-        <div className="fixed inset-0 bg-espresso/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl border-3 border-espresso shadow-brutal-xl p-6 sm:p-8 w-full max-w-md flex flex-col gap-4 animate-in zoom-in-95">
+        <div className="fixed inset-0 bg-espresso/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-3xl border-3 border-espresso shadow-brutal-xl p-5 sm:p-8 w-full max-w-md flex flex-col gap-4 animate-in zoom-in-95 max-h-[92vh] overflow-y-auto">
             <div className="flex items-center gap-3 pb-3 border-b-2 border-espresso">
               <div className="w-10 h-10 rounded-xl bg-red-100 text-red-600 flex items-center justify-center font-black text-xl border-2 border-espresso shadow-brutal-sm">
                 <span className="material-symbols-outlined text-[24px]">delete_forever</span>
@@ -2845,8 +3185,8 @@ export default function PosRegisterPage() {
 
       {/* ── Modal: Split Bill Calculator ── */}
       {isSplitModalOpen && (
-        <div className="fixed inset-0 bg-espresso/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl border-3 border-espresso shadow-brutal-xl p-6 sm:p-7 w-full max-w-md animate-in zoom-in-95">
+        <div className="fixed inset-0 bg-espresso/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-3xl border-3 border-espresso shadow-brutal-xl p-5 sm:p-7 w-full max-w-md animate-in zoom-in-95 max-h-[92vh] overflow-y-auto">
             <div className="flex justify-between items-center pb-3 border-b-2 border-espresso mb-4">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-paros-orange text-[24px]">call_split</span>
@@ -2929,8 +3269,8 @@ export default function PosRegisterPage() {
 
       {/* ── Modal: POS Drawer Expense Modal ── */}
       {isExpenseModalOpen && (
-        <div className="fixed inset-0 bg-espresso/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl border-3 border-espresso shadow-brutal-xl p-6 w-full max-w-md animate-in zoom-in-95">
+        <div className="fixed inset-0 bg-espresso/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-3xl border-3 border-espresso shadow-brutal-xl p-5 sm:p-6 w-full max-w-md animate-in zoom-in-95 max-h-[92vh] overflow-y-auto">
             <div className="flex justify-between items-center pb-3 border-b-2 border-espresso mb-4">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-paros-orange text-[22px]">payments</span>
