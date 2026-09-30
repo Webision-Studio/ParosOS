@@ -26,6 +26,23 @@ function isRateLimited(key: string, limit: number, windowMs: number): boolean {
   return false;
 }
 
+function maskPhone(phone: string | null | undefined): string | null {
+  if (!phone) return null;
+  const clean = phone.trim();
+  if (clean.length <= 4) return '****';
+  return clean.slice(0, 3) + '******' + clean.slice(-4);
+}
+
+function maskEmail(email: string | null | undefined): string | null {
+  if (!email) return null;
+  const parts = email.split('@');
+  if (parts.length !== 2) return '****';
+  const name = parts[0];
+  const domain = parts[1];
+  const maskedName = name.length > 2 ? `${name[0]}***${name[name.length - 1]}` : `${name[0]}***`;
+  return `${maskedName}@${domain}`;
+}
+
 export async function GET(req: NextRequest) {
   try {
     const session = await getSession();
@@ -36,14 +53,43 @@ export async function GET(req: NextRequest) {
 
     // 1. Live Order Status Lookup (for customer countdown & ETA polling)
     if (orderId || orderNumber) {
+      const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || '127.0.0.1';
+
+      // Defend against mass order number dictionary scraping
+      if (orderNumber && !orderId && isRateLimited(`${clientIp}_lookup_orderno`, 30, 60000)) {
+        return NextResponse.json(
+          { error: 'Too many order lookup requests. Please slow down.' },
+          { status: 429 }
+        );
+      }
+
+      // If queried by 4-digit orderNumber alone, restrict to orders created within the last 24h
+      const timeFilter = (!session && orderNumber && !orderId)
+        ? { createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } }
+        : {};
+
       const order = await prisma.order.findFirst({
-        where: orderId ? { id: String(orderId).slice(0, 60) } : { orderNumber: String(orderNumber).slice(0, 20) },
+        where: {
+          ...(orderId ? { id: String(orderId).slice(0, 60) } : { orderNumber: String(orderNumber).slice(0, 20) }),
+          ...timeFilter,
+        },
         include: { items: true, table: true },
       });
+
       if (!order) {
         return NextResponse.json({ error: 'Order not found' }, { status: 404 });
       }
-      return NextResponse.json({ order });
+
+      // Mask sensitive PII for unauthenticated callers (customer order tracker)
+      const sanitizedOrder = session
+        ? order
+        : {
+            ...order,
+            customerPhone: maskPhone(order.customerPhone),
+            customerEmail: maskEmail(order.customerEmail),
+          };
+
+      return NextResponse.json({ order: sanitizedOrder });
     }
 
     let cafe = null;

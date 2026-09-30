@@ -97,7 +97,11 @@ export async function POST(req: NextRequest) {
 
     let targetCafeId = session?.cafeId;
     if (!targetCafeId && cafeId) {
-      targetCafeId = String(cafeId);
+      const cafeRecord = await prisma.tenant.findUnique({ where: { id: String(cafeId).slice(0, 60) } });
+      if (!cafeRecord) {
+        return NextResponse.json({ error: 'Specified cafe not found' }, { status: 404 });
+      }
+      targetCafeId = cafeRecord.id;
     }
     if (!targetCafeId && process.env.NODE_ENV !== 'production') {
       const defaultCafe = await prisma.tenant.findFirst({ orderBy: { createdAt: 'desc' } });
@@ -105,7 +109,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (!targetCafeId) {
-      return NextResponse.json({ error: 'Cafe ID is required' }, { status: 400 });
+      return NextResponse.json({ error: 'Valid cafe context is required' }, { status: 400 });
     }
 
     // 1. Settle Order & Create Bill
@@ -261,11 +265,12 @@ export async function POST(req: NextRequest) {
       const safeProcessedBy = processedBy ? String(processedBy).slice(0, 60).trim() : 'Primary Cashier';
 
       // Create Bill attached to primaryOrder.id with strictly verified financial totals
+      const safePrimaryOrderNum = String(primaryOrder.orderNumber || '0000').replace('#', '');
       const bill = await prisma.bill.create({
         data: {
           cafeId: targetCafeId,
           orderId: primaryOrder.id,
-          billNumber: `INV-${primaryOrder.orderNumber.replace('#', '')}-${Math.floor(100 + Math.random() * 900)}`,
+          billNumber: `INV-${safePrimaryOrderNum}-${Math.floor(100 + Math.random() * 900)}`,
           subtotal: finalSubtotal,
           discount: finalDiscount,
           cgst: finalCgst,
@@ -354,12 +359,13 @@ export async function POST(req: NextRequest) {
       // If there are other unbilled orders for this table, close them with bills as part of this table tab
       const otherUnbilled = activeOrders.filter((o) => o.id !== primaryOrder.id);
       for (const other of otherUnbilled) {
-        const otherSubtotal = other.items.reduce((s, it) => s + it.price * it.quantity, 0);
+        const otherSubtotal = (other.items || []).reduce((s, it) => s + (Number(it.price) || 0) * (Number(it.quantity) || 1), 0);
+        const otherSafeOrderNum = String(other.orderNumber || '0000').replace('#', '');
         await prisma.bill.create({
           data: {
             cafeId: targetCafeId,
             orderId: other.id,
-            billNumber: `INV-${other.orderNumber.replace('#', '')}-${Math.floor(100 + Math.random() * 900)}`,
+            billNumber: `INV-${otherSafeOrderNum}-${Math.floor(100 + Math.random() * 900)}`,
             subtotal: otherSubtotal,
             cgst: Math.round(otherSubtotal * 0.025 * 100) / 100,
             sgst: Math.round(otherSubtotal * 0.025 * 100) / 100,

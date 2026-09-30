@@ -134,7 +134,17 @@ export async function POST(req: NextRequest) {
 
       const safeTitle = String(title || '☕ Paros Cafe').slice(0, 100).trim();
       const safeBody = String(messageBody || 'You have a new notification!').slice(0, 500).trim();
-      const safeUrl = url ? String(url).slice(0, 500).trim() : '/order';
+
+      // Anti-Open Redirect & Malicious Protocol Defense (prevent javascript:, data:, and protocol-relative links)
+      let safeUrl = '/order';
+      if (url && typeof url === 'string') {
+        const trimmedUrl = url.trim().slice(0, 500);
+        if (trimmedUrl.startsWith('/') && !trimmedUrl.startsWith('//') && !trimmedUrl.includes('\\')) {
+          safeUrl = trimmedUrl;
+        } else if (/^https:\/\/[a-zA-Z0-9\-._~:/?#[\]@!$&'()*+,;=]+$/i.test(trimmedUrl)) {
+          safeUrl = trimmedUrl;
+        }
+      }
 
       const payload = JSON.stringify({
         title: safeTitle,

@@ -134,6 +134,13 @@ export async function POST(req: NextRequest) {
     // 4. Vercel Serverless Safe Fallback (Base64 Data URI)
     // On Vercel, the local filesystem is read-only (EROFS). Base64 Data URI stores cleanly in PostgreSQL text column.
     if (process.env.NODE_ENV === 'production') {
+      // Vercel serverless functions have a 4.5MB response limit. 2.5MB image becomes ~3.3MB in Base64.
+      if (file.size > 2.5 * 1024 * 1024) {
+        return NextResponse.json(
+          { error: 'Image file size exceeds 2.5MB limit for direct serverless upload. Please optimize image or configure Cloudinary.' },
+          { status: 400 }
+        );
+      }
       const base64Uri = `data:${file.type};base64,${buffer.toString('base64')}`;
       return NextResponse.json({
         success: true,

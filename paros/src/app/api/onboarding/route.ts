@@ -132,7 +132,13 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Delete existing tables for this cafe so fresh table count takes effect
+    // Safely detach any historical orders from tables before table recreation to maintain Foreign Key integrity (prevent P2003 crash)
+    await prisma.order.updateMany({
+      where: { cafeId: finalCafeId, tableId: { not: null } },
+      data: { tableId: null },
+    }).catch(() => {});
+
+    // Delete existing tables for this cafe so fresh table count takes effect cleanly
     await prisma.table.deleteMany({
       where: { cafeId: finalCafeId },
     }).catch(() => {});
