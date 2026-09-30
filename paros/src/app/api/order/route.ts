@@ -188,7 +188,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 2. Validate Order Placement Inputs
-    const { tableNumber, items, customerName, customerPhone, customerEmail, whatsappOptIn, specialNotes, paymentMode, cafeId } = body;
+    const { tableNumber, items, customerName, customerPhone, customerEmail, whatsappOptIn, specialNotes, paymentMode, cafeId, couponCode } = body;
 
     if (!Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ error: 'Order cart cannot be empty' }, { status: 400 });
@@ -279,8 +279,36 @@ export async function POST(req: NextRequest) {
     }
 
     const calculatedSubtotal = verifiedItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
-    const calculatedGst = Math.round(calculatedSubtotal * 0.05);
-    const calculatedTotal = calculatedSubtotal + calculatedGst;
+
+    // Validate and apply coupon code server-side
+    let couponDiscount = 0;
+    let appliedCoupon: string | null = null;
+    if (couponCode) {
+      const cleanCode = String(couponCode).trim().toUpperCase();
+      const coupon = await prisma.coupon.findFirst({
+        where: { cafeId: cafe.id, code: cleanCode, isActive: true },
+      });
+      if (coupon && calculatedSubtotal >= coupon.minOrderValue) {
+        if (coupon.discountType === 'PERCENTAGE') {
+          couponDiscount = Math.round((calculatedSubtotal * coupon.discountValue) / 100);
+          if (coupon.maxDiscount && coupon.maxDiscount > 0) {
+            couponDiscount = Math.min(couponDiscount, coupon.maxDiscount);
+          }
+        } else {
+          couponDiscount = coupon.discountValue;
+        }
+        couponDiscount = Math.min(couponDiscount, calculatedSubtotal);
+        appliedCoupon = coupon.code;
+        await prisma.coupon.update({
+          where: { id: coupon.id },
+          data: { usageCount: { increment: 1 } },
+        }).catch(() => {});
+      }
+    }
+
+    const discountedSubtotal = Math.max(0, calculatedSubtotal - couponDiscount);
+    const calculatedGst = Math.round(discountedSubtotal * 0.05);
+    const calculatedTotal = discountedSubtotal + calculatedGst;
 
     const orderNumber = `#${Math.floor(1000 + Math.random() * 9000)}`;
 
@@ -303,7 +331,7 @@ export async function POST(req: NextRequest) {
         customerName: safeCustomerName,
         customerPhone: normalizedPhone || '+91 98450 XXXXX',
         customerEmail: safeCustomerEmail,
-        specialNotes: safeNotes,
+        specialNotes: appliedCoupon ? `${safeNotes} [PROMO: ${appliedCoupon} -₹${couponDiscount}]` : safeNotes,
         items: {
           create: verifiedItems,
         },
@@ -317,6 +345,29 @@ export async function POST(req: NextRequest) {
         where: { id: table.id },
         data: { currentStatus: 'OCCUPIED', activeOrderId: order.id },
       });
+    }
+
+    // Auto-deduct inventory raw materials based on recipe mappings
+    try {
+      for (const item of order.items || []) {
+        const mi = await prisma.menuItem.findFirst({
+          where: { cafeId: cafe.id, name: item.name },
+        });
+        if (mi) {
+          const recipes = await prisma.menuItemIngredient.findMany({
+            where: { menuItemId: mi.id },
+          });
+          for (const r of recipes) {
+            const qtyToDeduct = r.quantityNeeded * (item.quantity || 1);
+            await prisma.inventoryItem.update({
+              where: { id: r.inventoryItemId },
+              data: { currentStock: { decrement: qtyToDeduct } },
+            }).catch(() => {});
+          }
+        }
+      }
+    } catch (invErr) {
+      console.warn('QR Order inventory deduction error:', invErr);
     }
 
     // Upsert Customer record with email hijacking / profile poisoning defense

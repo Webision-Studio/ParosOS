@@ -254,11 +254,75 @@ export async function POST(req: NextRequest) {
         0
       );
       const finalSubtotal = verifiedItemsSubtotal > 0 ? verifiedItemsSubtotal : Math.max(0, Number(subtotal) || 0);
-      const finalDiscount = Math.min(finalSubtotal, Math.max(0, Number(discount) || 0));
+
+      // Server-side Coupon validation & application
+      let verifiedCouponDiscount = 0;
+      let appliedCouponCode: string | null = null;
+      if (body.couponCode) {
+        const cleanCode = String(body.couponCode).trim().toUpperCase();
+        const coupon = await prisma.coupon.findFirst({
+          where: { cafeId: targetCafeId, code: cleanCode, isActive: true },
+        });
+        if (coupon && finalSubtotal >= coupon.minOrderValue) {
+          if (coupon.discountType === 'PERCENTAGE') {
+            verifiedCouponDiscount = Math.round((finalSubtotal * coupon.discountValue) / 100);
+            if (coupon.maxDiscount && coupon.maxDiscount > 0) {
+              verifiedCouponDiscount = Math.min(verifiedCouponDiscount, coupon.maxDiscount);
+            }
+          } else {
+            verifiedCouponDiscount = coupon.discountValue;
+          }
+          appliedCouponCode = coupon.code;
+          await prisma.coupon.update({
+            where: { id: coupon.id },
+            data: { usageCount: { increment: 1 } },
+          }).catch(() => {});
+        }
+      }
+
+      const rawDiscount = Math.max(0, Number(discount) || 0);
+      const effectiveDiscount = Math.max(rawDiscount, verifiedCouponDiscount);
+      const finalDiscount = Math.min(finalSubtotal, effectiveDiscount);
       const taxableAmount = Math.max(0, finalSubtotal - finalDiscount);
       const finalCgst = Math.round(taxableAmount * 0.025 * 100) / 100;
       const finalSgst = Math.round(taxableAmount * 0.025 * 100) / 100;
       const finalTotal = Math.round(taxableAmount + finalCgst + finalSgst);
+
+      // Multi-channel Aggregator Calculation (Swiggy / Zomato / POS / Takeaway)
+      const orderSource = String(body.source || primaryOrder.source || 'POS').toUpperCase();
+      const isAggregator = orderSource === 'SWIGGY' || orderSource === 'ZOMATO';
+      const aggregatorCut = isAggregator ? Math.round(finalTotal * 0.20 * 100) / 100 : 0;
+      const netPayout = isAggregator ? Math.max(0, finalTotal - aggregatorCut) : finalTotal;
+
+      await prisma.order.update({
+        where: { id: primaryOrder.id },
+        data: {
+          source: orderSource,
+          aggregatorOrderId: body.aggregatorOrderId ? String(body.aggregatorOrderId).slice(0, 50).trim() : null,
+          aggregatorCut,
+          netPayout,
+        },
+      }).catch(() => {});
+
+      // Auto-deduct inventory raw materials based on recipe ingredients
+      try {
+        for (const item of primaryOrder.items || []) {
+          if (item.menuItemId) {
+            const recipes = await prisma.menuItemIngredient.findMany({
+              where: { menuItemId: item.menuItemId },
+            });
+            for (const r of recipes) {
+              const qtyToDeduct = r.quantityNeeded * (item.quantity || 1);
+              await prisma.inventoryItem.update({
+                where: { id: r.inventoryItemId },
+                data: { currentStock: { decrement: qtyToDeduct } },
+              }).catch(() => {});
+            }
+          }
+        }
+      } catch (invErr) {
+        console.warn('Inventory auto-deduction error:', invErr);
+      }
 
       const safeCustomerName = customerName ? String(customerName).slice(0, 80).trim() : null;
       const safeCustomerEmail = customerEmail && isValidEmail(customerEmail) ? String(customerEmail).trim().slice(0, 100) : null;
@@ -273,6 +337,7 @@ export async function POST(req: NextRequest) {
           billNumber: `INV-${safePrimaryOrderNum}-${Math.floor(100 + Math.random() * 900)}`,
           subtotal: finalSubtotal,
           discount: finalDiscount,
+          couponCode: appliedCouponCode,
           cgst: finalCgst,
           sgst: finalSgst,
           total: finalTotal,

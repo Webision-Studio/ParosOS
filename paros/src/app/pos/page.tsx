@@ -40,6 +40,7 @@ interface SettlementBill {
   items: CartItem[];
   subtotal: number;
   discount?: number;
+  couponCode?: string | null;
   cgst: number;
   sgst: number;
   total: number;
@@ -48,6 +49,10 @@ interface SettlementBill {
   customerPhone: string;
   changeDue: number;
   time: string;
+  source?: string;
+  aggregatorOrderId?: string;
+  aggregatorCut?: number;
+  netPayout?: number;
 }
 
 interface LiveOrderQueue {
@@ -91,6 +96,29 @@ export default function PosRegisterPage() {
 
   // Table Discounts (tableNumber -> percentage, e.g. 10%)
   const [tableDiscounts, setTableDiscounts] = useState<Record<string, number>>({});
+
+  // Multi-Channel Aggregator & Source state (DINE_IN, TAKEAWAY, SWIGGY, ZOMATO)
+  const [tableChannels, setTableChannels] = useState<Record<string, 'DINE_IN' | 'TAKEAWAY' | 'SWIGGY' | 'ZOMATO'>>({});
+  const [tableAggregatorIds, setTableAggregatorIds] = useState<Record<string, string>>({});
+
+  // Promo Coupon state per table/token
+  const [tableCoupons, setTableCoupons] = useState<Record<string, { code: string; discountAmount: number; description: string }>>({});
+  const [couponInput, setCouponInput] = useState<string>('');
+  const [isCouponLoading, setIsCouponLoading] = useState<boolean>(false);
+
+  // 1-Click Thermal ESC-POS Print Document state
+  const [printDocument, setPrintDocument] = useState<{
+    type: 'RECEIPT' | 'KOT';
+    bill?: SettlementBill;
+    kot?: {
+      orderNumber: string;
+      table: string;
+      channel: string;
+      items: CartItem[];
+      specialNotes?: string;
+      time: string;
+    };
+  } | null>(null);
 
   // Split Bill Modal State
   const [isSplitModalOpen, setIsSplitModalOpen] = useState(false);
@@ -513,26 +541,38 @@ export default function PosRegisterPage() {
     return Math.round(sub * 1.05); // 5% GST
   };
 
-  // Current Active Table Data
-  const currentCart = tableCarts[selectedTable] || [];
-  const currentCustomer = tableCustomers[selectedTable] || { name: '', phone: '' };
+  // Current Active Table / Station Data
+  const isExpress = posMode === 'EXPRESS_COUNTER' || isCounterOnlyCafe;
+  const currentTableId = isExpress ? 'Takeaway' : selectedTable;
+  const currentCart = tableCarts[currentTableId] || [];
+  const currentCustomer = tableCustomers[currentTableId] || { name: '', phone: '' };
+
+  const selectedChannel = tableChannels[currentTableId] || (isExpress ? 'TAKEAWAY' : 'DINE_IN');
+  const aggregatorOrderId = tableAggregatorIds[currentTableId] || '';
+  const isAggregator = selectedChannel === 'SWIGGY' || selectedChannel === 'ZOMATO';
+  const appliedCoupon = tableCoupons[currentTableId] || null;
 
   const subtotal = useMemo(() => {
     return currentCart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   }, [currentCart]);
 
-  const discountPercent = tableDiscounts[selectedTable] || 0;
-  const discountAmount = Math.round(subtotal * (discountPercent / 100));
+  const discountPercent = tableDiscounts[currentTableId] || 0;
+  const rawManualDiscount = Math.round(subtotal * (discountPercent / 100));
+  const couponDiscount = appliedCoupon?.discountAmount || 0;
+  const discountAmount = Math.min(subtotal, Math.max(rawManualDiscount, couponDiscount));
   const taxableAmount = Math.max(0, subtotal - discountAmount);
   const cgst = Math.round(taxableAmount * 0.025 * 100) / 100;
   const sgst = Math.round(taxableAmount * 0.025 * 100) / 100;
   const grandTotal = Math.round(taxableAmount + cgst + sgst);
   const changeDue = tenderAmount - grandTotal;
 
+  const aggregatorCut = isAggregator ? Math.round(grandTotal * 0.20 * 100) / 100 : 0;
+  const netPayout = isAggregator ? Math.max(0, grandTotal - aggregatorCut) : grandTotal;
+
   // Add Item to Current Table Cart
   function addToCart(item: MenuItemData) {
     setTableCarts((prev) => {
-      const existingCart = prev[selectedTable] || [];
+      const existingCart = prev[currentTableId] || [];
       const existingItem = existingCart.find((i) => i.name === item.name);
       let updatedCart: CartItem[];
 
@@ -556,14 +596,14 @@ export default function PosRegisterPage() {
 
       return {
         ...prev,
-        [selectedTable]: updatedCart,
+        [currentTableId]: updatedCart,
       };
     });
 
     // Mark physical table occupied on floor (leave Takeaway available for parallel counter orders)
-    if (selectedTable.toLowerCase() !== 'takeaway' && selectedTable.toLowerCase() !== 'counter') {
+    if (currentTableId.toLowerCase() !== 'takeaway' && currentTableId.toLowerCase() !== 'counter') {
       setTables((prev) =>
-        prev.map((t) => (t.tableNumber === selectedTable ? { ...t, currentStatus: 'OCCUPIED' } : t))
+        prev.map((t) => (t.tableNumber === currentTableId ? { ...t, currentStatus: 'OCCUPIED' } : t))
       );
     }
   }
@@ -571,7 +611,7 @@ export default function PosRegisterPage() {
   // Update Quantity for Current Table Cart
   function updateQty(id: string, delta: number) {
     setTableCarts((prev) => {
-      const existingCart = prev[selectedTable] || [];
+      const existingCart = prev[currentTableId] || [];
       const updatedCart = existingCart
         .map((item) => {
           if (item.id === id) {
@@ -584,7 +624,7 @@ export default function PosRegisterPage() {
 
       return {
         ...prev,
-        [selectedTable]: updatedCart,
+        [currentTableId]: updatedCart,
       };
     });
   }
@@ -592,11 +632,11 @@ export default function PosRegisterPage() {
   // Remove Item from Current Table Cart
   function removeItem(id: string) {
     setTableCarts((prev) => {
-      const existingCart = prev[selectedTable] || [];
+      const existingCart = prev[currentTableId] || [];
       const updatedCart = existingCart.filter((item) => item.id !== id);
       return {
         ...prev,
-        [selectedTable]: updatedCart,
+        [currentTableId]: updatedCart,
       };
     });
   }
@@ -606,10 +646,99 @@ export default function PosRegisterPage() {
     setTimeout(() => setToastMessage(null), 3200);
   }
 
+  // Apply Coupon Code
+  async function handleApplyCoupon() {
+    const cleanCode = couponInput.trim().toUpperCase();
+    if (!cleanCode) return;
+    if (subtotal <= 0) {
+      showToast('⚠️ Add items to cart before applying coupon');
+      return;
+    }
+    setIsCouponLoading(true);
+    try {
+      const res = await fetch('/api/coupons', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'validate',
+          code: cleanCode,
+          subtotal,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.valid) {
+        showToast(`❌ ${data.error || 'Invalid or expired coupon'}`);
+      } else {
+        setTableCoupons((prev) => ({
+          ...prev,
+          [currentTableId]: {
+            code: data.code,
+            discountAmount: data.discountAmount,
+            description: data.description,
+          },
+        }));
+        setCouponInput('');
+        showToast(`🎉 Coupon ${data.code} applied! -₹${data.discountAmount}`);
+      }
+    } catch {
+      showToast('⚠️ Could not validate coupon code');
+    } finally {
+      setIsCouponLoading(false);
+    }
+  }
+
+  // Thermal Printing Handlers (80mm & 58mm ESC-POS)
+  function triggerPrintReceipt(bill: SettlementBill) {
+    setPrintDocument({
+      type: 'RECEIPT',
+      bill,
+    });
+    setTimeout(() => {
+      window.print();
+    }, 150);
+  }
+
+  function triggerPrintKOTFromCart() {
+    if (currentCart.length === 0) {
+      showToast('⚠️ Cart is empty. Add items before printing KOT.');
+      return;
+    }
+
+    const orderNum = isExpress ? `#${expressTokenSeq}` : `#${Math.floor(1000 + Math.random() * 9000)}`;
+    setPrintDocument({
+      type: 'KOT',
+      kot: {
+        orderNumber: orderNum,
+        table: isExpress ? `Token ${orderNum}` : `Table ${selectedTable}`,
+        channel: selectedChannel,
+        items: [...currentCart],
+        specialNotes: isExpress ? `${selectedChannel} • Express Order` : undefined,
+        time: currentTime,
+      },
+    });
+    setTimeout(() => {
+      window.print();
+    }, 150);
+  }
+
+  function triggerPrintKOTFromBill(bill: SettlementBill) {
+    setPrintDocument({
+      type: 'KOT',
+      kot: {
+        orderNumber: bill.orderNumber,
+        table: bill.tableNumber.toLowerCase() === 'takeaway' ? `Token ${bill.orderNumber}` : `Table ${bill.tableNumber}`,
+        channel: bill.source || selectedChannel,
+        items: bill.items,
+        time: bill.time,
+      },
+    });
+    setTimeout(() => {
+      window.print();
+    }, 150);
+  }
+
   // ═══ SETTLE BILL (Opens Settlement Modal for Selected Table or Express Token) ═══
   function handleSettle(method: 'CASH' | 'UPI') {
-    const isExpress = posMode === 'EXPRESS_COUNTER' || isCounterOnlyCafe;
-    const currentTableId = isExpress ? 'Takeaway' : selectedTable;
     const targetCart = tableCarts[currentTableId] || [];
 
     if (targetCart.length === 0) {
@@ -626,6 +755,7 @@ export default function PosRegisterPage() {
       items: [...targetCart],
       subtotal,
       discount: discountAmount,
+      couponCode: appliedCoupon?.code || null,
       cgst,
       sgst,
       total: grandTotal,
@@ -634,12 +764,16 @@ export default function PosRegisterPage() {
       customerPhone: currentCustomer.phone || (isExpress ? '' : '+91 98450 00000'),
       changeDue: Math.max(0, changeDue),
       time: currentTime,
+      source: selectedChannel,
+      aggregatorOrderId: isAggregator && aggregatorOrderId ? aggregatorOrderId : undefined,
+      aggregatorCut,
+      netPayout,
     };
 
     setSettledBill(billData);
     setWhatsappSentStatus(false);
 
-    // Call backend API to record bill in Prisma DB and immediately dispatch to Kitchen KDS
+    // Call backend API to record bill in Prisma DB, auto-deduct raw materials, and dispatch to Kitchen KDS
     fetch('/api/pos', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -648,7 +782,10 @@ export default function PosRegisterPage() {
         tableId: currentTableId,
         tokenNumber: isExpress ? orderNum : undefined,
         sendToKitchen: true,
-        specialNotes: isExpress ? `${expressOrderType} • TOKEN ${orderNum} • PREPAID` : undefined,
+        source: selectedChannel,
+        aggregatorOrderId: isAggregator && aggregatorOrderId ? aggregatorOrderId : undefined,
+        couponCode: appliedCoupon?.code || undefined,
+        specialNotes: isExpress ? `${selectedChannel} • TOKEN ${orderNum} • PREPAID` : undefined,
         items: targetCart,
         subtotal,
         discount: discountAmount,
@@ -669,7 +806,6 @@ export default function PosRegisterPage() {
 
   // Close Settlement Modal & Free Table or Fast Reset Register for Next Token
   function handleCompleteAndFreeTable() {
-    const isExpress = posMode === 'EXPRESS_COUNTER' || isCounterOnlyCafe;
     const tableToFree = settledBill?.tableNumber || (isExpress ? 'Takeaway' : selectedTable);
 
     // Free physical table on floor
@@ -684,19 +820,35 @@ export default function PosRegisterPage() {
     }
 
     // Clear cart for this station
-    setTableCarts((prev) => ({
-      ...prev,
-      [tableToFree]: [],
-    }));
+    setTableCarts((prev) => {
+      const next = { ...prev };
+      delete next[tableToFree];
+      return next;
+    });
 
     // Reset customer metadata for this table
-    setTableCustomers((prev) => ({
-      ...prev,
-      [tableToFree]: { name: '', phone: '' },
-    }));
+    setTableCustomers((prev) => {
+      const next = { ...prev };
+      delete next[tableToFree];
+      return next;
+    });
 
     // Reset discount for this table
     setTableDiscounts((prev) => {
+      const next = { ...prev };
+      delete next[tableToFree];
+      return next;
+    });
+
+    // Reset coupon for this table
+    setTableCoupons((prev) => {
+      const next = { ...prev };
+      delete next[tableToFree];
+      return next;
+    });
+
+    // Reset aggregator ID for this table
+    setTableAggregatorIds((prev) => {
       const next = { ...prev };
       delete next[tableToFree];
       return next;
@@ -721,10 +873,10 @@ export default function PosRegisterPage() {
       return;
     }
     setTableDiscounts((prev) => {
-      const current = prev[selectedTable] || 0;
+      const current = prev[currentTableId] || 0;
       const next = current > 0 ? 0 : 10;
-      showToast(next > 0 ? `✓ 10% Flat Discount applied to Table ${selectedTable}!` : `Discount removed from Table ${selectedTable}`);
-      return { ...prev, [selectedTable]: next };
+      showToast(next > 0 ? `✓ 10% Flat Discount applied!` : `Discount removed`);
+      return { ...prev, [currentTableId]: next };
     });
   }
 
@@ -1927,7 +2079,7 @@ export default function PosRegisterPage() {
                       onChange={(e) =>
                         setTableCustomers((prev) => ({
                           ...prev,
-                          [selectedTable]: { ...currentCustomer, name: e.target.value },
+                          [currentTableId]: { ...currentCustomer, name: e.target.value },
                         }))
                       }
                       className="px-2 py-0.5 bg-paros-cream border border-espresso rounded font-body text-xs font-semibold text-espresso outline-none w-36"
@@ -1939,12 +2091,84 @@ export default function PosRegisterPage() {
                       onChange={(e) =>
                         setTableCustomers((prev) => ({
                           ...prev,
-                          [selectedTable]: { ...currentCustomer, phone: e.target.value },
+                          [currentTableId]: { ...currentCustomer, phone: e.target.value },
                         }))
                       }
                       className="px-2 py-0.5 bg-paros-cream border border-espresso rounded font-mono text-xs font-semibold text-espresso outline-none w-36"
                     />
                   </div>
+
+                  {/* Multi-Channel Order Source Selector */}
+                  <div className="mt-2 flex flex-col gap-1">
+                    <div className="flex items-center justify-between text-[10px] font-display font-black text-espresso/70 uppercase">
+                      <span>Channel:</span>
+                      {isAggregator && (
+                        <span className="text-[9px] text-amber-900 bg-amber-100 px-1 py-0.5 rounded border border-amber-300 font-bold">
+                          20% Cut: -₹{aggregatorCut.toFixed(0)} (Net: ₹{netPayout.toFixed(0)})
+                        </span>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-4 gap-1 p-0.5 bg-paros-cream border border-espresso rounded-xl">
+                      <button
+                        onClick={() => setTableChannels((prev) => ({ ...prev, [currentTableId]: 'DINE_IN' }))}
+                        className={`py-1 rounded-lg font-display text-[10px] font-black uppercase transition-all flex items-center justify-center gap-0.5 ${
+                          selectedChannel === 'DINE_IN'
+                            ? 'bg-paros-orange text-white border border-espresso shadow-xs'
+                            : 'text-espresso hover:bg-paros-yellow/40'
+                        }`}
+                      >
+                        <span>🍽️</span>
+                        <span>Dine-In</span>
+                      </button>
+                      <button
+                        onClick={() => setTableChannels((prev) => ({ ...prev, [currentTableId]: 'TAKEAWAY' }))}
+                        className={`py-1 rounded-lg font-display text-[10px] font-black uppercase transition-all flex items-center justify-center gap-0.5 ${
+                          selectedChannel === 'TAKEAWAY'
+                            ? 'bg-paros-orange text-white border border-espresso shadow-xs'
+                            : 'text-espresso hover:bg-paros-yellow/40'
+                        }`}
+                      >
+                        <span>🛍️</span>
+                        <span>Takeaway</span>
+                      </button>
+                      <button
+                        onClick={() => setTableChannels((prev) => ({ ...prev, [currentTableId]: 'SWIGGY' }))}
+                        className={`py-1 rounded-lg font-display text-[10px] font-black uppercase transition-all flex items-center justify-center gap-0.5 ${
+                          selectedChannel === 'SWIGGY'
+                            ? 'bg-orange-500 text-white border border-espresso shadow-xs'
+                            : 'text-espresso hover:bg-orange-100'
+                        }`}
+                      >
+                        <span>🛵</span>
+                        <span>Swiggy</span>
+                      </button>
+                      <button
+                        onClick={() => setTableChannels((prev) => ({ ...prev, [currentTableId]: 'ZOMATO' }))}
+                        className={`py-1 rounded-lg font-display text-[10px] font-black uppercase transition-all flex items-center justify-center gap-0.5 ${
+                          selectedChannel === 'ZOMATO'
+                            ? 'bg-red-600 text-white border border-espresso shadow-xs'
+                            : 'text-espresso hover:bg-red-100'
+                        }`}
+                      >
+                        <span>🔴</span>
+                        <span>Zomato</span>
+                      </button>
+                    </div>
+
+                    {/* Optional Aggregator Order ID */}
+                    {isAggregator && (
+                      <input
+                        type="text"
+                        placeholder={`${selectedChannel === 'SWIGGY' ? 'Swiggy' : 'Zomato'} Order ID (e.g. #SW-4912)`}
+                        value={aggregatorOrderId}
+                        onChange={(e) =>
+                          setTableAggregatorIds((prev) => ({ ...prev, [currentTableId]: e.target.value }))
+                        }
+                        className="px-2 py-1 bg-white border border-espresso rounded-lg font-mono text-xs text-espresso outline-none"
+                      />
+                    )}
+                  </div>
+
                   {/* Quick Customer Simulator Link */}
                   <div className="mt-2 flex items-center gap-2">
                     <a
@@ -2125,15 +2349,75 @@ export default function PosRegisterPage() {
                 </button>
               </div>
 
+              {/* Promo Coupon Application */}
+              <div className="bg-paros-cream p-2.5 rounded-xl border border-espresso flex flex-col gap-1.5">
+                <div className="flex items-center justify-between text-[11px] font-display font-black text-espresso/70 uppercase">
+                  <div className="flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[15px] text-paros-orange">sell</span>
+                    <span>Loyalty Promo Coupon</span>
+                  </div>
+                  {appliedCoupon && (
+                    <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-1.5 py-0.5 rounded border border-emerald-300">
+                      Applied
+                    </span>
+                  )}
+                </div>
+
+                {appliedCoupon ? (
+                  <div className="flex items-center justify-between bg-emerald-50 border border-emerald-300 px-2.5 py-1.5 rounded-lg">
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-mono text-xs font-black text-emerald-900 bg-emerald-200 px-1.5 py-0.5 rounded">
+                        {appliedCoupon.code}
+                      </span>
+                      <span className="font-display text-[11px] text-emerald-800 font-bold">
+                        {appliedCoupon.description} (-₹{appliedCoupon.discountAmount})
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setTableCoupons((prev) => {
+                          const next = { ...prev };
+                          delete next[currentTableId];
+                          return next;
+                        });
+                        showToast('Coupon removed');
+                      }}
+                      className="w-5 h-5 rounded flex items-center justify-center text-emerald-900 hover:bg-emerald-200 font-black text-xs"
+                      title="Remove coupon"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="text"
+                      placeholder="Code (e.g. WELCOME10, FLAT50)"
+                      value={couponInput}
+                      onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                      onKeyDown={(e) => e.key === 'Enter' && handleApplyCoupon()}
+                      className="flex-1 px-2.5 py-1 bg-white border border-espresso rounded-lg font-mono text-xs font-bold text-espresso uppercase outline-none"
+                    />
+                    <button
+                      onClick={handleApplyCoupon}
+                      disabled={isCouponLoading || !couponInput.trim()}
+                      className="px-3 py-1 bg-espresso text-white rounded-lg font-display text-[11px] font-black uppercase hover:bg-espresso/90 disabled:opacity-50"
+                    >
+                      {isCouponLoading ? '...' : 'Apply'}
+                    </button>
+                  </div>
+                )}
+              </div>
+
               {/* Receipt Breakdown for Selected Table */}
               <div className="bg-paros-cream p-3 rounded-xl border border-espresso font-mono text-xs flex flex-col gap-1">
                 <div className="flex justify-between text-espresso/70">
-                  <span>Table {selectedTable} Subtotal ({currentCart.length} items)</span>
+                  <span>{currentTableId.toLowerCase() === 'takeaway' ? 'Token Tab' : `Table ${currentTableId}`} Subtotal ({currentCart.length} items)</span>
                   <span className="tabular-nums">₹{subtotal.toFixed(2)}</span>
                 </div>
                 {discountAmount > 0 && (
                   <div className="flex justify-between text-emerald-700 font-bold">
-                    <span>Discount (10% OFF)</span>
+                    <span>Discount {appliedCoupon ? `(${appliedCoupon.code})` : discountPercent > 0 ? `(${discountPercent}%)` : ''}</span>
                     <span className="tabular-nums">-₹{discountAmount.toFixed(2)}</span>
                   </div>
                 )}
@@ -2147,6 +2431,12 @@ export default function PosRegisterPage() {
                     ₹{grandTotal.toFixed(2)}
                   </span>
                 </div>
+                {isAggregator && (
+                  <div className="flex justify-between text-[11px] text-amber-800 pt-1 border-t border-dashed border-espresso/20">
+                    <span>{selectedChannel} Cut (20%): -₹{aggregatorCut.toFixed(2)}</span>
+                    <span className="font-bold">Net Payout: ₹{netPayout.toFixed(2)}</span>
+                  </div>
+                )}
               </div>
 
               {/* Cash Tender Selector */}
@@ -2223,6 +2513,7 @@ export default function PosRegisterPage() {
                       `${itemsList}\n` +
                       `━━━━━━━━━━━━━━━━\n` +
                       `Subtotal: ₹${subtotal.toFixed(2)}\n` +
+                      (discountAmount > 0 ? `Discount: -₹${discountAmount.toFixed(2)}\n` : '') +
                       `GST (5%): ₹${(cgst + sgst).toFixed(2)}\n` +
                       `*Total: ₹${grandTotal.toFixed(2)}*\n\n` +
                       `Thank you for visiting! 🙏`
@@ -2237,8 +2528,9 @@ export default function PosRegisterPage() {
                   <span>WhatsApp Receipt</span>
                 </button>
                 <button
-                  onClick={() => showToast('🖨️ Thermal KOT printed to Kitchen station')}
+                  onClick={triggerPrintKOTFromCart}
                   className="py-2 bg-white hover:bg-paros-cream border border-espresso rounded-xl font-display text-xs font-bold flex items-center justify-center gap-1.5 shadow-brutal-sm"
+                  title="1-Click Print 80mm ESC-POS Kitchen KOT Chit"
                 >
                   <span className="material-symbols-outlined text-[16px]">print</span>
                   <span>Print KOT Slip</span>
@@ -2328,7 +2620,7 @@ export default function PosRegisterPage() {
                 </div>
                 {settledBill.discount !== undefined && settledBill.discount > 0 && (
                   <div className="flex justify-between text-emerald-700 font-bold">
-                    <span>Discount (10% OFF)</span>
+                    <span>Discount {settledBill.couponCode ? `(${settledBill.couponCode})` : '(Promo)'}</span>
                     <span>-₹{settledBill.discount.toFixed(2)}</span>
                   </div>
                 )}
@@ -2340,6 +2632,13 @@ export default function PosRegisterPage() {
                   <span>Grand Total</span>
                   <span className="text-paros-orange text-lg">₹{settledBill.total.toFixed(2)}</span>
                 </div>
+
+                {settledBill.aggregatorCut !== undefined && settledBill.aggregatorCut > 0 && (
+                  <div className="flex justify-between text-amber-800 text-[11px] pt-1 border-t border-dashed border-espresso/20">
+                    <span>{settledBill.source} Cut (20%): -₹{settledBill.aggregatorCut.toFixed(2)}</span>
+                    <span className="font-bold">Net Payout: ₹{settledBill.netPayout?.toFixed(2)}</span>
+                  </div>
+                )}
 
                 {settledBill.paymentMethod === 'CASH' && (
                   <div className="flex justify-between pt-1 text-espresso font-bold">
@@ -2387,14 +2686,24 @@ export default function PosRegisterPage() {
               </div>
             </div>
 
-            {/* Final Done & Free Table Button */}
-            <div className="flex items-center gap-3 mt-2">
+            {/* Final Done & Thermal Print Action Row */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mt-2">
               <button
-                onClick={() => showToast('🖨️ Printing thermal guest receipt slip...')}
-                className="px-4 py-3 bg-white hover:bg-paros-cream border-2 border-espresso rounded-xl font-display text-xs font-black uppercase shadow-brutal-sm flex items-center gap-1.5"
+                onClick={() => triggerPrintReceipt(settledBill)}
+                className="brutal-btn px-4 py-3 bg-white hover:bg-paros-yellow border-2 border-espresso rounded-xl font-display text-xs font-black uppercase shadow-brutal-sm flex items-center justify-center gap-1.5"
+                title="Print 80mm / 58mm Thermal Bill Receipt"
               >
-                <span className="material-symbols-outlined text-[16px]">print</span>
-                <span>Print Bill</span>
+                <span className="material-symbols-outlined text-[16px]">receipt_long</span>
+                <span>🖨️ Print Bill</span>
+              </button>
+
+              <button
+                onClick={() => triggerPrintKOTFromBill(settledBill)}
+                className="brutal-btn px-4 py-3 bg-paros-cream hover:bg-paros-yellow border-2 border-espresso rounded-xl font-display text-xs font-black uppercase shadow-brutal-sm flex items-center justify-center gap-1.5"
+                title="Print 80mm / 58mm Kitchen KOT Chit"
+              >
+                <span className="material-symbols-outlined text-[16px]">soup_kitchen</span>
+                <span>🖨️ Print KOT</span>
               </button>
 
               <button
@@ -2403,7 +2712,7 @@ export default function PosRegisterPage() {
               >
                 <span>
                   {isCounterOnlyCafe || posMode === 'EXPRESS_COUNTER' || settledBill.tableNumber.toLowerCase() === 'takeaway'
-                    ? 'Done • Next Customer (Fast Reset) ➔'
+                    ? 'Done • Next Customer ➔'
                     : `Done • Free Table ${settledBill.tableNumber} ➔`}
                 </span>
               </button>
@@ -2943,6 +3252,143 @@ export default function PosRegisterPage() {
           </div>
         </div>
       )}
+
+      {/* ════════════════════════════════════════════════════════════ */}
+      {/* ── THERMAL ESC-POS PRINT ZONE (80mm & 58mm MONOCHROME) ── */}
+      {/* ════════════════════════════════════════════════════════════ */}
+      <div id="thermal-print-area" className="thermal-print-only">
+        {printDocument?.type === 'RECEIPT' && printDocument.bill && (
+          <div style={{ fontFamily: 'monospace', fontSize: '11px', color: '#000', lineHeight: 1.25 }}>
+            <div style={{ textAlign: 'center', marginBottom: '8px' }}>
+              <div style={{ fontWeight: 'bold', fontSize: '15px' }}>{cafeName.toUpperCase()}</div>
+              <div>Table se Kitchen tak. Bas Paros.</div>
+              <div>--------------------------------</div>
+              <div style={{ fontWeight: 'bold' }}>TAX INVOICE / CASH BILL</div>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span>Bill: {printDocument.bill.billNumber}</span>
+              <span>Time: {printDocument.bill.time}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span>Order: {printDocument.bill.orderNumber}</span>
+              <span>Table: {printDocument.bill.tableNumber}</span>
+            </div>
+            {printDocument.bill.source && printDocument.bill.source !== 'POS' && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' }}>
+                <span>Channel: {printDocument.bill.source}</span>
+                <span>{printDocument.bill.aggregatorOrderId || ''}</span>
+              </div>
+            )}
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span>Guest: {printDocument.bill.customerName}</span>
+              <span>{printDocument.bill.customerPhone || ''}</span>
+            </div>
+            <div>--------------------------------</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' }}>
+              <span style={{ flex: 1 }}>ITEM</span>
+              <span style={{ width: '35px', textAlign: 'center' }}>QTY</span>
+              <span style={{ width: '60px', textAlign: 'right' }}>AMT</span>
+            </div>
+            <div>--------------------------------</div>
+            {printDocument.bill.items.map((it, idx) => (
+              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+                <span style={{ flex: 1 }}>{it.name}</span>
+                <span style={{ width: '35px', textAlign: 'center' }}>{it.quantity}</span>
+                <span style={{ width: '60px', textAlign: 'right' }}>₹{(it.price * it.quantity).toFixed(2)}</span>
+              </div>
+            ))}
+            <div>--------------------------------</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span>Subtotal:</span>
+              <span>₹{printDocument.bill.subtotal.toFixed(2)}</span>
+            </div>
+            {printDocument.bill.discount !== undefined && printDocument.bill.discount > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' }}>
+                <span>Discount ({printDocument.bill.couponCode || 'Promo'}):</span>
+                <span>-₹{printDocument.bill.discount.toFixed(2)}</span>
+              </div>
+            )}
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span>CGST (2.5%):</span>
+              <span>₹{printDocument.bill.cgst.toFixed(2)}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span>SGST (2.5%):</span>
+              <span>₹{printDocument.bill.sgst.toFixed(2)}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '13px', marginTop: '4px', borderTop: '1px solid #000', paddingTop: '4px' }}>
+              <span>TOTAL PAYABLE:</span>
+              <span>₹{printDocument.bill.total.toFixed(2)}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '2px' }}>
+              <span>Payment Mode:</span>
+              <span>{printDocument.bill.paymentMethod}</span>
+            </div>
+            {printDocument.bill.paymentMethod === 'CASH' && printDocument.bill.changeDue > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span>Change Returned:</span>
+                <span>₹{printDocument.bill.changeDue.toFixed(2)}</span>
+              </div>
+            )}
+            {printDocument.bill.aggregatorCut !== undefined && printDocument.bill.aggregatorCut > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', marginTop: '2px' }}>
+                <span>{printDocument.bill.source} Comm (20%):</span>
+                <span>-₹{printDocument.bill.aggregatorCut.toFixed(2)}</span>
+              </div>
+            )}
+            <div style={{ textAlign: 'center', marginTop: '8px', borderTop: '1px dashed #000', paddingTop: '6px' }}>
+              <div style={{ fontWeight: 'bold' }}>Thank You For Visiting!</div>
+              <div>GSTIN: 29AAAAA0000A1Z5</div>
+              <div>FSSAI: 11223344556677</div>
+              <div>Save Paper • WhatsApp Bills via Paros</div>
+            </div>
+          </div>
+        )}
+
+        {printDocument?.type === 'KOT' && printDocument.kot && (
+          <div style={{ fontFamily: 'monospace', fontSize: '12px', color: '#000', lineHeight: 1.3 }}>
+            <div style={{ textAlign: 'center', marginBottom: '8px' }}>
+              <div style={{ fontWeight: 'bold', fontSize: '16px' }}>*** KITCHEN ORDER TICKET ***</div>
+              <div style={{ fontWeight: 'bold', fontSize: '18px', marginTop: '4px' }}>
+                [{printDocument.kot.table.toUpperCase()}]
+              </div>
+              <div style={{ fontSize: '11px', marginTop: '2px' }}>
+                Order #{printDocument.kot.orderNumber} • {printDocument.kot.channel}
+              </div>
+              <div style={{ fontSize: '10px' }}>Time: {printDocument.kot.time}</div>
+            </div>
+            <div>================================</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' }}>
+              <span>QTY</span>
+              <span style={{ flex: 1, paddingLeft: '8px' }}>ITEM & SPECIAL PREP</span>
+            </div>
+            <div>================================</div>
+            {printDocument.kot.items.map((it, idx) => (
+              <div key={idx} style={{ marginBottom: '6px' }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', fontWeight: 'bold', fontSize: '13px' }}>
+                  <span style={{ width: '28px' }}>[ ] {it.quantity}x</span>
+                  <span style={{ flex: 1, paddingLeft: '4px' }}>{it.name}</span>
+                </div>
+                {it.notes && (
+                  <div style={{ paddingLeft: '28px', fontSize: '10px', fontStyle: 'italic' }}>
+                    &gt;&gt; {it.notes}
+                  </div>
+                )}
+              </div>
+            ))}
+            <div>--------------------------------</div>
+            {printDocument.kot.specialNotes && (
+              <div style={{ margin: '4px 0', fontSize: '11px', fontWeight: 'bold' }}>
+                Note: {printDocument.kot.specialNotes}
+              </div>
+            )}
+            <div style={{ textAlign: 'center', marginTop: '6px', fontSize: '10px' }}>
+              <div>KOT Sent to Barista / Chef Screen</div>
+              <div>Paros Kitchen Expediter</div>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Floating Toast Notification */}
       {toastMessage && (

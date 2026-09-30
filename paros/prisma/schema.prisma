@@ -41,6 +41,8 @@ model Tenant {
   shifts          CashShift[]
   expenses        Expense[]
   customers       Customer[]
+  inventoryItems  InventoryItem[]
+  coupons         Coupon[]
 }
 
 model User {
@@ -111,6 +113,7 @@ model MenuItem {
   prepTimeMinutes Int         @default(8)
 
   orderItems      OrderItem[]
+  recipes         MenuItemIngredient[]
 }
 
 model Order {
@@ -120,7 +123,7 @@ model Order {
   tableId             String?
   table               Table?      @relation(fields: [tableId], references: [id])
   orderNumber         String      // e.g. "#1042"
-  source              String      @default("POS") // POS, QR, SWIGGY, ZOMATO
+  source              String      @default("POS") // POS, QR, SWIGGY, ZOMATO, TAKEAWAY
   status              String      @default("PLACED") // PLACED, PREPARING, READY, SERVED, CANCELLED
   dynamicPrepMinutes  Int         @default(10)
   prepStartedAt       DateTime?
@@ -130,6 +133,9 @@ model Order {
   customerEmail       String?
   specialNotes        String?
   processedBy         String?     // e.g. "Rahul (Cashier)" or "Table QR"
+  aggregatorOrderId   String?     // e.g. "SWIG-9041" or "ZOM-1120"
+  aggregatorCut       Float       @default(0) // Commission fee deducted (e.g. 20%)
+  netPayout           Float?      // Net amount receivable by cafe
   createdAt           DateTime    @default(now())
   updatedAt           DateTime    @updatedAt
 
@@ -161,6 +167,7 @@ model Bill {
   cgst            Float     @default(0) // 2.5%
   sgst            Float     @default(0) // 2.5%
   discount        Float     @default(0)
+  couponCode      String?   // Applied coupon code (e.g. "WELCOME10")
   total           Float
   paymentMethod   String    @default("UPI") // CASH, UPI, CARD
   paymentStatus   String    @default("PAID") // PENDING, PAID
@@ -232,3 +239,48 @@ model PushSubscription {
   auth        String    // Auth secret
   createdAt   DateTime  @default(now())
 }
+
+model InventoryItem {
+  id              String                @id @default(cuid())
+  cafeId          String
+  cafe            Tenant                @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  name            String                // e.g. "Specialty Coffee Beans", "Oat Milk", "Croissants"
+  sku             String?               // e.g. "INV-BEANS-01"
+  unit            String                @default("g") // g, ml, pcs, kg, L
+  currentStock    Float                 @default(0)
+  minStockAlert   Float                 @default(100) // Alert threshold when currentStock <= minStockAlert
+  costPerUnit     Float?                @default(0)
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  recipeUsage     MenuItemIngredient[]
+}
+
+model MenuItemIngredient {
+  id              String        @id @default(cuid())
+  menuItemId      String
+  menuItem        MenuItem      @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  inventoryItemId String
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+  quantityNeeded  Float         // e.g. 18 (grams of beans), 200 (ml of oat milk), 1 (piece)
+
+  @@unique([menuItemId, inventoryItemId])
+}
+
+model Coupon {
+  id              String    @id @default(cuid())
+  cafeId          String
+  cafe            Tenant    @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  code            String    // e.g. "WELCOME10", "FLAT50"
+  discountType    String    @default("PERCENTAGE") // PERCENTAGE, FLAT
+  discountValue   Float     // e.g. 10 (for 10%) or 50 (for ₹50)
+  minOrderValue   Float     @default(0) // Minimum subtotal required
+  maxDiscount     Float?    // Optional cap for percentage discounts (e.g. max ₹100 off)
+  isActive        Boolean   @default(true)
+  usageCount      Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([cafeId, code])
+}
+

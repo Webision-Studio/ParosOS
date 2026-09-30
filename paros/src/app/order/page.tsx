@@ -63,6 +63,12 @@ export default function TableQrOrderPage() {
   // Cart starts empty for a genuine customer experience
   const [cart, setCart] = useState<OrderItem[]>([]);
 
+  // Promo Coupon State
+  const [promoCodeInput, setPromoCodeInput] = useState('');
+  const [appliedPromo, setAppliedPromo] = useState<{ code: string; discountAmount: number; description: string } | null>(null);
+  const [promoError, setPromoError] = useState<string | null>(null);
+  const [promoLoading, setPromoLoading] = useState(false);
+
   // Live Menu Items
   const [menuItems, setMenuItems] = useState<MenuItemData[]>([
     { id: '1', name: 'Flat White', price: 220, description: 'Double ristretto espresso, velvety textured milk', isVeg: true, category: { name: 'Hot Coffee' } },
@@ -126,10 +132,42 @@ export default function TableQrOrderPage() {
       .catch(() => {});
   }, []);
 
-  // Cart Totals
+  // Cart Totals with Promo Discount
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const gst = Math.round(subtotal * 0.05);
-  const total = subtotal + gst;
+  const discount = appliedPromo ? Math.min(subtotal, appliedPromo.discountAmount) : 0;
+  const taxableSubtotal = Math.max(0, subtotal - discount);
+  const gst = Math.round(taxableSubtotal * 0.05);
+  const total = taxableSubtotal + gst;
+
+  async function handleApplyPromo(e?: React.FormEvent) {
+    if (e) e.preventDefault();
+    if (!promoCodeInput.trim()) return;
+    setPromoLoading(true);
+    setPromoError(null);
+    try {
+      const res = await fetch('/api/coupons', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'validate',
+          code: promoCodeInput.trim().toUpperCase(),
+          subtotal,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setPromoError(data.error || 'Invalid promo code');
+        setAppliedPromo(null);
+      } else {
+        setAppliedPromo(data);
+        setPromoError(null);
+      }
+    } catch {
+      setPromoError('Failed to validate coupon');
+    } finally {
+      setPromoLoading(false);
+    }
+  }
 
   // Live ETA & Kitchen Status Synchronization in Step 5
   useEffect(() => {
@@ -252,6 +290,7 @@ export default function TableQrOrderPage() {
           customerPhone: customerPhone ? `+91 ${customerPhone}` : null,
           customerEmail: customerEmail || null,
           whatsappOptIn,
+          couponCode: appliedPromo?.code || undefined,
           specialNotes: paymentMode === 'PAY_LATER' ? 'PAY LATER TO WAITER / COUNTER' : 'ONLINE PREPAID (UPI)',
         }),
       });
@@ -721,12 +760,63 @@ export default function TableQrOrderPage() {
                 </div>
               ))}
 
+              {/* Promo Code Box */}
+              <div className="pt-2 border-t border-dashed border-espresso/15">
+                {appliedPromo ? (
+                  <div className="flex items-center justify-between p-2.5 bg-emerald-50 rounded-xl border border-emerald-300 text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-emerald-600 text-[18px]">confirmation_number</span>
+                      <div>
+                        <span className="font-mono font-black text-emerald-800">{appliedPromo.code}</span>
+                        <span className="text-emerald-700 ml-1.5 font-bold">(-₹{appliedPromo.discountAmount})</span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => { setAppliedPromo(null); setPromoCodeInput(''); }}
+                      className="text-xs font-bold text-red-600 hover:underline"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-1">
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="Enter Promo Code (e.g. WELCOME10)"
+                        value={promoCodeInput}
+                        onChange={(e) => { setPromoCodeInput(e.target.value.toUpperCase()); setPromoError(null); }}
+                        className="flex-1 px-3 py-2 bg-surface-container rounded-xl border border-espresso font-mono text-xs uppercase font-bold outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleApplyPromo}
+                        disabled={promoLoading || !promoCodeInput.trim()}
+                        className="px-4 py-2 bg-espresso text-white rounded-xl font-display font-black text-xs uppercase disabled:opacity-50"
+                      >
+                        {promoLoading ? '...' : 'Apply'}
+                      </button>
+                    </div>
+                    {promoError && (
+                      <p className="text-[11px] font-bold text-red-600">{promoError}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+
               {/* Bill Math */}
               <div className="pt-2 font-mono text-xs flex flex-col gap-1 text-espresso/70">
                 <div className="flex justify-between">
                   <span>Subtotal</span>
                   <span>₹{subtotal.toFixed(2)}</span>
                 </div>
+                {discount > 0 && (
+                  <div className="flex justify-between text-emerald-700 font-bold">
+                    <span>Promo Discount ({appliedPromo?.code})</span>
+                    <span>-₹{discount.toFixed(2)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span>Cafe GST (5%)</span>
                   <span>₹{gst.toFixed(2)}</span>
