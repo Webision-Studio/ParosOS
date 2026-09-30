@@ -6,22 +6,32 @@ export async function GET(req: NextRequest) {
   try {
     const session = await getSession();
     const { searchParams } = new URL(req.url);
-    const cafeSlug = searchParams.get('cafeSlug') || 'artisan-roastery';
+
+    // Strict Tenant Isolation: Admin bill history contains sensitive customer PII & transaction data
+    if (!session && process.env.NODE_ENV === 'production') {
+      return NextResponse.json(
+        { error: 'Unauthorized: Operator session login required to access cafe bill history' },
+        { status: 401 }
+      );
+    }
 
     // 1. Resolve Cafe Tenant
     let cafe = null;
     if (session?.cafeId) {
       cafe = await prisma.tenant.findUnique({ where: { id: session.cafeId } });
     }
-    if (!cafe) {
-      cafe = await prisma.tenant.findFirst({ where: { slug: cafeSlug } });
-    }
     if (!cafe && process.env.NODE_ENV !== 'production') {
-      cafe = await prisma.tenant.findFirst();
+      const cafeSlug = searchParams.get('cafeSlug');
+      if (cafeSlug) {
+        cafe = await prisma.tenant.findFirst({ where: { slug: cafeSlug } });
+      }
+      if (!cafe) {
+        cafe = await prisma.tenant.findFirst({ orderBy: { createdAt: 'desc' } });
+      }
     }
 
     if (!cafe) {
-      return NextResponse.json({ error: 'No cafe found' }, { status: 404 });
+      return NextResponse.json({ error: 'No cafe found or unauthorized' }, { status: 401 });
     }
 
     // 2. Parse Filters

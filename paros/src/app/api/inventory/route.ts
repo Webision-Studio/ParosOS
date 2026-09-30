@@ -5,26 +5,36 @@ import { getSession } from '@/lib/auth-session';
 export async function GET(req: NextRequest) {
   try {
     const session = await getSession();
-    const { searchParams } = new URL(req.url);
-    const cafeSlug = searchParams.get('cafeSlug');
-    const cafeId = searchParams.get('cafeId');
+
+    // Strict Tenant Isolation: Stock counts, supplier costs, and recipes require authenticated session
+    if (!session && process.env.NODE_ENV === 'production') {
+      return NextResponse.json(
+        { error: 'Unauthorized: Operator session login required to view inventory and costs' },
+        { status: 401 }
+      );
+    }
 
     let cafe = null;
     if (session?.cafeId) {
       cafe = await prisma.tenant.findUnique({ where: { id: session.cafeId } });
     }
-    if (!cafe && cafeId) {
-      cafe = await prisma.tenant.findUnique({ where: { id: String(cafeId) } });
-    }
-    if (!cafe && cafeSlug) {
-      cafe = await prisma.tenant.findFirst({ where: { slug: String(cafeSlug) } });
-    }
     if (!cafe && process.env.NODE_ENV !== 'production') {
-      cafe = await prisma.tenant.findFirst({ orderBy: { createdAt: 'desc' } });
+      const { searchParams } = new URL(req.url);
+      const cafeSlug = searchParams.get('cafeSlug');
+      const cafeId = searchParams.get('cafeId');
+      if (cafeId) {
+        cafe = await prisma.tenant.findUnique({ where: { id: String(cafeId) } });
+      }
+      if (!cafe && cafeSlug) {
+        cafe = await prisma.tenant.findFirst({ where: { slug: String(cafeSlug) } });
+      }
+      if (!cafe) {
+        cafe = await prisma.tenant.findFirst({ orderBy: { createdAt: 'desc' } });
+      }
     }
 
     if (!cafe) {
-      return NextResponse.json({ error: 'Cafe not found or unauthorized' }, { status: 404 });
+      return NextResponse.json({ error: 'Cafe not found or unauthorized' }, { status: 401 });
     }
 
     // Check if inventory is empty; if so, bootstrap starter inventory and recipe linkages
@@ -177,17 +187,28 @@ export async function POST(req: NextRequest) {
     const { action, cafeId } = body;
 
     let targetCafeId = session?.cafeId;
-    if (!targetCafeId && cafeId) {
-      const c = await prisma.tenant.findUnique({ where: { id: String(cafeId).slice(0, 60) } });
-      targetCafeId = c?.id;
+
+    // Strict Tenant Isolation: Block cross-tenant mutation if body.cafeId differs from session
+    if (session?.cafeId && cafeId && String(cafeId) !== session.cafeId) {
+      return NextResponse.json({ error: 'Forbidden: Cannot manage inventory of another cafe' }, { status: 403 });
     }
+
+    if (!targetCafeId && cafeId) {
+      if (process.env.NODE_ENV !== 'production') {
+        const c = await prisma.tenant.findUnique({ where: { id: String(cafeId).slice(0, 60) } });
+        targetCafeId = c?.id;
+      } else {
+        return NextResponse.json({ error: 'Unauthorized: Session login required to manage inventory' }, { status: 401 });
+      }
+    }
+
     if (!targetCafeId && process.env.NODE_ENV !== 'production') {
       const def = await prisma.tenant.findFirst({ orderBy: { createdAt: 'desc' } });
       targetCafeId = def?.id;
     }
 
     if (!targetCafeId) {
-      return NextResponse.json({ error: 'Valid cafe context or session required' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized: Active cafe session required' }, { status: 401 });
     }
 
     // 1. Create Raw Material / Inventory Item

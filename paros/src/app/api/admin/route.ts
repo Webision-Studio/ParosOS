@@ -5,22 +5,32 @@ import { getSession } from '@/lib/auth-session';
 export async function GET(req: NextRequest) {
   try {
     const session = await getSession();
-    const { searchParams } = new URL(req.url);
-    const cafeSlug = searchParams.get('cafeSlug');
+
+    // Strict Tenant Isolation: Financial analytics, drawer cash, and customer spend require authenticated session
+    if (!session && process.env.NODE_ENV === 'production') {
+      return NextResponse.json(
+        { error: 'Unauthorized: Operator session login required to view financial analytics' },
+        { status: 401 }
+      );
+    }
 
     let cafe = null;
     if (session?.cafeId) {
       cafe = await prisma.tenant.findUnique({ where: { id: session.cafeId } });
     }
-    if (!cafe && cafeSlug) {
-      cafe = await prisma.tenant.findUnique({ where: { slug: cafeSlug } });
-    }
     if (!cafe && process.env.NODE_ENV !== 'production') {
-      cafe = await prisma.tenant.findFirst({ orderBy: { createdAt: 'desc' } });
+      const { searchParams } = new URL(req.url);
+      const cafeSlug = searchParams.get('cafeSlug');
+      if (cafeSlug) {
+        cafe = await prisma.tenant.findUnique({ where: { slug: cafeSlug } });
+      }
+      if (!cafe) {
+        cafe = await prisma.tenant.findFirst({ orderBy: { createdAt: 'desc' } });
+      }
     }
 
     if (!cafe) {
-      return NextResponse.json({ error: 'Cafe not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Cafe not found or unauthorized' }, { status: 401 });
     }
 
     // Fetch active shift, expenses, customers, menu items, and aggregate financial totals

@@ -37,23 +37,27 @@ export async function getSession(): Promise<SessionUser | null> {
     const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
     if (!token) return null;
 
-    // Check if token has signature format: payload.signature
-    if (token.includes('.')) {
-      const [payload, signature] = token.split('.');
-      if (!payload || !signature) return null;
-
-      const expectedSig = signPayload(payload);
-      if (signature.length !== expectedSig.length || !crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSig))) {
-        return null; // Tampered or invalid signature
-      }
-
-      const decoded = Buffer.from(payload, 'base64url').toString('utf-8');
-      return JSON.parse(decoded) as SessionUser;
+    // Require signed token format: payload.signature
+    if (!token.includes('.')) {
+      return null;
     }
 
-    // Backwards-compatibility fallback for legacy base64 dev cookies
-    const decoded = Buffer.from(token, 'base64').toString('utf-8');
-    return JSON.parse(decoded) as SessionUser;
+    const [payload, signature] = token.split('.');
+    if (!payload || !signature) return null;
+
+    const expectedSig = signPayload(payload);
+    if (signature.length !== expectedSig.length || !crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSig))) {
+      return null; // Tampered or invalid signature
+    }
+
+    const decoded = Buffer.from(payload, 'base64url').toString('utf-8');
+    const user = JSON.parse(decoded) as SessionUser;
+
+    if (!user || typeof user !== 'object' || !user.cafeId || !user.userId) {
+      return null;
+    }
+
+    return user;
   } catch {
     return null;
   }

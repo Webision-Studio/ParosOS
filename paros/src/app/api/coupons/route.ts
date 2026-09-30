@@ -85,6 +85,17 @@ export async function POST(req: NextRequest) {
     const { action, cafeId } = body;
 
     let targetCafeId = session?.cafeId;
+
+    // Strict Tenant Isolation: For admin actions (create, toggle-active, delete), require authenticated session
+    if (action !== 'validate') {
+      if (!session?.cafeId && process.env.NODE_ENV === 'production') {
+        return NextResponse.json({ error: 'Unauthorized: Session login required to manage coupons' }, { status: 401 });
+      }
+      if (session?.cafeId && cafeId && String(cafeId) !== session.cafeId) {
+        return NextResponse.json({ error: 'Forbidden: Cannot manage coupons for another cafe' }, { status: 403 });
+      }
+    }
+
     if (!targetCafeId && cafeId) {
       const c = await prisma.tenant.findUnique({ where: { id: String(cafeId).slice(0, 60) } });
       targetCafeId = c?.id;

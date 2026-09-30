@@ -96,20 +96,31 @@ export async function POST(req: NextRequest) {
     const { action, cafeId } = body;
 
     let targetCafeId = session?.cafeId;
-    if (!targetCafeId && cafeId) {
-      const cafeRecord = await prisma.tenant.findUnique({ where: { id: String(cafeId).slice(0, 60) } });
-      if (!cafeRecord) {
-        return NextResponse.json({ error: 'Specified cafe not found' }, { status: 404 });
-      }
-      targetCafeId = cafeRecord.id;
+
+    // Strict Tenant Isolation: Block cross-tenant mutation if body.cafeId differs from session
+    if (session?.cafeId && cafeId && String(cafeId) !== session.cafeId) {
+      return NextResponse.json({ error: 'Forbidden: Cannot perform POS operations on another cafe' }, { status: 403 });
     }
+
+    if (!targetCafeId && cafeId) {
+      if (process.env.NODE_ENV !== 'production') {
+        const cafeRecord = await prisma.tenant.findUnique({ where: { id: String(cafeId).slice(0, 60) } });
+        if (!cafeRecord) {
+          return NextResponse.json({ error: 'Specified cafe not found' }, { status: 404 });
+        }
+        targetCafeId = cafeRecord.id;
+      } else {
+        return NextResponse.json({ error: 'Unauthorized: Active session required for POS operations' }, { status: 401 });
+      }
+    }
+
     if (!targetCafeId && process.env.NODE_ENV !== 'production') {
       const defaultCafe = await prisma.tenant.findFirst({ orderBy: { createdAt: 'desc' } });
       targetCafeId = defaultCafe?.id;
     }
 
     if (!targetCafeId) {
-      return NextResponse.json({ error: 'Valid cafe context is required' }, { status: 400 });
+      return NextResponse.json({ error: 'Unauthorized: Valid cafe session is required' }, { status: 401 });
     }
 
     // 1. Settle Order & Create Bill
