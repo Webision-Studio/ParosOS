@@ -1380,45 +1380,24 @@ export default function PosRegisterPage() {
             </div>
           )}
 
-          {/* Top Operational Strip: Visible on desktop; on mobile the 4-tab bar handles view selection */}
-          <div className="hidden xl:flex bg-white p-3.5 rounded-2xl border-2 border-espresso shadow-brutal flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-paros-orange text-white flex items-center justify-center font-display font-black text-sm border-2 border-espresso shadow-brutal-sm">
-                P
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="font-display text-sm font-black text-espresso">
-                    {cafeName} {isCounterOnlyCafe || posMode === 'EXPRESS_COUNTER' ? 'Express Counter' : 'Floor Register'}
-                  </span>
-                  <span className="font-mono text-[10px] bg-paros-cream px-1.5 py-0.5 rounded border border-espresso font-bold">
-                    {isCounterOnlyCafe || posMode === 'EXPRESS_COUNTER' ? 'TOKEN MODE' : 'ACTIVE REGISTER'}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 font-display text-xs text-espresso/60 font-medium">
-                  <span>Shift: Open</span>
-                  <span>•</span>
-                  <span className="text-paros-matcha font-bold">Supabase Cloud DB Synced</span>
-                </div>
-              </div>
-            </div>
-
-            {/* View Selector */}
-            <div className="flex items-center gap-1 p-1 bg-paros-cream border-2 border-espresso rounded-xl shadow-brutal-sm">
+          {/* ── Single Unified POS Toolbar (Desktop) ── */}
+          <div className="hidden xl:flex bg-white px-4 py-2.5 rounded-2xl border-2 border-espresso shadow-brutal flex-wrap items-center justify-between gap-3">
+            {/* Left: View Tabs */}
+            <div className="flex items-center gap-1.5 p-1 bg-paros-cream border-2 border-espresso rounded-xl shadow-brutal-sm">
               <button
                 onClick={() => setActiveView('menu')}
-                className={`px-3 py-1.5 rounded-lg font-display text-xs font-black uppercase transition-all flex items-center gap-1 ${
+                className={`px-3 py-1.5 rounded-lg font-display text-xs font-black uppercase transition-all flex items-center gap-1.5 ${
                   activeView === 'menu'
                     ? 'bg-paros-orange text-white border-2 border-espresso shadow-brutal-sm'
                     : 'text-espresso hover:bg-paros-yellow/40 border-2 border-transparent'
                 }`}
               >
                 <span className="material-symbols-outlined text-[16px]">coffee</span>
-                Menu Catalog
+                <span>Menu Catalog</span>
               </button>
               <button
                 onClick={() => setActiveView('floor')}
-                className={`px-3 py-1.5 rounded-lg font-display text-xs font-black uppercase transition-all flex items-center gap-1 ${
+                className={`px-3 py-1.5 rounded-lg font-display text-xs font-black uppercase transition-all flex items-center gap-1.5 ${
                   activeView === 'floor'
                     ? 'bg-paros-orange text-white border-2 border-espresso shadow-brutal-sm'
                     : 'text-espresso hover:bg-paros-yellow/40 border-2 border-transparent'
@@ -1427,118 +1406,81 @@ export default function PosRegisterPage() {
                 <span className="material-symbols-outlined text-[16px]">
                   {isCounterOnlyCafe || posMode === 'EXPRESS_COUNTER' ? 'receipt_long' : 'table_bar'}
                 </span>
-                {isCounterOnlyCafe || posMode === 'EXPRESS_COUNTER' ? 'Token Board' : 'Floor Grid'}
+                <span>{isCounterOnlyCafe || posMode === 'EXPRESS_COUNTER' ? 'Token Board' : 'Floor Grid'}</span>
               </button>
               <button
                 onClick={() => setActiveView('orders')}
-                className={`px-3 py-1.5 rounded-lg font-display text-xs font-black uppercase transition-all flex items-center gap-1 ${
+                className={`px-3 py-1.5 rounded-lg font-display text-xs font-black uppercase transition-all flex items-center gap-1.5 ${
                   activeView === 'orders'
                     ? 'bg-paros-orange text-white border-2 border-espresso shadow-brutal-sm'
                     : 'text-espresso hover:bg-paros-yellow/40 border-2 border-transparent'
                 }`}
               >
                 <span className="material-symbols-outlined text-[16px]">soup_kitchen</span>
-                Expediter ({liveOrders.filter((o) => o.status !== 'COMPLETED').length})
+                <span>Expediter</span>
+                {liveOrders.filter((o) => o.status !== 'COMPLETED').length > 0 && (
+                  <span className="bg-white/20 px-1.5 py-0.2 rounded font-mono text-[10px]">
+                    {liveOrders.filter((o) => o.status !== 'COMPLETED').length}
+                  </span>
+                )}
               </button>
             </div>
-          </div>
 
-          {/* ═══ TOP STRIP: SEATING GRID vs EXPRESS COUNTER MONITOR ═══ */}
-          {isCounterOnlyCafe || posMode === 'EXPRESS_COUNTER' ? (
-            /* ⚡ EXPRESS COUNTER & LIVE TOKEN MONITOR STRIP (For 0-table cafes & rush mode) */
-            <div className="bg-white p-3.5 rounded-2xl border-2 border-espresso shadow-brutal flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-              {/* Left: Live Kitchen & Counter Pass KPIs */}
-              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-paros-yellow/40 border-2 border-espresso shadow-brutal-sm">
-                  <span className="material-symbols-outlined text-espresso text-[16px]">soup_kitchen</span>
-                  <span className="font-display text-xs font-bold text-espresso">In Prep:</span>
-                  <span className="font-mono text-sm font-black text-espresso">
-                    {liveOrders.filter((o) => o.status !== 'READY_AT_PASS').length}
-                  </span>
-                </div>
+            {/* Right: Live Queue Status & Token/Table Info */}
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-paros-yellow/40 border-2 border-espresso shadow-brutal-sm text-xs font-display">
+                <span className="material-symbols-outlined text-espresso text-[15px]">soup_kitchen</span>
+                <span className="font-bold text-espresso">In Prep:</span>
+                <span className="font-mono text-xs font-black text-espresso">
+                  {liveOrders.filter((o) => o.status !== 'READY_AT_PASS').length}
+                </span>
+              </div>
 
-                <div
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-2 border-espresso shadow-brutal-sm ${
-                    liveOrders.filter((o) => o.status === 'READY_AT_PASS').length > 0
-                      ? 'bg-paros-mint text-emerald-900 border-emerald-600 animate-pulse'
-                      : 'bg-paros-cream text-espresso'
-                  }`}
-                >
-                  <span className="material-symbols-outlined text-[16px]">notifications_active</span>
-                  <span className="font-display text-xs font-black uppercase">Ready at Pickup:</span>
-                  <span className="font-mono text-sm font-black">
+              {liveOrders.filter((o) => o.status === 'READY_AT_PASS').length > 0 ? (
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-paros-mint text-emerald-900 border-2 border-emerald-600 shadow-brutal-sm text-xs font-display animate-pulse">
+                  <span className="material-symbols-outlined text-[15px]">notifications_active</span>
+                  <span className="font-black uppercase">Ready:</span>
+                  <span className="font-mono text-xs font-black">
                     {liveOrders.filter((o) => o.status === 'READY_AT_PASS').length}
                   </span>
                 </div>
-
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-paros-cream border-2 border-espresso shadow-brutal-sm">
-                  <span className="material-symbols-outlined text-espresso/60 text-[16px]">task_alt</span>
-                  <span className="font-display text-xs font-bold text-espresso/70">Served:</span>
-                  <span className="font-mono text-sm font-black text-espresso">
+              ) : (
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-paros-cream border-2 border-espresso shadow-brutal-sm text-xs font-display">
+                  <span className="material-symbols-outlined text-espresso/60 text-[15px]">task_alt</span>
+                  <span className="font-bold text-espresso/70">Served:</span>
+                  <span className="font-mono text-xs font-black text-espresso">
                     {servedOrders.length}
                   </span>
                 </div>
-              </div>
+              )}
 
-              {/* Center: Express Order Type Selector */}
-              <div className="flex items-center gap-1 bg-paros-cream p-1 rounded-xl border-2 border-espresso shadow-brutal-sm shrink-0">
-                <button
-                  onClick={() => setExpressOrderType('TAKEAWAY')}
-                  className={`px-2.5 py-1 rounded-lg font-display text-[11px] font-black uppercase transition-all flex items-center gap-1 ${
-                    expressOrderType === 'TAKEAWAY'
-                      ? 'bg-paros-orange text-white shadow-brutal-sm'
-                      : 'text-espresso hover:bg-paros-yellow/40'
-                  }`}
-                >
-                  <span>🛍️ Takeaway</span>
-                </button>
-                <button
-                  onClick={() => setExpressOrderType('COUNTER')}
-                  className={`px-2.5 py-1 rounded-lg font-display text-[11px] font-black uppercase transition-all flex items-center gap-1 ${
-                    expressOrderType === 'COUNTER'
-                      ? 'bg-paros-orange text-white shadow-brutal-sm'
-                      : 'text-espresso hover:bg-paros-yellow/40'
-                  }`}
-                >
-                  <span>☕ Counter</span>
-                </button>
-                <button
-                  onClick={() => setExpressOrderType('DELIVERY')}
-                  className={`px-2.5 py-1 rounded-lg font-display text-[11px] font-black uppercase transition-all flex items-center gap-1 ${
-                    expressOrderType === 'DELIVERY'
-                      ? 'bg-paros-orange text-white shadow-brutal-sm'
-                      : 'text-espresso hover:bg-paros-yellow/40'
-                  }`}
-                >
-                  <span>🛵 Delivery</span>
-                </button>
-              </div>
-
-              {/* Right: Next Token Indicator & Quick Call */}
-              <div className="flex items-center gap-2 shrink-0">
-                <div className="flex items-center gap-1.5 px-3 py-1 bg-espresso text-white rounded-xl border-2 border-espresso shadow-brutal-sm">
-                  <span className="font-display text-[11px] font-bold text-white/70 uppercase">Next Token:</span>
-                  <span className="font-mono text-sm font-black text-paros-yellow">#{expressTokenSeq}</span>
+              {/* Next Token Badge for Counter mode */}
+              {(isCounterOnlyCafe || posMode === 'EXPRESS_COUNTER') && (
+                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-espresso text-white rounded-xl border-2 border-espresso shadow-brutal-sm">
+                  <span className="font-display text-[10px] uppercase font-bold text-white/70">Next:</span>
+                  <span className="font-mono text-xs font-black text-paros-yellow">#{expressTokenSeq}</span>
                 </div>
+              )}
 
-                {liveOrders.find((o) => o.status === 'READY_AT_PASS') && (
-                  <button
-                    onClick={() => {
-                      const topReady = liveOrders.find((o) => o.status === 'READY_AT_PASS');
-                      if (topReady) {
-                        handleMarkOrderServed(topReady.id, topReady.table.replace('Table ', ''));
-                      }
-                    }}
-                    className="brutal-btn px-3 py-1 bg-paros-matcha text-white font-display text-xs font-black uppercase rounded-xl border-2 border-espresso shadow-brutal-sm flex items-center gap-1 animate-bounce"
-                    title="1-tap Hand Over the oldest ready order"
-                  >
-                    <span>🛎️ Hand Over {liveOrders.find((o) => o.status === 'READY_AT_PASS')?.orderNumber}</span>
-                  </button>
-                )}
-              </div>
+              {/* 1-tap Hand Over if order ready */}
+              {liveOrders.find((o) => o.status === 'READY_AT_PASS') && (
+                <button
+                  onClick={() => {
+                    const topReady = liveOrders.find((o) => o.status === 'READY_AT_PASS');
+                    if (topReady) {
+                      handleMarkOrderServed(topReady.id, topReady.table.replace('Table ', ''));
+                    }
+                  }}
+                  className="brutal-btn px-3 py-1.5 bg-paros-matcha text-white font-display text-xs font-black uppercase rounded-xl border-2 border-espresso shadow-brutal-sm flex items-center gap-1 animate-bounce"
+                  title="1-tap Hand Over the oldest ready order"
+                >
+                  <span>🛎️ Hand Over {liveOrders.find((o) => o.status === 'READY_AT_PASS')?.orderNumber}</span>
+                </button>
+              )}
             </div>
-          ) : activeView !== 'floor' ? (
-            /* 🪑 SEATING FLOOR GRID STRIP (For cafes with physical tables) */
+          </div>
+          {/* 🪑 SEATING FLOOR GRID STRIP (For cafes with physical tables when in catalog/orders view) */}
+          {!(isCounterOnlyCafe || posMode === 'EXPRESS_COUNTER') && activeView !== 'floor' && (
             <div className="bg-white p-3.5 rounded-2xl border-2 border-espresso shadow-brutal">
               <div className="flex items-center justify-between pb-2 mb-2 border-b-2 border-dashed border-espresso/20">
                 <div className="flex items-center gap-2">
@@ -1617,7 +1559,7 @@ export default function PosRegisterPage() {
                 })}
               </div>
             </div>
-          ) : null}
+          )}
 
           {/* ═══ VIEW MODE: EXPEDITER QUEUE ═══ */}
           {activeView === 'orders' ? (
@@ -2149,8 +2091,8 @@ export default function PosRegisterPage() {
                 ))}
               </div>
 
-              {/* Menu Items Grid: 2-Columns on Mobile for High Information Density */}
-              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 flex-1 overflow-y-auto max-h-[580px] xl:max-h-[460px] pr-0.5">
+              {/* Menu Items Grid: Tactile, Tap-To-Add Cards */}
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3 flex-1 overflow-y-auto max-h-[580px] xl:max-h-[460px] pr-0.5">
                 {filteredItems.map((item) => {
                   const cartItem = currentCart.find((it) => it.name === item.name);
                   const inCartQty = cartItem?.quantity || 0;
@@ -2158,73 +2100,73 @@ export default function PosRegisterPage() {
                   return (
                     <div
                       key={item.id}
-                      className={`p-2.5 sm:p-3 rounded-2xl border-2 border-espresso flex flex-col justify-between transition-all group ${
+                      onClick={() => addToCart(item)}
+                      className={`p-3 rounded-2xl border-2 transition-all cursor-pointer select-none active:scale-[0.98] flex flex-col justify-between group min-h-[105px] ${
                         inCartQty > 0
-                          ? 'bg-paros-yellow/40 border-espresso shadow-brutal-sm ring-1 ring-espresso'
-                          : 'bg-paros-cream hover:bg-white shadow-brutal-sm'
+                          ? 'bg-paros-yellow/40 border-espresso shadow-brutal ring-2 ring-espresso'
+                          : 'bg-white hover:bg-paros-cream/80 border-espresso shadow-brutal-sm hover:shadow-brutal'
                       }`}
                     >
                       <div>
-                        <div className="flex items-start justify-between gap-1 mb-1">
+                        {/* Top: Veg Dot + Category + In-Cart Badge */}
+                        <div className="flex items-center justify-between gap-1 mb-1.5">
                           <div className="flex items-center gap-1.5 min-w-0">
                             <span
-                              className={`w-2 h-2 rounded-full shrink-0 ring-2 ${
-                                item.isVeg
-                                  ? 'bg-paros-matcha ring-paros-matcha/30'
-                                  : 'bg-red-500 ring-red-500/30'
+                              className={`w-2 h-2 rounded-full shrink-0 ${
+                                item.isVeg ? 'bg-paros-matcha' : 'bg-red-500'
                               }`}
                             />
-                            <span className="font-display text-xs sm:text-sm font-bold text-espresso leading-snug line-clamp-2">
-                              {item.name}
+                            <span className="font-mono text-[9px] text-espresso/60 font-bold uppercase truncate max-w-[90px]">
+                              {item.category?.name || 'Item'}
                             </span>
                           </div>
+                          {inCartQty > 0 && (
+                            <span className="font-mono text-[9px] font-black bg-paros-orange text-white px-1.5 py-0.2 rounded-full shadow-xs">
+                              {inCartQty} in cart
+                            </span>
+                          )}
                         </div>
 
-                        <div className="flex items-baseline justify-between mt-1 mb-1">
-                          <span className="font-display font-black text-xs sm:text-sm text-espresso tabular-nums">
-                            ₹{item.price}
-                          </span>
-                          <span className="font-mono text-[9px] text-espresso/60 font-bold uppercase truncate max-w-[80px]">
-                            {item.category?.name || 'Cafe Item'}
-                          </span>
-                        </div>
-
-                        {item.description && (
-                          <p className="hidden sm:block font-body text-[11px] text-espresso/70 line-clamp-1 mb-1">
-                            {item.description}
-                          </p>
-                        )}
+                        {/* Dish Name */}
+                        <h4 className="font-display text-xs sm:text-sm font-bold text-espresso leading-snug line-clamp-2">
+                          {item.name}
+                        </h4>
                       </div>
 
-                      {/* Add Button or Inline Stepper */}
-                      <div className="mt-2 pt-1.5 border-t border-dashed border-espresso/20">
+                      {/* Bottom: Price + Quick Stepper or Subtle + */}
+                      <div className="flex items-center justify-between pt-1.5 mt-2 border-t border-espresso/10">
+                        <span className="font-display font-black text-xs sm:text-sm text-espresso tabular-nums">
+                          ₹{item.price}
+                        </span>
+
                         {inCartQty === 0 ? (
-                          <button
-                            onClick={() => addToCart(item)}
-                            className="brutal-btn w-full py-1.5 sm:py-2 bg-paros-orange text-white font-display text-[11px] sm:text-xs font-black uppercase rounded-xl border-2 border-espresso shadow-brutal-sm flex items-center justify-center gap-1 active:scale-95"
-                          >
-                            <span className="material-symbols-outlined text-[15px]">add</span>
-                            <span>Add</span>
-                          </button>
+                          <span className="w-6 h-6 rounded-lg bg-paros-cream group-hover:bg-paros-orange group-hover:text-white border border-espresso flex items-center justify-center font-black text-xs text-espresso transition-colors">
+                            +
+                          </span>
                         ) : (
-                          <div className="flex items-center justify-between w-full bg-white border-2 border-espresso rounded-xl shadow-brutal-sm p-0.5">
+                          <div
+                            className="flex items-center bg-white border border-espresso rounded-lg shadow-xs p-0.5"
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             <button
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 if (cartItem) updateQty(cartItem.id, -1);
                               }}
-                              className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center bg-paros-cream hover:bg-red-100 rounded-lg border border-espresso font-black text-sm text-espresso active:scale-95 transition-all"
+                              className="w-5 h-5 flex items-center justify-center bg-paros-cream hover:bg-red-100 rounded font-black text-xs text-espresso active:scale-95"
                               title="Reduce quantity"
                             >
                               -
                             </button>
-                            <span className="font-display font-black text-xs sm:text-sm text-espresso tabular-nums px-1">
+                            <span className="font-display font-black text-xs text-espresso tabular-nums px-1.5">
                               {inCartQty}
                             </span>
                             <button
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 if (cartItem) updateQty(cartItem.id, 1);
                               }}
-                              className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center bg-paros-orange text-white rounded-lg border border-espresso font-black text-sm active:scale-95 transition-all"
+                              className="w-5 h-5 flex items-center justify-center bg-paros-orange text-white rounded font-black text-xs active:scale-95"
                               title="Add more"
                             >
                               +
@@ -2390,24 +2332,6 @@ export default function PosRegisterPage() {
                     )}
                   </div>
 
-                  {/* Quick Customer Simulator Link */}
-                  <div className="mt-2 flex items-center gap-2">
-                    <a
-                      href={isCounterOnlyCafe || posMode === 'EXPRESS_COUNTER' ? "/order" : `/order?table=${selectedTable}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="brutal-btn inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-paros-mint hover:bg-paros-yellow text-espresso border border-espresso font-display text-[10px] font-black uppercase shadow-sm transition-all"
-                      title={isCounterOnlyCafe || posMode === 'EXPRESS_COUNTER' ? "Open Express Counter Self-Order in new tab" : `Open Customer Self-Order page for Table ${selectedTable} in new tab`}
-                    >
-                      <span className="material-symbols-outlined text-[13px]">smartphone</span>
-                      <span>
-                        {isCounterOnlyCafe || posMode === 'EXPRESS_COUNTER'
-                          ? 'Test Express Guest QR ↗'
-                          : `Test Guest QR (T-${selectedTable}) ↗`}
-                      </span>
-                    </a>
-                  </div>
-
                   {/* Payment Status Badge for Current Table */}
                   {(() => {
                     const currentTableNode = tables.find((t) => t.tableNumber === selectedTable);
@@ -2571,64 +2495,50 @@ export default function PosRegisterPage() {
               </div>
 
               {/* Promo Coupon Application */}
-              <div className="bg-paros-cream p-2.5 rounded-xl border border-espresso flex flex-col gap-1.5">
-                <div className="flex items-center justify-between text-[11px] font-display font-black text-espresso/70 uppercase">
-                  <div className="flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[15px] text-paros-orange">sell</span>
-                    <span>Loyalty Promo Coupon</span>
-                  </div>
-                  {appliedCoupon && (
-                    <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-1.5 py-0.5 rounded border border-emerald-300">
-                      Applied
-                    </span>
-                  )}
-                </div>
-
-                {appliedCoupon ? (
-                  <div className="flex items-center justify-between bg-emerald-50 border border-emerald-300 px-2.5 py-1.5 rounded-lg">
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-mono text-xs font-black text-emerald-900 bg-emerald-200 px-1.5 py-0.5 rounded">
-                        {appliedCoupon.code}
-                      </span>
-                      <span className="font-display text-[11px] text-emerald-800 font-bold">
-                        {appliedCoupon.description} (-₹{appliedCoupon.discountAmount})
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => {
-                        setTableCoupons((prev) => {
-                          const next = { ...prev };
-                          delete next[currentTableId];
-                          return next;
-                        });
-                        showToast('Coupon removed');
-                      }}
-                      className="w-5 h-5 rounded flex items-center justify-center text-emerald-900 hover:bg-emerald-200 font-black text-xs"
-                      title="Remove coupon"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ) : (
+              {appliedCoupon ? (
+                <div className="flex items-center justify-between bg-emerald-50 border border-emerald-300 px-3 py-1.5 rounded-xl">
                   <div className="flex items-center gap-1.5">
-                    <input
-                      type="text"
-                      placeholder="Code (e.g. WELCOME10, FLAT50)"
-                      value={couponInput}
-                      onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
-                      onKeyDown={(e) => e.key === 'Enter' && handleApplyCoupon()}
-                      className="flex-1 px-2.5 py-1 bg-white border border-espresso rounded-lg font-mono text-xs font-bold text-espresso uppercase outline-none"
-                    />
-                    <button
-                      onClick={handleApplyCoupon}
-                      disabled={isCouponLoading || !couponInput.trim()}
-                      className="px-3 py-1 bg-espresso text-white rounded-lg font-display text-[11px] font-black uppercase hover:bg-espresso/90 disabled:opacity-50"
-                    >
-                      {isCouponLoading ? '...' : 'Apply'}
-                    </button>
+                    <span className="font-mono text-xs font-black text-emerald-900 bg-emerald-200 px-1.5 py-0.5 rounded">
+                      {appliedCoupon.code}
+                    </span>
+                    <span className="font-display text-[11px] text-emerald-800 font-bold">
+                      {appliedCoupon.description} (-₹{appliedCoupon.discountAmount})
+                    </span>
                   </div>
-                )}
-              </div>
+                  <button
+                    onClick={() => {
+                      setTableCoupons((prev) => {
+                        const next = { ...prev };
+                        delete next[currentTableId];
+                        return next;
+                      });
+                      showToast('Coupon removed');
+                    }}
+                    className="w-5 h-5 rounded flex items-center justify-center text-emerald-900 hover:bg-emerald-200 font-black text-xs"
+                    title="Remove coupon"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="text"
+                    placeholder="Coupon (e.g. WELCOME10)"
+                    value={couponInput}
+                    onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                    onKeyDown={(e) => e.key === 'Enter' && handleApplyCoupon()}
+                    className="flex-1 px-3 py-1.5 bg-white border border-espresso/40 rounded-xl font-mono text-xs font-bold text-espresso uppercase outline-none focus:border-espresso"
+                  />
+                  <button
+                    onClick={handleApplyCoupon}
+                    disabled={isCouponLoading || !couponInput.trim()}
+                    className="px-3 py-1.5 bg-espresso text-white rounded-xl font-display text-[11px] font-black uppercase hover:bg-espresso/90 disabled:opacity-40"
+                  >
+                    {isCouponLoading ? '...' : 'Apply'}
+                  </button>
+                </div>
+              )}
 
               {/* Receipt Breakdown for Selected Table */}
               <div className="bg-paros-cream p-3 rounded-xl border border-espresso font-mono text-xs flex flex-col gap-1">

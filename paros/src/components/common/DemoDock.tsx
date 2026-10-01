@@ -45,6 +45,11 @@ export function DemoDock() {
 
   const currentRole = roles.find((r) => pathname.startsWith(r.href));
 
+  // Hide on POS workstation to avoid overlapping primary cashier settlement buttons
+  if (pathname.startsWith('/pos')) {
+    return null;
+  }
+
   return (
     <div className="hidden md:flex fixed bottom-4 right-4 z-50 flex-col items-end gap-2 font-display select-none">
       {/* Expanded Switcher Card */}
