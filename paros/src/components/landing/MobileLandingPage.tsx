@@ -210,6 +210,7 @@ export function MobileLandingPage() {
 
   // ── 3. Pricing Toggle State ──
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annual'>('monthly');
+  const [selectedPlanTab, setSelectedPlanTab] = useState<'silver' | 'gold'>('gold');
   const [pricePop, setPricePop] = useState(false);
 
   function toggleBilling(period: 'monthly' | 'annual') {
@@ -409,101 +410,85 @@ export function MobileLandingPage() {
             <div className="flex flex-col gap-2">
               <h1 className="font-headline-lg-mobile text-headline-lg-mobile tracking-tight text-on-surface font-black leading-tight">
                 Stop paying{' '}
-                <span className="line-through decoration-primary decoration-4 text-outline">₹40,000/yr</span> to bulky
-                old-school POS.
+                <span className="line-through decoration-primary decoration-4 text-outline">₹40,000/yr</span> to bulky POS.
+                <span className="block mt-2 p-2.5 rounded-xl bg-primary text-white border-2 border-black retro-shadow-sm text-center font-headline-sm text-lg font-black">
+                  ☕ Run your entire cafe for ₹499/mo.
+                </span>
               </h1>
-
-              {/* Callout Box (Terracotta) */}
-              <div
-                className="p-4 rounded-xl bg-primary text-on-primary border-2 border-black retro-shadow flex items-center justify-between gap-3 neo-press cursor-pointer"
-                onClick={() => showToast('⚡ Everything included: Cloud register, KDS & QR dine-in')}
-              >
-                <div className="flex flex-col">
-                  <span className="font-label-sm uppercase tracking-widest text-primary-fixed-dim font-bold">
-                    All-in-One Cloud Engine
-                  </span>
-                  <span className="font-headline-sm text-headline-sm font-black text-white">
-                    Run your entire cafe for ₹499/mo.
-                  </span>
-                </div>
-                <div className="w-10 h-10 rounded-lg bg-black/20 flex items-center justify-center shrink-0 border border-white/20">
-                  <span className="material-symbols-outlined text-white text-2xl">local_cafe</span>
-                </div>
-              </div>
             </div>
 
             {/* Subhead */}
-            <p className="font-body-md text-on-surface-variant leading-relaxed">
-              Throw away clunky Windows desktop towers, loud thermal paper printers, and missing paper KOTs. Turn any phone,
+            <p className="font-body-md text-on-surface-variant leading-relaxed text-sm">
+              Throw away clunky Windows desktop towers, loud paper printers, and missing KOTs. Turn any phone,
               iPad, or laptop into a blisteringly fast billing counter, digital barista KDS, and table QR dine-in system.
             </p>
 
             {/* CTAs */}
-            <div className="flex flex-col gap-3 pt-1">
+            <div className="flex flex-col gap-2.5 pt-1">
               <Link
                 href="/onboarding"
-                className="w-full py-4 px-6 rounded-xl bg-primary text-on-primary border-2 border-black retro-shadow font-label-md text-base font-extrabold flex items-center justify-center gap-2 neo-press"
+                className="w-full py-3.5 px-6 rounded-xl bg-primary text-on-primary border-2 border-black retro-shadow font-label-md text-base font-extrabold flex items-center justify-center gap-2 neo-press"
               >
                 <span>Launch Cafe in 2 Mins</span>
                 <span className="text-lg">🚀</span>
               </Link>
               <button
-                className="w-full py-3.5 px-6 rounded-xl bg-surface-container-lowest text-on-surface border-2 border-black retro-shadow-sm font-label-md text-label-md font-bold flex items-center justify-center gap-2 neo-press"
+                className="w-full py-2.5 px-5 rounded-xl bg-surface-container-lowest text-on-surface border-2 border-black retro-shadow-sm font-label-md text-xs font-bold flex items-center justify-center gap-1.5 neo-press"
                 onClick={() => {
                   const el = document.getElementById('os-interactive-demo');
                   if (el) el.scrollIntoView({ behavior: 'smooth' });
                 }}
               >
-                <span className="material-symbols-outlined text-primary text-xl">play_circle</span>
+                <span className="material-symbols-outlined text-primary text-lg">play_circle</span>
                 <span>⚡ Test Live Simulator</span>
               </button>
             </div>
 
             {/* Trust Micro-Bar */}
-            <div className="flex items-center justify-center gap-2 text-center text-on-surface-variant font-label-sm text-xs py-1">
-              <span>No Credit Card Required</span>
+            <div className="flex items-center justify-center gap-2 text-center text-on-surface-variant font-label-sm text-[11px] py-0.5">
+              <span>No Credit Card</span>
               <span>•</span>
               <span>14-Day Free Trial</span>
               <span>•</span>
-              <span>Instant 180s Setup</span>
+              <span>180s Setup</span>
             </div>
 
-            {/* 4-Metric Grid (2x2) */}
-            <div className="grid grid-cols-2 gap-3 pt-2">
+            {/* 4-Metric Grid (Compact & High-Density) */}
+            <div className="grid grid-cols-2 gap-2 pt-1">
               <div
-                className="p-3.5 rounded-xl bg-surface-container-lowest border-2 border-black retro-shadow-sm flex flex-col neo-press cursor-pointer"
+                className="p-2.5 rounded-xl bg-surface-container-lowest border-2 border-black retro-shadow-xs flex flex-col neo-press cursor-pointer"
                 onClick={() => showToast('Zero hardware mandate: runs on Android, iOS, Windows, Mac & Web')}
               >
-                <span className="font-headline-md text-2xl font-black text-primary leading-none">₹0</span>
-                <span className="font-label-sm text-on-surface-variant mt-1.5 uppercase font-bold tracking-tight">
+                <span className="font-headline-md text-xl font-black text-primary leading-none">₹0</span>
+                <span className="font-label-sm text-on-surface-variant mt-1 text-[11px] uppercase font-bold tracking-tight">
                   Hardware Required
                 </span>
               </div>
               <div
-                className="p-3.5 rounded-xl bg-surface-container-lowest border-2 border-black retro-shadow-sm flex flex-col neo-press cursor-pointer"
+                className="p-2.5 rounded-xl bg-surface-container-lowest border-2 border-black retro-shadow-xs flex flex-col neo-press cursor-pointer"
                 onClick={() => showToast('⚡ Instant WhatsApp API sends PDF invoices in <1 second')}
               >
-                <span className="font-headline-md text-2xl font-black text-secondary leading-none">&lt; 1s</span>
-                <span className="font-label-sm text-on-surface-variant mt-1.5 uppercase font-bold tracking-tight">
+                <span className="font-headline-md text-xl font-black text-secondary leading-none">&lt; 1s</span>
+                <span className="font-label-sm text-on-surface-variant mt-1 text-[11px] uppercase font-bold tracking-tight">
                   WhatsApp Bill Dispatch
                 </span>
               </div>
               <div
-                className="p-3.5 rounded-xl bg-surface-container-lowest border-2 border-black retro-shadow-sm flex flex-col neo-press cursor-pointer"
+                className="p-2.5 rounded-xl bg-surface-container-lowest border-2 border-black retro-shadow-xs flex flex-col neo-press cursor-pointer"
                 onClick={() => showToast('Direct merchant bank QR integration with 0% intermediary commission')}
               >
-                <span className="font-headline-md text-2xl font-black text-on-surface leading-none">0%</span>
-                <span className="font-label-sm text-on-surface-variant mt-1.5 uppercase font-bold tracking-tight">
+                <span className="font-headline-md text-xl font-black text-on-surface leading-none">0%</span>
+                <span className="font-label-sm text-on-surface-variant mt-1 text-[11px] uppercase font-bold tracking-tight">
                   Direct UPI MDR / Tax
                 </span>
               </div>
               <div
-                className="p-3.5 rounded-xl bg-surface-container-lowest border-2 border-black retro-shadow-sm flex flex-col neo-press cursor-pointer"
+                className="p-2.5 rounded-xl bg-surface-container-lowest border-2 border-black retro-shadow-xs flex flex-col neo-press cursor-pointer"
                 onClick={() => showToast('Offline cache stores last 10,000 orders even during Wi-Fi dropouts')}
               >
-                <span className="font-headline-md text-2xl font-black text-tertiary leading-none">100%</span>
-                <span className="font-label-sm text-on-surface-variant mt-1.5 uppercase font-bold tracking-tight">
-                  Offline PWA Local Engine
+                <span className="font-headline-md text-xl font-black text-tertiary leading-none">100%</span>
+                <span className="font-label-sm text-on-surface-variant mt-1 text-[11px] uppercase font-bold tracking-tight">
+                  Offline PWA Engine
                 </span>
               </div>
             </div>
@@ -1020,85 +1005,74 @@ export function MobileLandingPage() {
               </div>
             </div>
 
-            {/* Side-by-side comparison cards */}
-            <div className="flex flex-col gap-3.5">
-              {/* RED CARD: Old School POS */}
-              <div className="p-4 rounded-2xl bg-[#fff1f2] border-2 border-black retro-shadow flex flex-col gap-3">
-                <div className="flex justify-between items-center pb-2 border-b border-red-300">
-                  <div className="flex items-center gap-1.5">
-                    <span className="material-symbols-outlined text-error text-xl">desktop_access_disabled</span>
-                    <span className="font-headline-sm text-sm font-black text-red-950">Old-School Windows POS</span>
-                  </div>
-                  <span className="px-2 py-0.5 rounded bg-red-200 text-red-900 font-label-sm text-[10px] font-bold">
-                    Capital Trap
-                  </span>
-                </div>
-                <div className="flex flex-col gap-2 text-xs text-red-950 font-medium">
-                  <div className="flex justify-between">
-                    <span>Annual Software Lock-in</span>
-                    <span className="font-bold">₹20,000 / yr</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Bulky Touchscreen Capex</span>
-                    <span className="font-bold">₹35,000 (Upfront)</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Toxic BPA Thermal Paper Rolls</span>
-                    <span className="font-bold text-error">₹{auditPaper.toLocaleString('en-IN')} / yr</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Aggregator Gateway Cut (1.5% MDR)</span>
-                    <span className="font-bold text-error">₹{auditMdr.toLocaleString('en-IN')} / yr</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Technician AMC &amp; Cabling Fee</span>
-                    <span className="font-bold">₹4,500 / yr</span>
+            {/* Unified Forensic Cost Comparison Card */}
+            <div className="p-3.5 rounded-2xl bg-surface-container-lowest border-2 border-black retro-shadow flex flex-col gap-2.5">
+              <div className="flex items-center justify-between pb-2 border-b-2 border-dashed border-black/20">
+                <span className="font-label-sm text-xs font-black uppercase text-on-surface">Annual Cost Breakdown</span>
+                <span className="font-label-sm text-[10px] font-bold text-on-surface-variant">Year 1 Drain</span>
+              </div>
+
+              <div className="flex flex-col gap-1.5 text-xs">
+                {/* Row 1: Software */}
+                <div className="flex justify-between items-center py-1 border-b border-black/5">
+                  <span className="text-on-surface font-medium">Software License</span>
+                  <div className="flex items-center gap-2 font-mono">
+                    <span className="text-red-600 line-through text-[11px]">₹20,000</span>
+                    <span className="text-secondary font-black bg-green-100 px-1.5 py-0.2 rounded border border-green-300 text-[11px]">₹4,999</span>
                   </div>
                 </div>
-                <div className="pt-2 border-t-2 border-red-300 flex justify-between items-center">
-                  <span className="font-label-md text-xs font-bold uppercase text-red-900">Total Year 1 Drain</span>
-                  <span className="font-headline-sm text-lg font-black text-error">
-                    ₹{auditTotalLegacy.toLocaleString('en-IN')}
-                  </span>
+
+                {/* Row 2: Hardware */}
+                <div className="flex justify-between items-center py-1 border-b border-black/5">
+                  <span className="text-on-surface font-medium">Hardware Terminal</span>
+                  <div className="flex items-center gap-2 font-mono">
+                    <span className="text-red-600 line-through text-[11px]">₹35,000</span>
+                    <span className="text-secondary font-black bg-green-100 px-1.5 py-0.2 rounded border border-green-300 text-[11px]">₹0 (Any Phone/Tab)</span>
+                  </div>
+                </div>
+
+                {/* Row 3: Thermal Paper */}
+                <div className="flex justify-between items-center py-1 border-b border-black/5">
+                  <span className="text-on-surface font-medium">Thermal Paper Rolls</span>
+                  <div className="flex items-center gap-2 font-mono">
+                    <span className="text-red-600 line-through text-[11px]">₹{auditPaper.toLocaleString('en-IN')}</span>
+                    <span className="text-secondary font-black bg-green-100 px-1.5 py-0.2 rounded border border-green-300 text-[11px]">₹0 (WhatsApp)</span>
+                  </div>
+                </div>
+
+                {/* Row 4: Gateway MDR */}
+                <div className="flex justify-between items-center py-1 border-b border-black/5">
+                  <span className="text-on-surface font-medium">Payment Gateway MDR (1.5%)</span>
+                  <div className="flex items-center gap-2 font-mono">
+                    <span className="text-red-600 line-through text-[11px]">₹{auditMdr.toLocaleString('en-IN')}</span>
+                    <span className="text-secondary font-black bg-green-100 px-1.5 py-0.2 rounded border border-green-300 text-[11px]">₹0 (Direct UPI)</span>
+                  </div>
+                </div>
+
+                {/* Row 5: AMC */}
+                <div className="flex justify-between items-center py-1">
+                  <span className="text-on-surface font-medium">Technician AMC &amp; Cabling</span>
+                  <div className="flex items-center gap-2 font-mono">
+                    <span className="text-red-600 line-through text-[11px]">₹4,500</span>
+                    <span className="text-secondary font-black bg-green-100 px-1.5 py-0.2 rounded border border-green-300 text-[11px]">₹0 (Free Lifetime)</span>
+                  </div>
                 </div>
               </div>
 
-              {/* GREEN CARD: Paros Cafe OS */}
-              <div className="p-4 rounded-2xl bg-[#f0fdf4] border-2 border-black retro-shadow flex flex-col gap-3">
-                <div className="flex justify-between items-center pb-2 border-b border-green-300">
-                  <div className="flex items-center gap-1.5">
-                    <span className="material-symbols-outlined text-secondary text-xl">energy_savings_leaf</span>
-                    <span className="font-headline-sm text-sm font-black text-green-950">Paros Cafe Cloud OS</span>
-                  </div>
-                  <span className="px-2 py-0.5 rounded bg-green-200 text-green-900 font-label-sm text-[10px] font-bold">
-                    Pure Profit
+              {/* Totals Comparison Summary Bar */}
+              <div className="pt-2 border-t-2 border-black flex items-center justify-between bg-surface-container p-2.5 rounded-xl border">
+                <div className="flex flex-col">
+                  <span className="font-label-sm text-[9px] uppercase font-bold text-red-700">Old Windows POS</span>
+                  <span className="font-headline-sm text-sm font-black text-red-600 line-through">
+                    ₹{auditTotalLegacy.toLocaleString('en-IN')}
                   </span>
                 </div>
-                <div className="flex flex-col gap-2 text-xs text-green-950 font-medium">
-                  <div className="flex justify-between">
-                    <span>Paros Unlimited Cloud OS</span>
-                    <span className="font-bold text-secondary">₹4,999 / yr</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Hardware Capex (Any Device)</span>
-                    <span className="font-bold text-secondary">₹0</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Paper Rolls (100% WhatsApp)</span>
-                    <span className="font-bold text-secondary">₹0</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Direct Bank UPI (0% MDR)</span>
-                    <span className="font-bold text-secondary">₹0</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Maintenance, Support &amp; Updates</span>
-                    <span className="font-bold text-secondary">₹0 (Included)</span>
-                  </div>
-                </div>
-                <div className="pt-2 border-t-2 border-green-300 flex justify-between items-center">
-                  <span className="font-label-md text-xs font-bold uppercase text-green-900">Total Year 1</span>
-                  <span className="font-headline-sm text-lg font-black text-secondary">₹4,999</span>
+                <span className="text-base font-black text-on-surface">➔</span>
+                <div className="flex flex-col text-right">
+                  <span className="font-label-sm text-[9px] uppercase font-bold text-green-700">Paros Cafe OS</span>
+                  <span className="font-headline-sm text-base font-black text-secondary">
+                    ₹4,999 / yr
+                  </span>
                 </div>
               </div>
             </div>
@@ -1148,86 +1122,88 @@ export function MobileLandingPage() {
               </p>
             </div>
 
-            {/* 4 Modular Cards */}
-            <div className="flex flex-col gap-3.5">
+            {/* 4 Modular Cards - Mobile-optimized horizontal layout */}
+            <div className="flex flex-col gap-3">
               {/* Feature 1 */}
               <div
-                className="p-4 rounded-xl bg-surface-container-lowest border-2 border-black retro-shadow flex flex-col gap-2 neo-press cursor-pointer"
+                className="p-3.5 rounded-xl bg-surface-container-lowest border-2 border-black retro-shadow flex gap-3 items-start neo-press cursor-pointer"
                 onClick={() =>
                   showToast('Universal QR: 1 QR print handles dining, takeaways, & room service')
                 }
               >
-                <div className="w-10 h-10 rounded-lg bg-tertiary-fixed border border-black flex items-center justify-center text-on-tertiary-fixed">
-                  <span className="material-symbols-outlined text-2xl">qr_code_scanner</span>
+                <div className="w-10 h-10 rounded-lg bg-tertiary-fixed border border-black flex items-center justify-center text-on-tertiary-fixed shrink-0 mt-0.5">
+                  <span className="material-symbols-outlined text-xl">qr_code_scanner</span>
                 </div>
-                <h3 className="font-headline-sm text-base font-black text-on-surface">Universal Single Table QR</h3>
-                <p className="font-body-sm text-xs text-on-surface-variant leading-relaxed">
-                  Print just 1 single QR artwork for your entire cafe. Eliminates rogue table stickers, sticky physical
-                  card damages, and table swapping order confusion.
-                </p>
-                <span className="text-[11px] font-bold text-primary flex items-center gap-1 mt-1">
-                  <span className="material-symbols-outlined text-sm">verified</span> Zero hardware reprint costs
-                </span>
+                <div className="flex flex-col gap-1 flex-1">
+                  <h3 className="font-headline-sm text-sm font-black text-on-surface">Universal Single Table QR</h3>
+                  <p className="font-body-sm text-xs text-on-surface-variant leading-relaxed">
+                    Print 1 QR artwork for your entire cafe. Eliminates rogue table stickers, card damages, and order confusion.
+                  </p>
+                  <span className="text-[10px] font-bold text-primary flex items-center gap-1 mt-0.5">
+                    <span className="material-symbols-outlined text-xs">verified</span> Zero hardware reprint costs
+                  </span>
+                </div>
               </div>
 
               {/* Feature 2 */}
               <div
-                className="p-4 rounded-xl bg-surface-container-lowest border-2 border-black retro-shadow flex flex-col gap-2 neo-press cursor-pointer"
+                className="p-3.5 rounded-xl bg-surface-container-lowest border-2 border-black retro-shadow flex gap-3 items-start neo-press cursor-pointer"
                 onClick={() =>
                   showToast('ETA updates ping customer phones silently without loud kitchen shouting')
                 }
               >
-                <div className="w-10 h-10 rounded-lg bg-secondary-container border border-black flex items-center justify-center text-on-secondary-container">
-                  <span className="material-symbols-outlined text-2xl">hourglass_top</span>
+                <div className="w-10 h-10 rounded-lg bg-secondary-container border border-black flex items-center justify-center text-on-secondary-container shrink-0 mt-0.5">
+                  <span className="material-symbols-outlined text-xl">hourglass_top</span>
                 </div>
-                <h3 className="font-headline-sm text-base font-black text-on-surface">1-Tap Chef ETA Countdowns</h3>
-                <p className="font-body-sm text-xs text-on-surface-variant leading-relaxed">
-                  Barista slammed with 8 complex manual pour-overs? Tap +5m directly on the KDS tablet. Diner phones
-                  update live with estimated brew times.
-                </p>
-                <span className="text-[11px] font-bold text-secondary flex items-center gap-1 mt-1">
-                  <span className="material-symbols-outlined text-sm">sentiment_very_satisfied</span> Cuts impatient
-                  customer inquiries by 90%
-                </span>
+                <div className="flex flex-col gap-1 flex-1">
+                  <h3 className="font-headline-sm text-sm font-black text-on-surface">1-Tap Chef ETA Countdowns</h3>
+                  <p className="font-body-sm text-xs text-on-surface-variant leading-relaxed">
+                    Barista slammed with manual pour-overs? Tap +5m on the KDS tablet. Diner phones update live with brew times.
+                  </p>
+                  <span className="text-[10px] font-bold text-secondary flex items-center gap-1 mt-0.5">
+                    <span className="material-symbols-outlined text-xs">sentiment_very_satisfied</span> Cuts customer inquiries by 90%
+                  </span>
+                </div>
               </div>
 
               {/* Feature 3 */}
               <div
-                className="p-4 rounded-xl bg-surface-container-lowest border-2 border-black retro-shadow flex flex-col gap-2 neo-press cursor-pointer"
+                className="p-3.5 rounded-xl bg-surface-container-lowest border-2 border-black retro-shadow flex gap-3 items-start neo-press cursor-pointer"
                 onClick={() => showToast('Official WhatsApp Business API with zero paper waste')}
               >
-                <div className="w-10 h-10 rounded-lg bg-primary-fixed border border-black flex items-center justify-center text-primary">
-                  <span className="material-symbols-outlined text-2xl">receipt_long</span>
+                <div className="w-10 h-10 rounded-lg bg-primary-fixed border border-black flex items-center justify-center text-primary shrink-0 mt-0.5">
+                  <span className="material-symbols-outlined text-xl">receipt_long</span>
                 </div>
-                <h3 className="font-headline-sm text-base font-black text-on-surface">100% Paperless WhatsApp Bills</h3>
-                <p className="font-body-sm text-xs text-on-surface-variant leading-relaxed">
-                  Official GST-compliant PDF tax invoices pinged via WhatsApp API in &lt;1 second. Automatically
-                  captures customer names and phone numbers for your CRM.
-                </p>
-                <span className="text-[11px] font-bold text-primary flex items-center gap-1 mt-1">
-                  <span className="material-symbols-outlined text-sm">forest</span> Zero chemical BPA thermal receipt
-                  pollution
-                </span>
+                <div className="flex flex-col gap-1 flex-1">
+                  <h3 className="font-headline-sm text-sm font-black text-on-surface">100% Paperless WhatsApp Bills</h3>
+                  <p className="font-body-sm text-xs text-on-surface-variant leading-relaxed">
+                    GST-compliant PDF tax invoices pinged via WhatsApp in &lt;1 second. Automatically captures customer phone for CRM.
+                  </p>
+                  <span className="text-[10px] font-bold text-primary flex items-center gap-1 mt-0.5">
+                    <span className="material-symbols-outlined text-xs">forest</span> Zero chemical BPA thermal receipt pollution
+                  </span>
+                </div>
               </div>
 
               {/* Feature 4 */}
               <div
-                className="p-4 rounded-xl bg-surface-container-lowest border-2 border-black retro-shadow flex flex-col gap-2 neo-press cursor-pointer"
+                className="p-3.5 rounded-xl bg-surface-container-lowest border-2 border-black retro-shadow flex gap-3 items-start neo-press cursor-pointer"
                 onClick={() =>
                   showToast('Register lock prevents drawer opening without manager 4-digit PIN')
                 }
               >
-                <div className="w-10 h-10 rounded-lg bg-surface-container-highest border border-black flex items-center justify-center text-on-surface">
-                  <span className="material-symbols-outlined text-2xl">lock_clock</span>
+                <div className="w-10 h-10 rounded-lg bg-surface-container-highest border border-black flex items-center justify-center text-on-surface shrink-0 mt-0.5">
+                  <span className="material-symbols-outlined text-xl">lock_clock</span>
                 </div>
-                <h3 className="font-headline-sm text-base font-black text-on-surface">Shift Cash Lock &amp; Spot Petty Audit</h3>
-                <p className="font-body-sm text-xs text-on-surface-variant leading-relaxed">
-                  Opening float check, mid-day dairy runs, and end-of-day register drawer reconciliation. Instant mismatch
-                  alarms sent straight to owner phones.
-                </p>
-                <span className="text-[11px] font-bold text-on-surface flex items-center gap-1 mt-1">
-                  <span className="material-symbols-outlined text-sm">shield</span> Eliminates till pilferage on night shifts
-                </span>
+                <div className="flex flex-col gap-1 flex-1">
+                  <h3 className="font-headline-sm text-sm font-black text-on-surface">Shift Cash Lock &amp; Spot Petty Audit</h3>
+                  <p className="font-body-sm text-xs text-on-surface-variant leading-relaxed">
+                    Opening float check, mid-day dairy runs, and end-of-day register drawer reconciliation. Instant mismatch alerts.
+                  </p>
+                  <span className="text-[10px] font-bold text-on-surface flex items-center gap-1 mt-0.5">
+                    <span className="material-symbols-outlined text-xs">shield</span> Eliminates till pilferage on night shifts
+                  </span>
+                </div>
               </div>
             </div>
           </section>
@@ -1270,154 +1246,215 @@ export function MobileLandingPage() {
                   </span>
                 </button>
               </div>
+
+              {/* Plan Switcher Tabs (Silver vs Gold) to eliminate ~500px vertical stack */}
+              <div className="grid grid-cols-2 p-1 rounded-xl bg-surface-container-highest border-2 border-black retro-shadow-sm gap-1 w-full max-w-xs mx-auto mt-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedPlanTab('silver')}
+                  className={`py-2 px-2.5 rounded-lg font-label-sm text-xs font-black transition-all flex flex-col items-center justify-center neo-press ${
+                    selectedPlanTab === 'silver'
+                      ? 'bg-black text-white retro-shadow-xs'
+                      : 'bg-transparent text-on-surface hover:bg-black/5'
+                  }`}
+                >
+                  <span>Silver Plan</span>
+                  <span className="text-[10px] font-normal opacity-85">
+                    {billingPeriod === 'annual' ? '₹4,999/yr' : '₹499/mo'}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedPlanTab('gold')}
+                  className={`py-2 px-2.5 rounded-lg font-label-sm text-xs font-black transition-all flex flex-col items-center justify-center neo-press ${
+                    selectedPlanTab === 'gold'
+                      ? 'bg-primary text-white retro-shadow-xs'
+                      : 'bg-transparent text-on-surface hover:bg-black/5'
+                  }`}
+                >
+                  <div className="flex items-center gap-1">
+                    <span>Gold Plan</span>
+                    <span className="text-amber-300">★</span>
+                  </div>
+                  <span className="text-[10px] font-normal opacity-90">
+                    {billingPeriod === 'annual' ? '₹8,499/yr' : '₹799/mo'}
+                  </span>
+                </button>
+              </div>
             </div>
 
-            {/* Pricing Cards */}
-            <div className="flex flex-col gap-5 pt-2">
-              {/* PLAN 1: Silver Plan */}
-              <div className="p-5 rounded-2xl bg-surface-container-lowest border-2 border-black retro-shadow flex flex-col gap-4">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <span className="font-label-sm text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">
-                      Quick Counter &amp; Bakery
+            {/* Selected Pricing Card */}
+            <div className="pt-1">
+              {selectedPlanTab === 'silver' ? (
+                /* PLAN 1: Silver Plan */
+                <div className="p-5 rounded-2xl bg-surface-container-lowest border-2 border-black retro-shadow flex flex-col gap-4">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="font-label-sm text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">
+                        Quick Counter &amp; Bakery
+                      </span>
+                      <h3 className="font-headline-sm text-xl font-black text-on-surface">Silver Plan</h3>
+                    </div>
+                    <span className="px-2.5 py-0.5 rounded-full bg-surface-container border border-black text-on-surface font-label-sm text-[10px] font-bold">
+                      Takeaway
                     </span>
-                    <h3 className="font-headline-sm text-xl font-black text-on-surface">Silver Plan</h3>
                   </div>
-                  <span className="px-2.5 py-0.5 rounded-full bg-surface-container border border-black text-on-surface font-label-sm text-[10px] font-bold">
-                    Takeaway
-                  </span>
-                </div>
 
-                <div className="flex items-baseline gap-1">
-                  <span
-                    className={`font-headline-md text-3xl font-black text-on-surface transition-all duration-200 ${
-                      pricePop ? 'scale-pop' : ''
-                    }`}
-                  >
-                    {billingPeriod === 'annual' ? '₹4,999' : '₹499'}
-                  </span>
-                  <span className="font-body-sm text-xs text-on-surface-variant font-semibold">
-                    {billingPeriod === 'annual' ? '/ year' : '/ month'}
-                  </span>
-                </div>
-
-                <p className="font-body-sm text-xs text-on-surface-variant leading-relaxed">
-                  Ideal for takeaway espresso bars, bakeries, food trucks, and cloud kitchens.
-                </p>
-
-                {/* Feature Checklist */}
-                <div className="flex flex-col gap-2 pt-2 border-t border-dashed border-outline-variant text-xs text-on-surface">
-                  <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-secondary text-base">check_circle</span>
-                    <span>Unlimited orders &amp; menu items</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-secondary text-base">check_circle</span>
-                    <span>WhatsApp GST billing included</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-secondary text-base">check_circle</span>
-                    <span>1 Kitchen KDS screen terminal</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-secondary text-base">check_circle</span>
-                    <span>Offline-first Progressive Web App (PWA)</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-secondary text-base">check_circle</span>
-                    <span>Shift cash lock &amp; spot petty cash audits</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-secondary text-base">check_circle</span>
-                    <span>1 Counter Register login</span>
-                  </div>
-                </div>
-
-                <Link
-                  href="/onboarding"
-                  onClick={() =>
-                    showToast('⚡ Silver 14-day free trial activated! Ready in under 180s.')
-                  }
-                  className="w-full py-3 px-4 rounded-xl bg-surface-container-high hover:bg-surface-container-highest text-on-surface border-2 border-black retro-shadow-sm font-label-md text-xs font-black flex items-center justify-center gap-1 neo-press"
-                >
-                  <span>Start 14-Day Free Trial</span>
-                </Link>
-              </div>
-
-              {/* PLAN 2: Gold Plan (Highlight) */}
-              <div className="p-5 rounded-2xl bg-[#fff8ee] border-2 border-black retro-shadow-lg flex flex-col gap-4 relative overflow-hidden">
-                {/* Most Loved Ribbon */}
-                <div className="absolute -right-12 top-6 bg-primary text-white text-[10px] font-black uppercase tracking-widest py-1 px-12 rotate-45 border-y border-black">
-                  Top Pick
-                </div>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <span className="font-label-sm text-[11px] font-bold text-primary uppercase tracking-wider">
-                      Full Dine-In &amp; Brewpub
+                  <div className="flex items-baseline gap-1">
+                    <span
+                      className={`font-headline-md text-3xl font-black text-on-surface transition-all duration-200 ${
+                        pricePop ? 'scale-pop' : ''
+                      }`}
+                    >
+                      {billingPeriod === 'annual' ? '₹4,999' : '₹499'}
                     </span>
-                    <h3 className="font-headline-sm text-xl font-black text-on-surface">Gold Plan</h3>
+                    <span className="font-body-sm text-xs text-on-surface-variant font-semibold">
+                      {billingPeriod === 'annual' ? '/ year' : '/ month'}
+                    </span>
                   </div>
-                </div>
 
-                <div className="flex items-baseline gap-1">
-                  <span
-                    className={`font-headline-md text-3xl font-black text-primary transition-all duration-200 ${
-                      pricePop ? 'scale-pop' : ''
-                    }`}
+                  <p className="font-body-sm text-xs text-on-surface-variant leading-relaxed">
+                    Ideal for takeaway espresso bars, bakeries, food trucks, and cloud kitchens.
+                  </p>
+
+                  {/* Feature Checklist */}
+                  <div className="flex flex-col gap-2 pt-2 border-t border-dashed border-outline-variant text-xs text-on-surface">
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-secondary text-base">check_circle</span>
+                      <span>Unlimited orders &amp; menu items</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-secondary text-base">check_circle</span>
+                      <span>WhatsApp GST billing included</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-secondary text-base">check_circle</span>
+                      <span>1 Kitchen KDS screen terminal</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-secondary text-base">check_circle</span>
+                      <span>Offline-first Progressive Web App (PWA)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-secondary text-base">check_circle</span>
+                      <span>Shift cash lock &amp; spot petty cash audits</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-secondary text-base">check_circle</span>
+                      <span>1 Counter Register login</span>
+                    </div>
+                  </div>
+
+                  <Link
+                    href="/onboarding"
+                    onClick={() =>
+                      showToast('⚡ Silver 14-day free trial activated! Ready in under 180s.')
+                    }
+                    className="w-full py-3 px-4 rounded-xl bg-surface-container-high hover:bg-surface-container-highest text-on-surface border-2 border-black retro-shadow-sm font-label-md text-xs font-black flex items-center justify-center gap-1 neo-press"
                   >
-                    {billingPeriod === 'annual' ? '₹8,499' : '₹799'}
-                  </span>
-                  <span className="font-body-sm text-xs text-on-surface-variant font-semibold">
-                    {billingPeriod === 'annual' ? '/ year' : '/ month'}
-                  </span>
+                    <span>Start 14-Day Free Trial</span>
+                  </Link>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedPlanTab('gold');
+                      showToast('Switched to Gold Plan details');
+                    }}
+                    className="text-center text-xs font-bold text-primary hover:underline flex items-center justify-center gap-1 pt-1"
+                  >
+                    <span>Need Table QR &amp; Dine-In? View Gold Plan ({billingPeriod === 'annual' ? '₹8,499/yr' : '₹799/mo'})</span>
+                    <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                  </button>
                 </div>
+              ) : (
+                /* PLAN 2: Gold Plan (Highlight) */
+                <div className="p-5 rounded-2xl bg-[#fff8ee] border-2 border-black retro-shadow-lg flex flex-col gap-4 relative overflow-hidden">
+                  {/* Most Loved Ribbon */}
+                  <div className="absolute -right-12 top-6 bg-primary text-white text-[10px] font-black uppercase tracking-widest py-1 px-12 rotate-45 border-y border-black">
+                    Top Pick
+                  </div>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="font-label-sm text-[11px] font-bold text-primary uppercase tracking-wider">
+                        Full Dine-In &amp; Brewpub
+                      </span>
+                      <h3 className="font-headline-sm text-xl font-black text-on-surface">Gold Plan</h3>
+                    </div>
+                  </div>
 
-                <p className="font-body-sm text-xs text-on-surface-variant leading-relaxed">
-                  For seated specialty cafes, bistros, roasteries, and multi-floor craft spaces.
-                </p>
+                  <div className="flex items-baseline gap-1">
+                    <span
+                      className={`font-headline-md text-3xl font-black text-primary transition-all duration-200 ${
+                        pricePop ? 'scale-pop' : ''
+                      }`}
+                    >
+                      {billingPeriod === 'annual' ? '₹8,499' : '₹799'}
+                    </span>
+                    <span className="font-body-sm text-xs text-on-surface-variant font-semibold">
+                      {billingPeriod === 'annual' ? '/ year' : '/ month'}
+                    </span>
+                  </div>
 
-                {/* Feature Checklist */}
-                <div className="flex flex-col gap-2 pt-2 border-t border-dashed border-primary/30 text-xs text-on-surface">
-                  <div className="font-label-sm text-[11px] font-black text-primary uppercase tracking-wider pb-1">
-                    EVERYTHING IN SILVER, PLUS:
+                  <p className="font-body-sm text-xs text-on-surface-variant leading-relaxed">
+                    For seated specialty cafes, bistros, roasteries, and multi-floor craft spaces.
+                  </p>
+
+                  {/* Feature Checklist */}
+                  <div className="flex flex-col gap-2 pt-2 border-t border-dashed border-primary/30 text-xs text-on-surface">
+                    <div className="font-label-sm text-[11px] font-black text-primary uppercase tracking-wider pb-1">
+                      EVERYTHING IN SILVER, PLUS:
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-secondary text-base">check_circle</span>
+                      <span className="font-bold">Universal Single Table QR ordering</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-secondary text-base">check_circle</span>
+                      <span>Interactive floor plan &amp; occupancy map</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-secondary text-base">check_circle</span>
+                      <span>Dynamic Chef ETA countdown on diner mobile</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-secondary text-base">check_circle</span>
+                      <span>Multi-device sync (Counter + Barista + Runner)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-secondary text-base">check_circle</span>
+                      <span>Automated Google Review Collector via WhatsApp</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-secondary text-base">check_circle</span>
+                      <span>Priority WhatsApp VIP Founder Support (24/7)</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-secondary text-base">check_circle</span>
-                    <span className="font-bold">Universal Single Table QR ordering</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-secondary text-base">check_circle</span>
-                    <span>Interactive floor plan &amp; occupancy map</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-secondary text-base">check_circle</span>
-                    <span>Dynamic Chef ETA countdown on diner mobile</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-secondary text-base">check_circle</span>
-                    <span>Multi-device sync (Counter + Barista + Runner)</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-secondary text-base">check_circle</span>
-                    <span>Automated Google Review Collector via WhatsApp</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-secondary text-base">check_circle</span>
-                    <span>Priority WhatsApp VIP Founder Support (24/7)</span>
-                  </div>
+
+                  <Link
+                    href="/onboarding"
+                    onClick={() =>
+                      showToast('⚡ Gold Plan VIP concierge trial started! Support ping sent.')
+                    }
+                    className="w-full py-3.5 px-4 rounded-xl bg-primary text-white border-2 border-black retro-shadow font-label-md text-xs font-black flex items-center justify-center gap-2 neo-press"
+                  >
+                    <span>Start 14-Day Free Trial</span>
+                    <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                  </Link>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedPlanTab('silver');
+                      showToast('Switched to Silver Plan details');
+                    }}
+                    className="text-center text-xs font-bold text-on-surface-variant hover:underline flex items-center justify-center gap-1 pt-1"
+                  >
+                    <span>Running Takeaway Counter only? View Silver Plan ({billingPeriod === 'annual' ? '₹4,999/yr' : '₹499/mo'})</span>
+                    <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                  </button>
                 </div>
-
-                <Link
-                  href="/onboarding"
-                  onClick={() =>
-                    showToast('⚡ Gold Plan VIP concierge trial started! Support ping sent.')
-                  }
-                  className="w-full py-3.5 px-4 rounded-xl bg-primary text-white border-2 border-black retro-shadow font-label-md text-xs font-black flex items-center justify-center gap-2 neo-press"
-                >
-                  <span>Start 14-Day Free Trial</span>
-                  <span className="material-symbols-outlined text-sm">arrow_forward</span>
-                </Link>
-              </div>
+              )}
             </div>
 
             {/* Guarantees Footer Strip */}
