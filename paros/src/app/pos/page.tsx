@@ -74,6 +74,7 @@ export default function PosRegisterPage() {
   const [activeView, setActiveView] = useState<'menu' | 'floor' | 'orders'>('menu');
   const [mobilePanel, setMobilePanel] = useState<'catalog' | 'ticket'>('catalog');
   const [isMobileToolsOpen, setIsMobileToolsOpen] = useState(false);
+  const [isDesktopToolsOpen, setIsDesktopToolsOpen] = useState(false);
   const [selectedTable, setSelectedTable] = useState<string>('1');
   const [selectedCategory, setSelectedCategory] = useState<string>('All Items');
   const [searchQuery, setSearchQuery] = useState('');
@@ -1083,48 +1084,50 @@ export default function PosRegisterPage() {
             )}
           </div>
 
-          {/* Quick Route Switches */}
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+          {/* Quick Route Switches - Station Switcher */}
+          <div className="flex items-center gap-1.5 p-1 bg-paros-cream border-2 border-espresso rounded-xl shadow-brutal-sm">
             <Link
               href="/pos"
-              className="px-2.5 sm:px-3 py-1.5 rounded-xl font-display text-[11px] sm:text-xs font-black uppercase bg-paros-orange text-white border-2 border-espresso shadow-brutal-sm flex items-center gap-1 shrink-0"
+              className="px-3 py-1.5 rounded-lg font-display text-xs font-black uppercase bg-paros-orange text-white shadow-xs flex items-center gap-1.5 shrink-0"
             >
               <span className="material-symbols-outlined text-[15px]">point_of_sale</span>
               <span>POS</span>
             </Link>
             <Link
+              href="/kds"
+              className="px-3 py-1.5 rounded-lg font-display text-xs font-black uppercase text-espresso hover:bg-paros-yellow/40 transition-colors flex items-center gap-1.5 shrink-0"
+              title="Open Barista Kitchen Display System"
+            >
+              <span className="material-symbols-outlined text-[15px]">soup_kitchen</span>
+              <span>Kitchen KDS</span>
+            </Link>
+            <Link
               href="/order"
               target="_blank"
-              className="px-2.5 sm:px-3 py-1.5 rounded-xl font-display text-[11px] sm:text-xs font-black uppercase bg-paros-mint hover:bg-paros-yellow text-espresso border-2 border-espresso shadow-brutal-sm flex items-center gap-1 shrink-0"
+              className="px-3 py-1.5 rounded-lg font-display text-xs font-black uppercase text-espresso hover:bg-paros-yellow/40 transition-colors flex items-center gap-1.5 shrink-0"
               title={isCounterOnlyCafe ? "Open Express Counter QR (Token Mode)" : "Open Customer QR Dine-in View in new tab"}
             >
               <span className="material-symbols-outlined text-[15px]">smartphone</span>
-              <span>{isCounterOnlyCafe ? 'Token QR ↗' : 'Customer QR ↗'}</span>
-            </Link>
-            <Link
-              href="/kds"
-              className="px-2.5 sm:px-3 py-1.5 rounded-xl font-display text-[11px] sm:text-xs font-black uppercase bg-white hover:bg-paros-yellow text-espresso border-2 border-espresso shadow-brutal-sm flex items-center gap-1 shrink-0"
-            >
-              <span className="material-symbols-outlined text-[15px]">soup_kitchen</span>
-              <span className="hidden sm:inline">Kitchen</span> KDS
+              <span>{isCounterOnlyCafe ? 'Token QR ↗' : 'Guest QR ↗'}</span>
             </Link>
             <Link
               href="/admin"
-              className="px-2.5 sm:px-3 py-1.5 rounded-xl font-display text-[11px] sm:text-xs font-black uppercase bg-white hover:bg-paros-yellow text-espresso border-2 border-espresso shadow-brutal-sm flex items-center gap-1 shrink-0"
+              className="px-3 py-1.5 rounded-lg font-display text-xs font-black uppercase text-espresso hover:bg-paros-yellow/40 transition-colors flex items-center gap-1.5 shrink-0"
+              title="Open Owner Analytics, Daily Sales & Z-Report"
             >
-              <span className="material-symbols-outlined text-[15px]">analytics</span>
-              <span className="hidden sm:inline">Z-Report</span>
+              <span className="material-symbols-outlined text-[16px] text-paros-orange">analytics</span>
+              <span>Analytics &amp; Sales ↗</span>
             </Link>
           </div>
 
-          {/* Till Float & Clock & Operator Badge */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          {/* Right: Cashier Operator, Till Float & Shift Tools Dropdown */}
+          <div className="flex items-center gap-2">
             {/* Operator Lock/Unlock Badge */}
             {operator ? (
               <button
                 onClick={handleLockTerminal}
                 title="Tap to lock terminal or switch cashier"
-                className="flex items-center gap-1.5 px-2.5 py-1 bg-paros-mint hover:bg-paros-yellow rounded-xl border border-espresso font-display text-xs font-black text-espresso transition-colors shadow-brutal-sm"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-paros-mint hover:bg-paros-yellow rounded-xl border border-espresso font-display text-xs font-black text-espresso transition-colors shadow-brutal-sm"
               >
                 <span className="material-symbols-outlined text-[15px] text-paros-matcha">badge</span>
                 <span>{operator.name}</span>
@@ -1133,51 +1136,89 @@ export default function PosRegisterPage() {
             ) : (
               <button
                 onClick={() => setPinModalOpen(true)}
-                className="flex items-center gap-1.5 px-2.5 py-1 bg-paros-yellow rounded-xl border border-espresso font-display text-xs font-black text-espresso animate-pulse shadow-brutal-sm"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-paros-yellow rounded-xl border border-espresso font-display text-xs font-black text-espresso animate-pulse shadow-brutal-sm"
               >
                 <span className="material-symbols-outlined text-[15px]">lock</span>
                 <span>Enter PIN</span>
               </button>
             )}
 
-            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-paros-cream rounded-xl border border-espresso font-display text-xs font-bold shadow-brutal-sm">
-              <span className="material-symbols-outlined text-[16px] text-paros-orange">point_of_sale</span>
-              <span className="hidden md:inline text-espresso/60 uppercase text-[10px]">Till Cash:</span>
-              <span className="font-mono font-black text-espresso">₹{drawerCash.toLocaleString('en-IN')}</span>
-              <button
-                onClick={() => setIsExpenseModalOpen(true)}
-                title="Log quick petty cash expense from till drawer"
-                className="ml-1 text-[10px] px-1.5 py-0.5 bg-paros-orange text-white rounded font-black hover:bg-orange-600 uppercase"
-              >
-                + Exp
-              </button>
-            </div>
-
-            {/* End Shift / EOD Audit Button */}
+            {/* Till Cash Pill */}
             <button
-              onClick={() => setIsCloseShiftModalOpen(true)}
-              title="End Shift & Close Cash Drawer with EOD Audit"
-              className="flex items-center gap-1 px-2.5 py-1 bg-paros-yellow hover:bg-amber-300 rounded-xl border border-espresso font-display text-xs font-black text-espresso shadow-brutal-sm transition-all"
+              onClick={() => setIsExpenseModalOpen(true)}
+              title="Till Drawer Float (tap to log petty expense)"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-paros-cream hover:bg-paros-yellow rounded-xl border border-espresso font-display text-xs font-bold shadow-brutal-sm transition-colors"
             >
-              <span className="material-symbols-outlined text-[15px] text-amber-900">lock_clock</span>
-              <span className="hidden lg:inline">End Shift / EOD</span>
-              <span className="lg:hidden">EOD</span>
+              <span className="material-symbols-outlined text-[16px] text-paros-orange">point_of_sale</span>
+              <span className="text-espresso/60 uppercase text-[10px]">Till:</span>
+              <span className="font-mono font-black text-espresso">₹{drawerCash.toLocaleString('en-IN')}</span>
             </button>
 
-            <div className="hidden sm:flex items-center gap-1 font-mono text-xs font-bold text-espresso bg-paros-cream px-2.5 py-1 rounded-lg border border-espresso">
+            {/* Clock */}
+            <div className="hidden 2xl:flex items-center gap-1 font-mono text-xs font-bold text-espresso bg-paros-cream px-2.5 py-1.5 rounded-xl border border-espresso/40">
               <span className="material-symbols-outlined text-[14px]">schedule</span>
               <span>{currentTime}</span>
             </div>
 
-            {/* Wipe Cache & New Cafe Modal Trigger */}
-            <button
-              onClick={() => setShowResetModal(true)}
-              className="brutal-btn px-2.5 sm:px-3 py-1.5 rounded-xl bg-red-100 hover:bg-red-200 text-red-700 font-display text-xs font-black uppercase border-2 border-espresso shadow-brutal-sm flex items-center gap-1"
-              title="Delete local DB & register a new cafe"
-            >
-              <span className="material-symbols-outlined text-[16px]">cleaning_services</span>
-              <span className="hidden sm:inline">Reset / New Cafe</span>
-            </button>
+            {/* Shift Tools Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setIsDesktopToolsOpen((prev) => !prev)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-paros-cream border-2 border-espresso rounded-xl font-display text-xs font-black uppercase shadow-brutal-sm transition-all"
+                title="Shift EOD, Expenses & Settings"
+              >
+                <span className="material-symbols-outlined text-[16px]">tune</span>
+                <span>Tools ▾</span>
+              </button>
+
+              {isDesktopToolsOpen && (
+                <div className="absolute right-0 top-full mt-2 w-56 bg-white border-2 border-espresso rounded-2xl shadow-brutal-lg p-2 z-50 flex flex-col gap-1 animate-in fade-in slide-in-from-top-2">
+                  <button
+                    onClick={() => {
+                      setIsDesktopToolsOpen(false);
+                      setIsCloseShiftModalOpen(true);
+                    }}
+                    className="w-full px-3 py-2 text-left rounded-xl hover:bg-paros-yellow font-display text-xs font-bold text-espresso flex items-center gap-2 transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-[18px] text-amber-800">lock_clock</span>
+                    <div>
+                      <div className="font-black">End Shift &amp; EOD</div>
+                      <div className="text-[10px] text-espresso/60">Balance drawer cash</div>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setIsDesktopToolsOpen(false);
+                      setIsExpenseModalOpen(true);
+                    }}
+                    className="w-full px-3 py-2 text-left rounded-xl hover:bg-paros-yellow font-display text-xs font-bold text-espresso flex items-center gap-2 transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-[18px] text-paros-orange">payments</span>
+                    <div>
+                      <div className="font-black">Log Till Expense</div>
+                      <div className="text-[10px] text-espresso/60">Milk, ice &amp; petty cash</div>
+                    </div>
+                  </button>
+
+                  <div className="h-px bg-espresso/15 my-1" />
+
+                  <button
+                    onClick={() => {
+                      setIsDesktopToolsOpen(false);
+                      setShowResetModal(true);
+                    }}
+                    className="w-full px-3 py-2 text-left rounded-xl hover:bg-red-50 text-red-700 font-display text-xs font-bold flex items-center gap-2 transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">cleaning_services</span>
+                    <div>
+                      <div className="font-black">Reset / Switch Cafe</div>
+                      <div className="text-[10px] text-red-600/70">Wipe local terminal cache</div>
+                    </div>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
