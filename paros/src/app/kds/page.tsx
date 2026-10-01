@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 
 interface KdsItem {
@@ -25,10 +25,12 @@ interface KdsTicket {
 }
 
 export default function KdsStudioPage() {
-  const [stationFilter, setStationFilter] = useState<'all' | 'kitchen' | 'barista' | 'served'>('all');
+  const [stationFilter, setStationFilter] = useState<'all' | 'kitchen' | 'barista' | 'ready' | 'served'>('all');
   const [chimeEnabled, setChimeEnabled] = useState(true);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [cafeName, setCafeName] = useState<string>('Kitchen KDS');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Kitchen Staff PIN & Operator State
   const [operator, setOperator] = useState<{ name: string; role: string } | null>(null);
@@ -37,6 +39,56 @@ export default function KdsStudioPage() {
   const [pinError, setPinError] = useState('');
   const [pinLoading, setPinLoading] = useState(false);
 
+  // Audio Context Ref for reliable mobile audio
+  const audioCtxRef = useRef<AudioContext | null>(null);
+
+  function getAudioContext(): AudioContext | null {
+    if (!audioCtxRef.current && typeof window !== 'undefined') {
+      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      if (AudioCtx) {
+        audioCtxRef.current = new AudioCtx();
+      }
+    }
+    if (audioCtxRef.current && audioCtxRef.current.state === 'suspended') {
+      audioCtxRef.current.resume().catch(() => {});
+    }
+    return audioCtxRef.current;
+  }
+
+  // Auto-unlock audio context on first user touch anywhere
+  useEffect(() => {
+    const unlockAudio = () => {
+      getAudioContext();
+      window.removeEventListener('pointerdown', unlockAudio);
+      window.removeEventListener('keydown', unlockAudio);
+    };
+    window.addEventListener('pointerdown', unlockAudio);
+    window.addEventListener('keydown', unlockAudio);
+    return () => {
+      window.removeEventListener('pointerdown', unlockAudio);
+      window.removeEventListener('keydown', unlockAudio);
+    };
+  }, []);
+
+  // Listen for browser fullscreen changes
+  useEffect(() => {
+    const handleFsChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFsChange);
+    return () => document.removeEventListener('fullscreenchange', handleFsChange);
+  }, []);
+
+  function toggleFullscreen() {
+    if (typeof document === 'undefined') return;
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().then(() => setIsFullscreen(true)).catch(() => {});
+    } else {
+      document.exitFullscreen().then(() => setIsFullscreen(false)).catch(() => {});
+    }
+  }
+
+  // Load operator from session
   useEffect(() => {
     const cached = sessionStorage.getItem('paros_kds_operator');
     if (cached) {
@@ -85,7 +137,7 @@ export default function KdsStudioPage() {
     setPinModalOpen(true);
   }
 
-  // Tickets State (starts empty, loaded dynamically from live database)
+  // Tickets State
   const [tickets, setTickets] = useState<KdsTicket[]>([]);
   const [servedTickets, setServedTickets] = useState<KdsTicket[]>([]);
   const hasLoadedOnce = useRef(false);
@@ -94,8 +146,8 @@ export default function KdsStudioPage() {
   function playKitchenChime() {
     if (!chimeEnabled) return;
     try {
-      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      const ctx = new AudioCtx();
+      const ctx = getAudioContext();
+      if (!ctx) return;
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
 
@@ -141,11 +193,7 @@ export default function KdsStudioPage() {
         recallLastTicket();
       }
       if (e.key === 'f' || e.key === 'F') {
-        if (!document.fullscreenElement) {
-          document.documentElement.requestFullscreen().catch(() => {});
-        } else {
-          document.exitFullscreen().catch(() => {});
-        }
+        toggleFullscreen();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -223,7 +271,18 @@ export default function KdsStudioPage() {
         }
 
         if (data?.servedOrders?.length) {
-          const mappedServed: KdsTicket[] = data.servedOrders.map((o: any) => {
+          const mappedServed: KdsTicket[] = data.servedOrders.map((o: {
+            id: string;
+            orderNumber: string;
+            source?: string;
+            customerName?: string;
+            createdAt: string;
+            updatedAt?: string;
+            dynamicPrepMinutes?: number;
+            specialNotes?: string;
+            table?: { tableNumber: string };
+            items?: Array<{ id: string; name: string; quantity: number; notes?: string }>;
+          }) => {
             const elapsed = Math.floor((Date.now() - new Date(o.updatedAt || o.createdAt).getTime()) / 1000);
             return {
               id: o.id,
@@ -235,7 +294,7 @@ export default function KdsStudioPage() {
               targetSeconds: (o.dynamicPrepMinutes || 10) * 60,
               status: 'READY' as const,
               specialNote: o.specialNotes,
-              items: (o.items || []).map((it: any) => ({
+              items: (o.items || []).map((it) => ({
                 id: it.id,
                 name: `${it.quantity}x ${it.name}`,
                 notes: it.notes || '',
@@ -310,7 +369,7 @@ export default function KdsStudioPage() {
     }
   }
 
-  // Push Chef ETA (+5m / +10m)
+  // Push Chef ETA (+3m / +5m / +10m)
   function pushEta(ticketId: string, minutes: number) {
     setTickets((prev) =>
       prev.map((t) => {
@@ -326,7 +385,7 @@ export default function KdsStudioPage() {
       })
     );
     playKitchenChime();
-    showToast(`⏱️ Chef added +${minutes}m to ${ticketId}. Customer phone live timer synced!`);
+    showToast(`⏱️ Added +${minutes}m to ${ticketId}. Customer live timer synced!`);
 
     fetch('/api/kds', {
       method: 'POST',
@@ -350,7 +409,7 @@ export default function KdsStudioPage() {
         return t;
       })
     );
-    showToast(`🛎️ Ticket ${ticketId} marked Ready! Order runner notified on POS.`);
+    showToast(`🛎️ Ticket marked Ready! Order runner notified on POS.`);
 
     fetch('/api/kds', {
       method: 'POST',
@@ -362,7 +421,7 @@ export default function KdsStudioPage() {
   // Bump / Serve Ticket
   function bumpTicket(ticketId: string) {
     setTickets((prev) => prev.filter((t) => t.id !== ticketId));
-    showToast(`✓ Ticket bumped & archived. Press [Space] to recall.`);
+    showToast(`✓ Ticket bumped & handed to runner.`);
 
     fetch('/api/kds', {
       method: 'POST',
@@ -374,6 +433,10 @@ export default function KdsStudioPage() {
   // Bump All Completed Items
   function bumpAllCompleted() {
     const readyTickets = tickets.filter((t) => t.status === 'READY');
+    if (readyTickets.length === 0) {
+      showToast('⚠️ No tickets are currently marked Ready to bump.');
+      return;
+    }
     setTickets((prev) => prev.filter((t) => t.status !== 'READY'));
     showToast(`✓ Bumped all ${readyTickets.length} ready tickets to runner.`);
 
@@ -410,42 +473,149 @@ export default function KdsStudioPage() {
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   }
 
-  // Filtered tickets (Active stations or Served history)
-  const filteredTickets =
-    stationFilter === 'served'
-      ? servedTickets
-      : tickets.filter((t) => {
-          if (stationFilter === 'all') return true;
-          return t.items.some((i) => i.category === stationFilter);
-        });
+  // Print ESC-POS 80mm KOT Slip
+  function printTicketKot(ticket: KdsTicket) {
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+    const dateStr = now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+
+    const itemsHtml = ticket.items
+      .map(
+        (it) => `
+      <div style="display:flex; justify-content:space-between; margin-bottom: 6px; font-size: 15px; font-weight: bold;">
+        <span>${it.name}</span>
+        <span>${it.status === 'READY' ? '✓ DONE' : 'COOK'}</span>
+      </div>
+      ${it.notes ? `<div style="font-size: 12px; color: #555; margin-top: -3px; margin-bottom: 6px; padding-left: 8px;">↳ ${it.notes}</div>` : ''}
+    `
+      )
+      .join('');
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>KOT — ${ticket.tableLabel} #${ticket.orderNumber}</title>
+        <style>
+          @page { size: 80mm auto; margin: 0; }
+          body {
+            font-family: 'Courier New', Courier, monospace;
+            width: 72mm;
+            margin: 0 auto;
+            padding: 8px 4px;
+            color: #000;
+            background: #fff;
+          }
+          .center { text-align: center; }
+          .divider { border-top: 1px dashed #000; margin: 8px 0; }
+          .double-divider { border-top: 2px solid #000; margin: 8px 0; }
+          .large { font-size: 20px; font-weight: 900; }
+        </style>
+      </head>
+      <body>
+        <div class="center">
+          <div style="font-size: 12px; letter-spacing: 2px;">*** KITCHEN ORDER TICKET ***</div>
+          <div class="large" style="margin: 4px 0;">${ticket.tableLabel}</div>
+          <div style="font-size: 14px; font-weight: bold;">ORDER #${ticket.orderNumber} • ${ticket.source}</div>
+          <div style="font-size: 11px;">${dateStr} ${timeStr}</div>
+          ${ticket.customerName ? `<div style="font-size: 12px; margin-top: 2px;">Guest: ${ticket.customerName}</div>` : ''}
+        </div>
+        <div class="double-divider"></div>
+        ${itemsHtml}
+        <div class="divider"></div>
+        ${ticket.specialNote ? `<div style="font-size: 12px; font-weight: bold; background: #eee; padding: 4px;">NOTE: ${ticket.specialNote}</div>` : ''}
+        <div class="center" style="font-size: 11px; margin-top: 8px;">Paros Kitchen Display System</div>
+        <script>
+          window.onload = function() {
+            window.print();
+            setTimeout(function() { window.close(); }, 500);
+          };
+        </script>
+      </body>
+      </html>
+    `;
+
+    const printWin = window.open('', '_blank', 'width=400,height=600');
+    if (printWin) {
+      printWin.document.open();
+      printWin.document.write(html);
+      printWin.document.close();
+    }
+  }
+
+  // Summary counts
+  const readyCount = useMemo(() => tickets.filter((t) => t.status === 'READY').length, [tickets]);
+  const overdueCount = useMemo(() => tickets.filter((t) => t.status === 'OVERDUE').length, [tickets]);
+  const baristaCount = useMemo(
+    () => tickets.filter((t) => t.items.some((i) => i.category === 'barista')).length,
+    [tickets]
+  );
+  const kitchenCount = useMemo(
+    () => tickets.filter((t) => t.items.some((i) => i.category === 'kitchen')).length,
+    [tickets]
+  );
+
+  // Filtered tickets based on station filter & search query
+  const filteredTickets = useMemo(() => {
+    let list: KdsTicket[] = [];
+    if (stationFilter === 'served') {
+      list = servedTickets;
+    } else if (stationFilter === 'ready') {
+      list = tickets.filter((t) => t.status === 'READY');
+    } else {
+      list = tickets.filter((t) => {
+        if (stationFilter === 'all') return true;
+        return t.items.some((i) => i.category === stationFilter);
+      });
+    }
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      list = list.filter(
+        (t) =>
+          t.orderNumber.toLowerCase().includes(q) ||
+          t.tableLabel.toLowerCase().includes(q) ||
+          (t.customerName && t.customerName.toLowerCase().includes(q)) ||
+          t.items.some((it) => it.name.toLowerCase().includes(q))
+      );
+    }
+
+    return list;
+  }, [stationFilter, tickets, servedTickets, searchQuery]);
 
   return (
     <div className="min-h-screen bg-paros-cream text-espresso font-body flex flex-col select-none antialiased">
       {/* ── Sticky KDS Header Bar ── */}
-      <header className="sticky top-0 left-0 right-0 bg-white z-50 border-b-2 border-espresso shadow-brutal-sm">
-        <div className="flex items-center justify-between px-3 sm:px-6 py-2 sm:py-3 gap-2">
-          <div className="flex items-center gap-3">
-            <Link href="/pos" className="flex items-center gap-2">
+      <header className="sticky top-0 left-0 right-0 bg-white z-40 border-b-2 border-espresso shadow-brutal-sm">
+        {/* Top Operational Bar */}
+        <div className="flex items-center justify-between px-2.5 sm:px-6 py-2 sm:py-3 gap-2">
+          {/* Brand & Cafe Name */}
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <Link href="/pos" className="flex items-center gap-1.5 sm:gap-2 shrink-0">
               <div className="w-8 sm:w-9 h-8 sm:h-9 rounded-xl bg-paros-orange text-white flex items-center justify-center font-display font-black text-sm border-2 border-espresso shadow-brutal-sm">
                 <span className="material-symbols-outlined text-[18px] sm:text-[20px]">skillet</span>
               </div>
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <span className="font-display text-base sm:text-lg font-black text-espresso tracking-tight">{cafeName}</span>
-                  <span className="font-display text-[9px] sm:text-[10px] font-black uppercase bg-paros-yellow px-1.5 py-0.5 rounded border border-espresso">
+              <div className="min-w-0">
+                <div className="flex items-center gap-1 sm:gap-1.5">
+                  <span className="font-display text-sm sm:text-lg font-black text-espresso tracking-tight truncate max-w-[110px] sm:max-w-[200px]">
+                    {cafeName}
+                  </span>
+                  <span className="font-display text-[9px] sm:text-[10px] font-black uppercase bg-paros-yellow px-1 sm:px-1.5 py-0.2 rounded border border-espresso shrink-0">
                     KDS
                   </span>
                 </div>
-                <div className="flex items-center gap-1.5 text-[11px] sm:text-xs font-display font-bold text-paros-matcha">
-                  <span className="w-2 h-2 rounded-full bg-paros-matcha animate-pulse" />
-                  <span>{tickets.length} Active Tickets</span>
+                <div className="flex items-center gap-1.5 text-[10px] sm:text-xs font-display font-bold text-paros-matcha">
+                  <span className="w-1.5 sm:w-2 h-1.5 sm:h-2 rounded-full bg-paros-matcha animate-pulse shrink-0" />
+                  <span className="truncate">
+                    {tickets.length} Active {overdueCount > 0 ? `(${overdueCount} Late)` : ''}
+                  </span>
                 </div>
               </div>
             </Link>
           </div>
 
           {/* Desktop Station Navigation Tabs */}
-          <nav className="hidden md:flex items-center gap-1 p-1 bg-paros-cream rounded-xl border-2 border-espresso shadow-brutal-sm">
+          <nav className="hidden lg:flex items-center gap-1 p-1 bg-paros-cream rounded-xl border-2 border-espresso shadow-brutal-sm">
             <button
               onClick={() => setStationFilter('all')}
               className={`px-3 py-1.5 rounded-lg font-display text-xs font-black uppercase transition-all ${
@@ -454,7 +624,7 @@ export default function KdsStudioPage() {
                   : 'text-espresso hover:bg-paros-yellow/40'
               }`}
             >
-              All Stations ({tickets.length})
+              All ({tickets.length})
             </button>
             <button
               onClick={() => setStationFilter('barista')}
@@ -464,7 +634,7 @@ export default function KdsStudioPage() {
                   : 'text-espresso hover:bg-paros-yellow/40'
               }`}
             >
-              <span>☕ Barista / Brews</span>
+              <span>☕ Barista ({baristaCount})</span>
             </button>
             <button
               onClick={() => setStationFilter('kitchen')}
@@ -474,53 +644,101 @@ export default function KdsStudioPage() {
                   : 'text-espresso hover:bg-paros-yellow/40'
               }`}
             >
-              <span>🍳 Kitchen & Hearth</span>
+              <span>🍳 Kitchen ({kitchenCount})</span>
+            </button>
+            <button
+              onClick={() => setStationFilter('ready')}
+              className={`px-3 py-1.5 rounded-lg font-display text-xs font-black uppercase transition-all flex items-center gap-1 ${
+                stationFilter === 'ready'
+                  ? 'bg-paros-matcha text-white shadow-brutal-sm'
+                  : 'text-espresso hover:bg-paros-yellow/40'
+              }`}
+            >
+              <span>🛎️ Ready Pass ({readyCount})</span>
             </button>
             <button
               onClick={() => setStationFilter('served')}
               className={`px-3 py-1.5 rounded-lg font-display text-xs font-black uppercase transition-all flex items-center gap-1.5 ${
                 stationFilter === 'served'
-                  ? 'bg-paros-matcha text-white shadow-brutal-sm'
+                  ? 'bg-espresso text-white shadow-brutal-sm'
                   : 'text-espresso hover:bg-paros-yellow/40'
               }`}
             >
               <span className="material-symbols-outlined text-[16px]">task_alt</span>
-              <span>Handed to Runner ({servedTickets.length})</span>
+              <span>Delivered ({servedTickets.length})</span>
             </button>
           </nav>
 
           {/* Top Control Actions */}
-          <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+            {/* Quick Search on Desktop */}
+            <div className="hidden sm:flex items-center relative">
+              <input
+                type="text"
+                placeholder="Search token / table..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-36 lg:w-44 px-2.5 py-1 sm:py-1.5 pr-6 bg-paros-cream border border-espresso rounded-xl font-display text-xs font-bold text-espresso outline-none"
+              />
+              {searchQuery ? (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-1.5 text-xs text-espresso/60 hover:text-espresso"
+                >
+                  ✕
+                </button>
+              ) : (
+                <span className="material-symbols-outlined absolute right-1.5 text-espresso/40 text-[16px]">
+                  search
+                </span>
+              )}
+            </div>
+
             {/* Chime Mute Toggle */}
             <button
-              onClick={() => setChimeEnabled(!chimeEnabled)}
-              className={`p-2 rounded-xl border border-espresso transition-all shadow-brutal-sm ${
-                chimeEnabled ? 'bg-paros-mint text-emerald-800' : 'bg-red-100 text-red-700'
+              onClick={() => {
+                setChimeEnabled(!chimeEnabled);
+                showToast(chimeEnabled ? '🔇 Kitchen order chime muted' : '🔔 Kitchen order chime active');
+              }}
+              className={`p-1.5 sm:p-2 rounded-xl border border-espresso transition-all shadow-brutal-sm ${
+                chimeEnabled ? 'bg-paros-mint text-emerald-950' : 'bg-red-100 text-red-700'
               }`}
-              title={chimeEnabled ? 'Kitchen chime active' : 'Chime muted'}
+              title={chimeEnabled ? 'Kitchen chime active (tap to mute)' : 'Chime muted (tap to enable)'}
             >
               <span className="material-symbols-outlined text-[18px]">
                 {chimeEnabled ? 'notifications_active' : 'notifications_off'}
               </span>
             </button>
 
-            {/* Recall Last Bumped */}
+            {/* Fullscreen Toggle */}
+            <button
+              onClick={toggleFullscreen}
+              className="p-1.5 sm:p-2 rounded-xl bg-white hover:bg-paros-cream text-espresso border border-espresso transition-all shadow-brutal-sm"
+              title={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen mode'}
+            >
+              <span className="material-symbols-outlined text-[18px]">
+                {isFullscreen ? 'fullscreen_exit' : 'fullscreen'}
+              </span>
+            </button>
+
+            {/* Recall Last Bumped (Desktop) */}
             <button
               onClick={recallLastTicket}
-              className="inline-flex items-center gap-1 px-2.5 sm:px-3 py-1.5 sm:py-2 bg-paros-cream hover:bg-paros-yellow text-espresso font-display text-xs font-black uppercase rounded-xl border border-espresso shadow-brutal-sm"
+              className="hidden sm:inline-flex items-center gap-1 px-2.5 sm:px-3 py-1.5 sm:py-2 bg-paros-cream hover:bg-paros-yellow text-espresso font-display text-xs font-black uppercase rounded-xl border border-espresso shadow-brutal-sm"
               title="Recall last bumped ticket"
             >
               <span className="material-symbols-outlined text-[16px]">undo</span>
-              <span className="hidden sm:inline">Recall</span>
+              <span>Recall</span>
             </button>
 
-            {/* Bump All Completed */}
+            {/* Bump All Ready (Desktop) */}
             <button
               onClick={bumpAllCompleted}
-              className="hidden sm:inline-flex items-center gap-1 px-3 py-2 bg-white hover:bg-paros-cream text-espresso font-display text-xs font-black uppercase rounded-xl border border-espresso shadow-brutal-sm"
+              disabled={readyCount === 0}
+              className="hidden sm:inline-flex items-center gap-1 px-3 py-2 bg-white hover:bg-paros-cream text-espresso font-display text-xs font-black uppercase rounded-xl border border-espresso shadow-brutal-sm disabled:opacity-40"
             >
               <span className="material-symbols-outlined text-[16px]">done_all</span>
-              <span>Bump Ready</span>
+              <span>Bump Ready ({readyCount})</span>
             </button>
 
             {/* Chef Operator Lock/Unlock Badge */}
@@ -528,18 +746,18 @@ export default function KdsStudioPage() {
               <button
                 onClick={handleLockTerminal}
                 title="Tap to lock KDS or switch chef"
-                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-paros-mint hover:bg-paros-yellow rounded-xl border border-espresso font-display text-xs font-black text-espresso transition-colors shadow-brutal-sm"
+                className="flex items-center gap-1 px-2 sm:px-2.5 py-1.5 bg-paros-mint hover:bg-paros-yellow rounded-xl border border-espresso font-display text-[11px] sm:text-xs font-black text-espresso transition-colors shadow-brutal-sm"
               >
-                <span className="material-symbols-outlined text-[16px] text-paros-matcha">skillet</span>
-                <span>{operator.name}</span>
-                <span className="material-symbols-outlined text-[13px] text-espresso/60">lock</span>
+                <span className="material-symbols-outlined text-[14px] sm:text-[16px] text-paros-matcha">skillet</span>
+                <span className="max-w-[50px] sm:max-w-none truncate">{operator.name.split(' ')[0]}</span>
+                <span className="material-symbols-outlined text-[12px] text-espresso/60">lock</span>
               </button>
             ) : (
               <button
                 onClick={() => setPinModalOpen(true)}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-paros-yellow rounded-xl border border-espresso font-display text-xs font-black text-espresso animate-pulse shadow-brutal-sm"
+                className="flex items-center gap-1 px-2 sm:px-2.5 py-1.5 bg-paros-yellow rounded-xl border border-espresso font-display text-[11px] sm:text-xs font-black text-espresso animate-pulse shadow-brutal-sm"
               >
-                <span className="material-symbols-outlined text-[15px]">lock</span>
+                <span className="material-symbols-outlined text-[14px]">lock</span>
                 <span>PIN</span>
               </button>
             )}
@@ -547,166 +765,258 @@ export default function KdsStudioPage() {
             {/* Return to POS */}
             <Link
               href="/pos"
-              className="brutal-btn px-2.5 sm:px-3 py-1.5 sm:py-2 bg-espresso text-white font-display text-xs font-black uppercase rounded-xl border border-espresso shadow-brutal-sm flex items-center gap-1"
+              className="brutal-btn px-2 sm:px-3 py-1.5 sm:py-2 bg-espresso text-white font-display text-[11px] sm:text-xs font-black uppercase rounded-xl border border-espresso shadow-brutal-sm flex items-center gap-1 shrink-0"
+              title="Switch to Counter POS"
             >
-              <span className="material-symbols-outlined text-[16px]">point_of_sale</span>
-              <span className="hidden md:inline">Open POS</span>
+              <span className="material-symbols-outlined text-[15px] sm:text-[16px]">point_of_sale</span>
+              <span className="hidden md:inline">POS</span>
             </Link>
           </div>
         </div>
 
-        {/* ── Mobile Station Navigation Tab Bar (Swipable) ── */}
-        <div className="md:hidden flex items-center gap-1.5 px-3 py-2 bg-paros-cream border-t border-espresso/20 overflow-x-auto no-scrollbar">
+        {/* ── Mobile Station Navigation Tab Bar (Swipable with Counters) ── */}
+        <div className="lg:hidden flex items-center gap-1.5 px-2.5 py-1.5 bg-paros-cream border-t border-espresso/20 overflow-x-auto no-scrollbar">
           <button
             onClick={() => setStationFilter('all')}
-            className={`px-3 py-1.5 rounded-lg font-display text-xs font-black uppercase whitespace-nowrap transition-all ${
+            className={`px-2.5 py-1.5 rounded-xl font-display text-[11px] font-black uppercase whitespace-nowrap transition-all flex items-center gap-1 shrink-0 ${
               stationFilter === 'all'
                 ? 'bg-espresso text-white shadow-brutal-sm'
                 : 'bg-white text-espresso border border-espresso'
             }`}
           >
-            All ({tickets.length})
+            <span>🔥 All</span>
+            <span className="px-1 py-0.2 rounded-full font-mono text-[9px] bg-white/20">
+              {tickets.length}
+            </span>
           </button>
+
           <button
             onClick={() => setStationFilter('barista')}
-            className={`px-3 py-1.5 rounded-lg font-display text-xs font-black uppercase whitespace-nowrap transition-all flex items-center gap-1 ${
+            className={`px-2.5 py-1.5 rounded-xl font-display text-[11px] font-black uppercase whitespace-nowrap transition-all flex items-center gap-1 shrink-0 ${
               stationFilter === 'barista'
                 ? 'bg-espresso text-white shadow-brutal-sm'
                 : 'bg-white text-espresso border border-espresso'
             }`}
           >
             <span>☕ Barista</span>
+            {baristaCount > 0 && (
+              <span className="px-1 py-0.2 rounded-full font-mono text-[9px] bg-white/20">
+                {baristaCount}
+              </span>
+            )}
           </button>
+
           <button
             onClick={() => setStationFilter('kitchen')}
-            className={`px-3 py-1.5 rounded-lg font-display text-xs font-black uppercase whitespace-nowrap transition-all flex items-center gap-1 ${
+            className={`px-2.5 py-1.5 rounded-xl font-display text-[11px] font-black uppercase whitespace-nowrap transition-all flex items-center gap-1 shrink-0 ${
               stationFilter === 'kitchen'
                 ? 'bg-espresso text-white shadow-brutal-sm'
                 : 'bg-white text-espresso border border-espresso'
             }`}
           >
             <span>🍳 Kitchen</span>
+            {kitchenCount > 0 && (
+              <span className="px-1 py-0.2 rounded-full font-mono text-[9px] bg-white/20">
+                {kitchenCount}
+              </span>
+            )}
           </button>
+
           <button
-            onClick={() => setStationFilter('served')}
-            className={`px-3 py-1.5 rounded-lg font-display text-xs font-black uppercase whitespace-nowrap transition-all flex items-center gap-1 ${
-              stationFilter === 'served'
-                ? 'bg-paros-matcha text-white shadow-brutal-sm'
+            onClick={() => setStationFilter('ready')}
+            className={`px-2.5 py-1.5 rounded-xl font-display text-[11px] font-black uppercase whitespace-nowrap transition-all flex items-center gap-1 shrink-0 ${
+              stationFilter === 'ready'
+                ? 'bg-paros-matcha text-white shadow-brutal-sm ring-1 ring-emerald-600'
+                : readyCount > 0
+                ? 'bg-paros-mint text-emerald-950 border border-emerald-600 animate-pulse'
                 : 'bg-white text-espresso border border-espresso'
             }`}
           >
-            <span className="material-symbols-outlined text-[14px]">task_alt</span>
-            <span>Runner ({servedTickets.length})</span>
+            <span>🛎️ Ready</span>
+            <span className="px-1.5 py-0.2 rounded-full font-mono text-[9px] font-black bg-white/30">
+              {readyCount}
+            </span>
           </button>
+
+          <button
+            onClick={() => setStationFilter('served')}
+            className={`px-2.5 py-1.5 rounded-xl font-display text-[11px] font-black uppercase whitespace-nowrap transition-all flex items-center gap-1 shrink-0 ${
+              stationFilter === 'served'
+                ? 'bg-espresso text-white shadow-brutal-sm'
+                : 'bg-white text-espresso border border-espresso'
+            }`}
+          >
+            <span className="material-symbols-outlined text-[13px]">task_alt</span>
+            <span>Delivered ({servedTickets.length})</span>
+          </button>
+
+          {/* Quick Mobile Search Input */}
+          <div className="flex items-center relative shrink-0 ml-auto">
+            <input
+              type="text"
+              placeholder="Search..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-24 px-2 py-1 pr-5 bg-white border border-espresso rounded-lg font-display text-[10px] font-bold text-espresso outline-none"
+            />
+            {searchQuery ? (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-1 text-[10px] text-espresso/60"
+              >
+                ✕
+              </button>
+            ) : (
+              <span className="material-symbols-outlined absolute right-1 text-espresso/40 text-[13px]">
+                search
+              </span>
+            )}
+          </div>
         </div>
       </header>
 
       {/* ── Main KDS Kanban Board ── */}
-      <main className="p-3 sm:p-6 pb-24 sm:pb-8 flex-1 flex flex-col">
+      <main className="p-2.5 sm:p-4 lg:p-6 pb-28 md:pb-8 flex-1 flex flex-col">
         {filteredTickets.length === 0 ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-center p-8 bg-white rounded-3xl border-3 border-espresso shadow-brutal-lg max-w-xl mx-auto my-8">
-            <div className="w-16 h-16 rounded-2xl bg-paros-mint flex items-center justify-center border-2 border-espresso shadow-brutal-sm mb-4">
-              <span className="material-symbols-outlined text-emerald-800 text-[32px]">
-                {stationFilter === 'served' ? 'task_alt' : 'check_circle'}
+          <div className="flex-1 flex flex-col items-center justify-center text-center p-6 sm:p-8 bg-white rounded-3xl border-3 border-espresso shadow-brutal-lg max-w-xl mx-auto my-6 sm:my-8 w-full">
+            <div className="w-14 sm:w-16 h-14 sm:h-16 rounded-2xl bg-paros-mint flex items-center justify-center border-2 border-espresso shadow-brutal-sm mb-3 sm:mb-4">
+              <span className="material-symbols-outlined text-emerald-800 text-[28px] sm:text-[32px]">
+                {stationFilter === 'served' ? 'task_alt' : stationFilter === 'ready' ? 'check_circle' : 'done_all'}
               </span>
             </div>
-            <h2 className="font-display text-2xl font-black text-espresso">
-              {stationFilter === 'served' ? 'No Delivered Tickets Yet' : 'Kitchen Pass is Clear!'}
-            </h2>
-            <p className="font-body text-sm text-espresso/70 mt-1 max-w-md">
+            <h2 className="font-display text-xl sm:text-2xl font-black text-espresso">
               {stationFilter === 'served'
-                ? 'Orders that are bumped and handed over to the runner will appear here. You can inspect or recall them anytime.'
-                : 'All tickets have been fulfilled and served. New customer QR orders and POS tickets will automatically appear here with a live chime.'}
+                ? 'No Delivered Tickets Yet'
+                : stationFilter === 'ready'
+                ? 'No Tickets Waiting at Pass'
+                : 'Kitchen Pass is Clear!'}
+            </h2>
+            <p className="font-body text-xs sm:text-sm text-espresso/70 mt-1 max-w-md">
+              {stationFilter === 'served'
+                ? 'Orders bumped and handed over to the runner appear here. You can recall them anytime.'
+                : stationFilter === 'ready'
+                ? 'Orders with all items struck ready will appear here waiting for runner pickup.'
+                : 'All orders have been prepared and served. New customer QR orders and POS tickets will automatically appear here with a chime.'}
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-start">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 items-start">
             {filteredTickets.map((t) => {
               const isOverdue = t.status === 'OVERDUE';
               const isReady = t.status === 'READY';
               const isNew = t.status === 'NEW';
+              const readyItemsCount = t.items.filter((i) => i.status === 'READY').length;
+              const totalItemsCount = t.items.length;
 
               return (
                 <div
                   key={t.id}
-                  className={`rounded-3xl border-3 border-espresso flex flex-col justify-between transition-all ${
+                  className={`rounded-2xl sm:rounded-3xl border-2 sm:border-3 border-espresso flex flex-col justify-between transition-all ${
                     t.source === 'SWIGGY'
-                      ? 'border-t-8 border-t-orange-500'
+                      ? 'border-t-6 sm:border-t-8 border-t-orange-500'
                       : t.source === 'ZOMATO'
-                      ? 'border-t-8 border-t-red-600'
+                      ? 'border-t-6 sm:border-t-8 border-t-red-600'
                       : t.source === 'TAKEAWAY' || t.tableLabel.toLowerCase().includes('token') || t.tableLabel.toLowerCase().includes('takeaway')
-                      ? 'border-t-8 border-t-amber-500'
-                      : 'border-t-8 border-t-emerald-600'
+                      ? 'border-t-6 sm:border-t-8 border-t-amber-500'
+                      : 'border-t-6 sm:border-t-8 border-t-emerald-600'
                   } ${
                     isOverdue
-                      ? 'bg-red-50 border-red-600 shadow-brutal-lg ring-2 ring-red-400'
+                      ? 'bg-red-50/90 border-red-600 shadow-brutal-sm ring-2 ring-red-400'
                       : isReady
-                      ? 'bg-paros-mint border-emerald-600 shadow-brutal ring-2 ring-emerald-400'
+                      ? 'bg-paros-mint/90 border-emerald-600 shadow-brutal ring-2 ring-emerald-400'
                       : isNew
-                      ? 'bg-paros-yellow shadow-brutal-lg ring-2 ring-amber-400'
-                      : 'bg-white shadow-brutal'
+                      ? 'bg-paros-yellow/85 border-espresso shadow-brutal ring-2 ring-amber-400'
+                      : 'bg-white border-espresso shadow-brutal'
                   }`}
                 >
                   {/* Ticket Header */}
-                  <div className="p-4 border-b-2 border-espresso flex items-start justify-between gap-2">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-display text-lg font-black text-espresso tracking-tight">
+                  <div className="p-3 sm:p-4 border-b-2 border-espresso flex flex-col gap-1.5">
+                    {/* Row 1: Table & Order Number & Print KOT */}
+                    <div className="flex items-center justify-between gap-1.5">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="font-display text-base sm:text-lg font-black text-espresso tracking-tight truncate">
                           {t.tableLabel}
                         </span>
-                        <span className="px-1.5 py-0.5 rounded bg-white font-mono text-xs font-black border border-espresso shadow-sm">
+                        <span className="px-1.5 py-0.2 rounded bg-white font-mono text-xs font-black border border-espresso shadow-xs shrink-0">
                           {t.orderNumber}
                         </span>
                       </div>
-                      <p className="font-body text-xs text-espresso/80 font-semibold mt-0.5">
-                        {t.customerName}
-                      </p>
 
-                      {/* Prominent KDS Packaging Badge */}
-                      {t.source === 'SWIGGY' ? (
-                        <div className="mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-orange-500 text-white font-display text-[10px] font-black uppercase border border-espresso shadow-xs">
-                          <span>🛵</span>
-                          <span>SWIGGY • PACK FOR RIDER</span>
+                      <div className="flex items-center gap-1 shrink-0">
+                        {/* 1-Tap KOT Thermal Print Slip */}
+                        <button
+                          onClick={() => printTicketKot(t)}
+                          className="p-1 rounded-lg bg-paros-cream hover:bg-paros-yellow text-espresso border border-espresso transition-colors shadow-xs"
+                          title="Print 80mm ESC-POS Kitchen KOT Slip"
+                        >
+                          <span className="material-symbols-outlined text-[15px]">print</span>
+                        </button>
+
+                        {/* Timer Badge */}
+                        <div
+                          className={`px-2.5 py-1 rounded-xl border border-espresso font-mono font-black text-[11px] sm:text-xs tabular-nums flex items-center gap-1 shadow-xs ${
+                            stationFilter === 'served'
+                              ? 'bg-paros-mint text-emerald-950 border-emerald-600'
+                              : isOverdue
+                              ? 'bg-red-500 text-white animate-pulse'
+                              : isReady
+                              ? 'bg-emerald-600 text-white'
+                              : isNew
+                              ? 'bg-amber-400 text-espresso'
+                              : 'bg-paros-cream text-espresso'
+                          }`}
+                        >
+                          <span className="material-symbols-outlined text-[13px]">
+                            {stationFilter === 'served' ? 'task_alt' : isOverdue ? 'warning' : 'timer'}
+                          </span>
+                          <span>
+                            {stationFilter === 'served'
+                              ? `${Math.floor(t.elapsedSeconds / 60)}m ago`
+                              : isOverdue
+                              ? `+${Math.floor((t.elapsedSeconds - t.targetSeconds) / 60)}m LATE`
+                              : formatTime(t.elapsedSeconds)}
+                          </span>
                         </div>
-                      ) : t.source === 'ZOMATO' ? (
-                        <div className="mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-red-600 text-white font-display text-[10px] font-black uppercase border border-espresso shadow-xs">
-                          <span>🔴</span>
-                          <span>ZOMATO • PACK FOR RIDER</span>
-                        </div>
-                      ) : t.source === 'TAKEAWAY' || t.tableLabel.toLowerCase().includes('token') || t.tableLabel.toLowerCase().includes('takeaway') ? (
-                        <div className="mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-400 text-espresso font-display text-[10px] font-black uppercase border border-espresso shadow-xs">
-                          <span>🛍️</span>
-                          <span>PARCEL • PACK IN BAG</span>
-                        </div>
-                      ) : (
-                        <div className="mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-100 text-emerald-950 font-display text-[10px] font-black uppercase border border-emerald-400 shadow-xs">
-                          <span>🍽️</span>
-                          <span>DINE-IN • SERVE AT TABLE</span>
-                        </div>
-                      )}
+                      </div>
                     </div>
 
-                    {/* Timer Badge */}
-                    <div
-                      className={`px-3 py-1.5 rounded-xl border-2 border-espresso font-mono font-black text-xs tabular-nums flex items-center gap-1 shadow-brutal-sm ${
-                        stationFilter === 'served'
-                          ? 'bg-paros-mint text-emerald-950 border-emerald-600'
-                          : isOverdue
-                          ? 'bg-red-500 text-white animate-pulse'
-                          : isReady
-                          ? 'bg-emerald-600 text-white'
-                          : isNew
-                          ? 'bg-amber-400 text-espresso'
-                          : 'bg-paros-cream text-espresso'
-                      }`}
-                    >
-                      <span className="material-symbols-outlined text-[14px]">
-                        {stationFilter === 'served' ? 'task_alt' : 'timer'}
-                      </span>
-                      <span>
-                        {stationFilter === 'served'
-                          ? `${Math.floor(t.elapsedSeconds / 60)}m ago`
-                          : formatTime(t.elapsedSeconds)}
+                    {/* Row 2: Customer Name, Channel Badge & Progress */}
+                    <div className="flex items-center justify-between gap-2 flex-wrap text-xs">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="font-body text-xs text-espresso/80 font-semibold truncate max-w-[120px]">
+                          {t.customerName}
+                        </span>
+                        {/* Source Tag */}
+                        {t.source === 'SWIGGY' ? (
+                          <span className="px-1.5 py-0.2 rounded-md bg-orange-500 text-white font-display text-[9px] font-black uppercase shadow-xs">
+                            SWIGGY
+                          </span>
+                        ) : t.source === 'ZOMATO' ? (
+                          <span className="px-1.5 py-0.2 rounded-md bg-red-600 text-white font-display text-[9px] font-black uppercase shadow-xs">
+                            ZOMATO
+                          </span>
+                        ) : t.source === 'TAKEAWAY' || t.tableLabel.toLowerCase().includes('token') || t.tableLabel.toLowerCase().includes('takeaway') ? (
+                          <span className="px-1.5 py-0.2 rounded-md bg-amber-400 text-espresso font-display text-[9px] font-black uppercase shadow-xs">
+                            PARCEL
+                          </span>
+                        ) : (
+                          <span className="px-1.5 py-0.2 rounded-md bg-emerald-100 text-emerald-950 font-display text-[9px] font-black uppercase border border-emerald-400 shadow-xs">
+                            DINE-IN
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Items Done Progress Pill */}
+                      <span
+                        className={`font-display text-[10px] font-black px-1.5 py-0.5 rounded-lg border border-espresso ${
+                          readyItemsCount === totalItemsCount
+                            ? 'bg-paros-matcha text-white'
+                            : readyItemsCount > 0
+                            ? 'bg-paros-yellow text-espresso'
+                            : 'bg-paros-cream text-espresso/70'
+                        }`}
+                      >
+                        {readyItemsCount}/{totalItemsCount} Done
                       </span>
                     </div>
                   </div>
@@ -714,7 +1024,7 @@ export default function KdsStudioPage() {
                   {/* Special Note / Payment Badge */}
                   {t.specialNote && (
                     <div
-                      className={`px-4 py-2 border-b-2 border-dashed border-espresso/20 flex items-center justify-between font-display text-xs font-black ${
+                      className={`px-3 sm:px-4 py-1.5 sm:py-2 border-b-2 border-dashed border-espresso/20 flex items-center justify-between font-display text-[11px] sm:text-xs font-black ${
                         t.specialNote.includes('PAY LATER')
                           ? 'bg-amber-100 text-amber-950'
                           : t.specialNote.includes('PREPAID') || t.specialNote.includes('UPI')
@@ -722,18 +1032,18 @@ export default function KdsStudioPage() {
                           : 'bg-amber-100 text-amber-900'
                       }`}
                     >
-                      <div className="flex items-center gap-1.5">
-                        <span className="material-symbols-outlined text-[16px]">
+                      <div className="flex items-center gap-1 min-w-0">
+                        <span className="material-symbols-outlined text-[15px] shrink-0">
                           {t.specialNote.includes('PAY LATER')
                             ? 'payments'
                             : t.specialNote.includes('PREPAID') || t.specialNote.includes('UPI')
                             ? 'verified'
                             : 'campaign'}
                         </span>
-                        <span>{t.specialNote}</span>
+                        <span className="truncate">{t.specialNote}</span>
                       </div>
                       <span
-                        className={`text-[9px] uppercase px-1.5 py-0.5 rounded border border-espresso font-black ${
+                        className={`text-[8.5px] uppercase px-1.5 py-0.2 rounded border border-espresso font-black shrink-0 ${
                           t.specialNote.includes('PAY LATER')
                             ? 'bg-amber-300 text-amber-950'
                             : 'bg-emerald-300 text-emerald-950'
@@ -744,30 +1054,30 @@ export default function KdsStudioPage() {
                     </div>
                   )}
 
-                  {/* Items Checklist */}
-                  <div className="p-4 flex flex-col gap-2.5 flex-1">
+                  {/* Items Checklist (Tap to Strike/Complete) */}
+                  <div className="p-3 sm:p-4 flex flex-col gap-2 flex-1">
                     {t.items.map((item) => (
                       <div
                         key={item.id}
                         onClick={() => toggleItem(t.id, item.id)}
-                        className={`p-3 rounded-2xl border-2 border-espresso cursor-pointer transition-all flex items-start justify-between gap-2 ${
+                        className={`p-2.5 sm:p-3 rounded-xl border-2 border-espresso cursor-pointer active:scale-98 transition-all flex items-start justify-between gap-2 ${
                           item.status === 'READY'
-                            ? 'bg-white/60 opacity-60 line-through'
+                            ? 'bg-emerald-50/70 border-emerald-600 opacity-70 line-through'
                             : 'bg-paros-cream hover:bg-white shadow-brutal-sm'
                         }`}
                       >
-                        <div>
-                          <p className="font-display text-sm font-bold text-espresso">
+                        <div className="min-w-0">
+                          <p className="font-display text-xs sm:text-sm font-bold text-espresso leading-snug">
                             {item.name}
                           </p>
                           {item.notes && (
-                            <p className="font-body text-xs text-espresso/60 mt-0.5">
-                              {item.notes}
+                            <p className="font-body text-[11px] text-espresso/70 mt-0.5 font-medium">
+                              ↳ {item.notes}
                             </p>
                           )}
                         </div>
                         <div
-                          className={`w-6 h-6 rounded-lg border-2 border-espresso flex items-center justify-center shrink-0 ${
+                          className={`w-6 h-6 rounded-lg border-2 border-espresso flex items-center justify-center shrink-0 transition-colors ${
                             item.status === 'READY' ? 'bg-paros-matcha text-white' : 'bg-white'
                           }`}
                         >
@@ -781,22 +1091,31 @@ export default function KdsStudioPage() {
                     ))}
                   </div>
 
-                  {/* Chef Modifier Dock (+5m / +10m) - Only for active tickets */}
+                  {/* Chef ETA Modifiers (+3m / +5m / +10m) - Active tickets only */}
                   {stationFilter !== 'served' && (
-                    <div className="px-4 py-2 bg-paros-cream/60 border-t-2 border-dashed border-espresso/20 flex items-center justify-between text-xs font-display">
+                    <div className="px-3 sm:px-4 py-1.5 bg-paros-cream/60 border-t-2 border-dashed border-espresso/20 flex items-center justify-between text-xs font-display">
                       <span className="font-bold text-espresso/60 uppercase text-[10px]">
                         Delay ETA:
                       </span>
                       <div className="flex items-center gap-1">
                         <button
+                          onClick={() => pushEta(t.id, 3)}
+                          className="px-2 py-1 bg-white hover:bg-paros-yellow border border-espresso rounded-lg font-mono font-bold text-[11px] shadow-xs active:scale-95"
+                          title="Add 3 minutes"
+                        >
+                          +3m
+                        </button>
+                        <button
                           onClick={() => pushEta(t.id, 5)}
-                          className="px-2 py-1 bg-white hover:bg-paros-yellow border border-espresso rounded-lg font-mono font-bold text-[11px] shadow-sm"
+                          className="px-2 py-1 bg-white hover:bg-paros-yellow border border-espresso rounded-lg font-mono font-bold text-[11px] shadow-xs active:scale-95"
+                          title="Add 5 minutes"
                         >
                           +5m
                         </button>
                         <button
                           onClick={() => pushEta(t.id, 10)}
-                          className="px-2 py-1 bg-white hover:bg-paros-yellow border border-espresso rounded-lg font-mono font-bold text-[11px] shadow-sm"
+                          className="px-2 py-1 bg-white hover:bg-paros-yellow border border-espresso rounded-lg font-mono font-bold text-[11px] shadow-xs active:scale-95"
+                          title="Add 10 minutes"
                         >
                           +10m
                         </button>
@@ -805,30 +1124,30 @@ export default function KdsStudioPage() {
                   )}
 
                   {/* Primary Ticket Action Footer */}
-                  <div className="p-4 pt-2 flex items-center gap-2">
+                  <div className="p-3 pt-1.5 sm:p-4 sm:pt-2 flex items-center gap-2">
                     {stationFilter === 'served' ? (
                       <button
                         onClick={() => handleRecallTicket(t.id)}
-                        className="brutal-btn w-full py-3.5 bg-white hover:bg-paros-yellow text-espresso font-display font-black text-xs uppercase rounded-2xl border-2 border-espresso shadow-brutal flex items-center justify-center gap-1.5"
+                        className="brutal-btn w-full py-2.5 sm:py-3.5 bg-white hover:bg-paros-yellow text-espresso font-display font-black text-xs uppercase rounded-xl border-2 border-espresso shadow-brutal flex items-center justify-center gap-1.5 active:scale-98"
                       >
-                        <span className="material-symbols-outlined text-[18px]">undo</span>
-                        <span>↩️ Recall to Active Queue</span>
+                        <span className="material-symbols-outlined text-[17px]">undo</span>
+                        <span>↩️ Recall to Pass</span>
                       </button>
                     ) : isReady ? (
                       <button
                         onClick={() => bumpTicket(t.id)}
-                        className="brutal-btn w-full py-3.5 bg-espresso text-white font-display font-black text-xs uppercase rounded-2xl border-2 border-espresso shadow-brutal flex items-center justify-center gap-1.5"
+                        className="brutal-btn w-full py-2.5 sm:py-3.5 bg-espresso text-white font-display font-black text-xs uppercase rounded-xl border-2 border-espresso shadow-brutal flex items-center justify-center gap-1.5 active:scale-98"
                       >
-                        <span className="material-symbols-outlined text-[18px]">check_circle</span>
-                        <span>Bump Ticket (Delivered)</span>
+                        <span className="material-symbols-outlined text-[17px]">check_circle</span>
+                        <span>BUMP & DELIVER ➔</span>
                       </button>
                     ) : (
                       <button
                         onClick={() => markReady(t.id)}
-                        className="brutal-btn w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-display font-black text-xs uppercase rounded-2xl border-2 border-espresso shadow-brutal flex items-center justify-center gap-1.5"
+                        className="brutal-btn w-full py-2.5 sm:py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-display font-black text-xs uppercase rounded-xl border-2 border-espresso shadow-brutal flex items-center justify-center gap-1.5 active:scale-98"
                       >
-                        <span className="material-symbols-outlined text-[18px]">notifications</span>
-                        <span>MARK READY 🛎️</span>
+                        <span className="material-symbols-outlined text-[17px]">notifications_active</span>
+                        <span>MARK ALL READY 🛎️</span>
                       </button>
                     )}
                   </div>
@@ -842,24 +1161,24 @@ export default function KdsStudioPage() {
       {/* ── Kitchen KDS PIN Unlock Modal ── */}
       {pinModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-espresso/80 backdrop-blur-md p-4">
-          <div className="bg-white rounded-3xl border-2 border-espresso shadow-brutal-xl w-full max-w-sm p-6 flex flex-col items-center">
-            <div className="w-14 h-14 rounded-2xl bg-paros-mint border-2 border-espresso shadow-brutal-sm flex items-center justify-center mb-3">
-              <span className="material-symbols-outlined text-emerald-900 text-3xl">skillet</span>
+          <div className="bg-white rounded-3xl border-2 border-espresso shadow-brutal-xl w-full max-w-sm p-5 sm:p-6 flex flex-col items-center max-h-[92vh] overflow-y-auto pb-safe">
+            <div className="w-12 sm:w-14 h-12 sm:h-14 rounded-2xl bg-paros-mint border-2 border-espresso shadow-brutal-sm flex items-center justify-center mb-2.5">
+              <span className="material-symbols-outlined text-emerald-900 text-2xl sm:text-3xl">skillet</span>
             </div>
 
-            <h2 className="font-display text-2xl font-black text-espresso text-center">
+            <h2 className="font-display text-xl sm:text-2xl font-black text-espresso text-center">
               Kitchen Display Access
             </h2>
-            <p className="font-body text-xs text-espresso/70 text-center mt-1 mb-4">
+            <p className="font-body text-xs text-espresso/70 text-center mt-0.5 mb-3">
               Enter 4-digit Kitchen PIN to access the Chef KDS station.
             </p>
 
             {/* PIN Display Dots */}
-            <div className="flex items-center justify-center gap-3 my-2">
+            <div className="flex items-center justify-center gap-2.5 my-1.5">
               {[0, 1, 2, 3].map((idx) => (
                 <div
                   key={idx}
-                  className={`w-4 h-4 rounded-full border-2 border-espresso transition-all ${
+                  className={`w-3.5 h-3.5 rounded-full border-2 border-espresso transition-all ${
                     enteredPin.length > idx ? 'bg-paros-matcha scale-110' : 'bg-paros-cream'
                   }`}
                 />
@@ -867,13 +1186,13 @@ export default function KdsStudioPage() {
             </div>
 
             {pinError && (
-              <p className="font-display text-xs font-bold text-red-600 bg-red-100 border border-red-300 px-3 py-1 rounded-lg my-2 text-center">
+              <p className="font-display text-xs font-bold text-red-600 bg-red-100 border border-red-300 px-3 py-1 rounded-lg my-1.5 text-center">
                 {pinError}
               </p>
             )}
 
             {/* Numeric Keypad */}
-            <div className="grid grid-cols-3 gap-2.5 w-full mt-3">
+            <div className="grid grid-cols-3 gap-2 w-full mt-2.5">
               {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((digit) => (
                 <button
                   key={digit}
@@ -885,7 +1204,7 @@ export default function KdsStudioPage() {
                       setPinError('');
                     }
                   }}
-                  className="py-3.5 rounded-xl bg-paros-cream hover:bg-paros-yellow active:bg-paros-matcha active:text-white border-2 border-espresso font-mono text-xl font-black text-espresso transition-all shadow-brutal-sm flex items-center justify-center"
+                  className="py-3 sm:py-3.5 rounded-xl bg-paros-cream hover:bg-paros-yellow active:bg-paros-matcha active:text-white border-2 border-espresso font-mono text-lg sm:text-xl font-black text-espresso transition-all shadow-brutal-sm flex items-center justify-center"
                 >
                   {digit}
                 </button>
@@ -893,7 +1212,7 @@ export default function KdsStudioPage() {
               <button
                 type="button"
                 onClick={() => setEnteredPin('')}
-                className="py-3.5 rounded-xl bg-red-100 hover:bg-red-200 border-2 border-espresso font-display text-xs font-black text-red-700 uppercase shadow-brutal-sm"
+                className="py-3 sm:py-3.5 rounded-xl bg-red-100 hover:bg-red-200 border-2 border-espresso font-display text-xs font-black text-red-700 uppercase shadow-brutal-sm"
               >
                 Clear
               </button>
@@ -906,14 +1225,14 @@ export default function KdsStudioPage() {
                     setPinError('');
                   }
                 }}
-                className="py-3.5 rounded-xl bg-paros-cream hover:bg-paros-yellow border-2 border-espresso font-mono text-xl font-black text-espresso shadow-brutal-sm flex items-center justify-center"
+                className="py-3 sm:py-3.5 rounded-xl bg-paros-cream hover:bg-paros-yellow border-2 border-espresso font-mono text-lg sm:text-xl font-black text-espresso shadow-brutal-sm flex items-center justify-center"
               >
                 0
               </button>
               <button
                 type="button"
                 onClick={() => setEnteredPin((prev) => prev.slice(0, -1))}
-                className="py-3.5 rounded-xl bg-gray-100 hover:bg-gray-200 border-2 border-espresso font-mono text-sm font-black text-espresso shadow-brutal-sm flex items-center justify-center"
+                className="py-3 sm:py-3.5 rounded-xl bg-gray-100 hover:bg-gray-200 border-2 border-espresso font-mono text-sm font-black text-espresso shadow-brutal-sm flex items-center justify-center"
               >
                 ⌫
               </button>
@@ -924,60 +1243,83 @@ export default function KdsStudioPage() {
               type="button"
               disabled={enteredPin.length !== 4 || pinLoading}
               onClick={() => handleVerifyPin()}
-              className="brutal-btn w-full mt-4 py-3.5 bg-espresso text-white font-display font-black text-sm uppercase rounded-xl border-2 border-espresso shadow-brutal disabled:opacity-40"
+              className="brutal-btn w-full mt-3 py-3 sm:py-3.5 bg-espresso text-white font-display font-black text-xs sm:text-sm uppercase rounded-xl border-2 border-espresso shadow-brutal disabled:opacity-40"
             >
               {pinLoading ? 'Verifying PIN...' : 'Unlock KDS Screen ➔'}
             </button>
 
-            <p className="font-body text-[11px] text-espresso/50 mt-3 text-center">
+            <p className="font-body text-[10px] text-espresso/50 mt-2 text-center">
               💡 Default Kitchen PIN: <span className="font-mono font-bold text-espresso">7788</span>
             </p>
           </div>
         </div>
       )}
 
-      {/* ── Mobile Quick Navigation Bottom Bar ── */}
-      <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t-2 border-espresso shadow-brutal flex items-center justify-around py-2 px-1 pb-safe">
+      {/* ── Mobile Kitchen Operations Bottom Dock (Dedicated for Cook / Barista) ── */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white/95 backdrop-blur-md border-t-2 border-espresso shadow-brutal-lg p-2 pb-safe flex items-center justify-between gap-1.5">
+        {/* Bump All Ready */}
+        <button
+          onClick={bumpAllCompleted}
+          disabled={readyCount === 0}
+          className={`flex-1 py-2 px-2 rounded-xl font-display text-[10px] font-black uppercase flex items-center justify-center gap-1 border-2 border-espresso transition-all shadow-brutal-sm ${
+            readyCount > 0
+              ? 'bg-paros-matcha text-white'
+              : 'bg-gray-100 text-espresso/40 border-gray-300'
+          }`}
+          title="Bump all ready tickets to runner"
+        >
+          <span className="material-symbols-outlined text-[15px]">done_all</span>
+          <span>Bump Ready ({readyCount})</span>
+        </button>
+
+        {/* Recall Last */}
+        <button
+          onClick={recallLastTicket}
+          className="py-2 px-2.5 rounded-xl bg-paros-cream hover:bg-paros-yellow text-espresso font-display text-[10px] font-black uppercase border-2 border-espresso shadow-brutal-sm flex items-center gap-1"
+          title="Recall last bumped ticket back to active"
+        >
+          <span className="material-symbols-outlined text-[15px]">undo</span>
+          <span>Recall</span>
+        </button>
+
+        {/* Mute/Unmute Chime */}
+        <button
+          onClick={() => setChimeEnabled(!chimeEnabled)}
+          className={`p-2 rounded-xl border-2 border-espresso shadow-brutal-sm transition-colors ${
+            chimeEnabled ? 'bg-paros-mint text-emerald-950' : 'bg-red-100 text-red-700'
+          }`}
+          title={chimeEnabled ? 'Mute Chime' : 'Enable Chime'}
+        >
+          <span className="material-symbols-outlined text-[16px]">
+            {chimeEnabled ? 'notifications_active' : 'notifications_off'}
+          </span>
+        </button>
+
+        {/* Fullscreen Toggle */}
+        <button
+          onClick={toggleFullscreen}
+          className="p-2 rounded-xl bg-white text-espresso border-2 border-espresso shadow-brutal-sm"
+          title="Fullscreen Mode"
+        >
+          <span className="material-symbols-outlined text-[16px]">
+            {isFullscreen ? 'fullscreen_exit' : 'fullscreen'}
+          </span>
+        </button>
+
+        {/* POS Link */}
         <Link
           href="/pos"
-          className="flex flex-col items-center gap-0.5 text-espresso/70 hover:text-paros-orange font-display text-[10px] font-bold py-1 px-2 rounded-lg"
+          className="py-2 px-2.5 rounded-xl bg-espresso text-white font-display text-[10px] font-black uppercase border-2 border-espresso shadow-brutal-sm flex items-center gap-1"
+          title="Switch to Counter POS"
         >
-          <span className="material-symbols-outlined text-[20px]">point_of_sale</span>
-          <span>Register</span>
-        </Link>
-        <Link
-          href="/kds"
-          className="flex flex-col items-center gap-0.5 text-paros-orange font-display text-[10px] font-black py-1 px-2 rounded-lg bg-paros-orange/10"
-        >
-          <span className="material-symbols-outlined text-[20px]">soup_kitchen</span>
-          <span>KDS</span>
-        </Link>
-        <Link
-          href="/admin/menu"
-          className="flex flex-col items-center gap-0.5 text-espresso/70 hover:text-paros-orange font-display text-[10px] font-bold py-1 px-2 rounded-lg"
-        >
-          <span className="material-symbols-outlined text-[20px]">restaurant_menu</span>
-          <span>Menu</span>
-        </Link>
-        <Link
-          href="/admin/bills"
-          className="flex flex-col items-center gap-0.5 text-espresso/70 hover:text-paros-orange font-display text-[10px] font-bold py-1 px-2 rounded-lg"
-        >
-          <span className="material-symbols-outlined text-[20px]">receipt_long</span>
-          <span>Bills</span>
-        </Link>
-        <Link
-          href="/admin"
-          className="flex flex-col items-center gap-0.5 text-espresso/70 hover:text-paros-orange font-display text-[10px] font-bold py-1 px-2 rounded-lg"
-        >
-          <span className="material-symbols-outlined text-[20px]">monitoring</span>
-          <span>Analytics</span>
+          <span className="material-symbols-outlined text-[15px]">point_of_sale</span>
+          <span>POS</span>
         </Link>
       </nav>
 
       {/* Floating Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-20 sm:bottom-6 right-6 z-50 bg-espresso text-white px-5 py-3 rounded-2xl border-2 border-white shadow-brutal-lg flex items-center gap-2 font-display text-sm font-bold animate-bounce">
+        <div className="fixed bottom-16 sm:bottom-6 right-4 sm:right-6 z-50 bg-espresso text-white px-4 py-2.5 sm:px-5 sm:py-3 rounded-2xl border-2 border-white shadow-brutal-lg flex items-center gap-2 font-display text-xs sm:text-sm font-bold animate-bounce">
           <span className="material-symbols-outlined text-paros-matcha">check_circle</span>
           <span>{toastMessage}</span>
         </div>
