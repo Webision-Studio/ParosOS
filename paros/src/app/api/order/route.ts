@@ -264,17 +264,40 @@ export async function POST(req: NextRequest) {
 
       // Quantity must be a safe positive integer (1..50)
       const quantity = Math.min(50, Math.max(1, Math.floor(Number(item.quantity) || 1)));
-      const milkSurcharge = item.milk && String(item.milk).toLowerCase().includes('oat') ? 40 : 0;
-      const verifiedUnitPrice = baseCatalogPrice + milkSurcharge;
+      let addonsSurcharge = 0;
+      const notesList: string[] = [];
+
+      if (item.notes) notesList.push(String(item.notes).slice(0, 150));
+      if (item.milk) {
+        const m = String(item.milk).toLowerCase();
+        if (m.includes('oat')) addonsSurcharge += 40;
+        else if (m.includes('almond')) addonsSurcharge += 40;
+        notesList.push(String(item.milk).slice(0, 60));
+      }
+      if (item.extraShot) {
+        addonsSurcharge += 50;
+        notesList.push('Extra Espresso Shot (+₹50)');
+      }
+      if (item.syrup) {
+        addonsSurcharge += 30;
+        notesList.push(`${item.syrup} Syrup (+₹30)`);
+      }
+      if (Array.isArray(item.addons)) {
+        for (const a of item.addons) {
+          const addonPrice = Math.min(500, Math.max(0, Number(a.price) || 0));
+          addonsSurcharge += addonPrice;
+          notesList.push(`${a.name} (+₹${addonPrice})`);
+        }
+      }
+
+      const verifiedUnitPrice = baseCatalogPrice + addonsSurcharge;
 
       verifiedItems.push({
         name: cleanName.slice(0, 100),
         price: verifiedUnitPrice,
         quantity,
         status: 'PENDING' as const,
-        notes: [item.notes ? String(item.notes).slice(0, 150) : null, item.milk ? String(item.milk).slice(0, 50) : null]
-          .filter(Boolean)
-          .join(' • '),
+        notes: notesList.filter(Boolean).join(' • ').slice(0, 200),
       });
     }
 
@@ -347,28 +370,30 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Auto-deduct inventory raw materials based on recipe mappings
-    try {
-      for (const item of order.items || []) {
-        const mi = await prisma.menuItem.findFirst({
-          where: { cafeId: cafe.id, name: item.name },
-        });
-        if (mi) {
-          const recipes = await prisma.menuItemIngredient.findMany({
-            where: { menuItemId: mi.id },
+    // Non-blocking background inventory deduction (prevents 20+ sequential awaits from freezing order creation)
+    (async () => {
+      try {
+        for (const item of order.items || []) {
+          const mi = await prisma.menuItem.findFirst({
+            where: { cafeId: cafe.id, name: item.name },
           });
-          for (const r of recipes) {
-            const qtyToDeduct = r.quantityNeeded * (item.quantity || 1);
-            await prisma.inventoryItem.update({
-              where: { id: r.inventoryItemId },
-              data: { currentStock: { decrement: qtyToDeduct } },
-            }).catch(() => {});
+          if (mi) {
+            const recipes = await prisma.menuItemIngredient.findMany({
+              where: { menuItemId: mi.id },
+            });
+            for (const r of recipes) {
+              const qtyToDeduct = r.quantityNeeded * (item.quantity || 1);
+              await prisma.inventoryItem.update({
+                where: { id: r.inventoryItemId },
+                data: { currentStock: { decrement: qtyToDeduct } },
+              }).catch(() => {});
+            }
           }
         }
+      } catch (invErr) {
+        console.warn('QR Order inventory deduction error:', invErr);
       }
-    } catch (invErr) {
-      console.warn('QR Order inventory deduction error:', invErr);
-    }
+    })().catch(() => {});
 
     // Upsert Customer record with email hijacking / profile poisoning defense
     if (normalizedPhone) {

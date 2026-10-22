@@ -29,6 +29,12 @@ export async function POST(req: NextRequest) {
       wifiPassword,
       cashierPin,
       kitchenPin,
+      upiId,
+      email,
+      phone,
+      address,
+      gstin,
+      fssai,
     } = body;
 
     // Strict Tenant Isolation:
@@ -45,6 +51,12 @@ export async function POST(req: NextRequest) {
     const safeWifiName = wifiName ? String(wifiName).slice(0, 50).trim() : null;
     const safeWifiPassword = wifiPassword ? String(wifiPassword).slice(0, 50).trim() : null;
     const safeGoogleReviewUrl = sanitizeUrl(googleReviewUrl);
+    const safeUpiId = upiId ? String(upiId).slice(0, 80).trim() : 'artisan@okhdfcbank';
+    const safeEmail = email ? String(email).slice(0, 100).trim() : null;
+    const safePhone = phone ? String(phone).slice(0, 20).trim() : null;
+    const safeAddress = address ? String(address).slice(0, 250).trim() : null;
+    const safeGstin = gstin ? String(gstin).slice(0, 25).trim() : null;
+    const safeFssai = fssai ? String(fssai).slice(0, 20).trim() : null;
 
     // Enforce 4-digit PIN constraints
     const safeCashierPin = cashierPin && /^\d{4}$/.test(String(cashierPin).trim()) ? String(cashierPin).trim() : '1234';
@@ -76,6 +88,12 @@ export async function POST(req: NextRequest) {
           wifiPassword: safeWifiPassword,
           cashierPin: safeCashierPin,
           kitchenPin: safeKitchenPin,
+          upiId: safeUpiId,
+          email: safeEmail,
+          phone: safePhone,
+          address: safeAddress,
+          gstin: safeGstin,
+          fssai: safeFssai,
         },
       });
       finalCafeId = updatedCafe.id;
@@ -116,6 +134,12 @@ export async function POST(req: NextRequest) {
           wifiPassword: safeWifiPassword !== undefined ? safeWifiPassword : undefined,
           cashierPin: safeCashierPin,
           kitchenPin: safeKitchenPin,
+          upiId: safeUpiId !== undefined ? safeUpiId : undefined,
+          email: safeEmail !== undefined ? safeEmail : undefined,
+          phone: safePhone !== undefined ? safePhone : undefined,
+          address: safeAddress !== undefined ? safeAddress : undefined,
+          gstin: safeGstin !== undefined ? safeGstin : undefined,
+          fssai: safeFssai !== undefined ? safeFssai : undefined,
         },
       });
     }

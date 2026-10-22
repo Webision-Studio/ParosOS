@@ -171,7 +171,10 @@ async function generateAndSendNightlyReport({ targetCafeId, dateStr, previewOnly
     if (mode === 'UPI') upiTotal += Number(b.total || 0);
     else if (mode === 'CASH') cashTotal += Number(b.total || 0);
     else if (mode === 'CARD') cardTotal += Number(b.total || 0);
-    else otherTotal += Number(b.total || 0);
+    else if (mode === 'SPLIT') {
+      cashTotal += Number(b.cashAmount || 0);
+      upiTotal += Number(b.upiAmount || 0);
+    } else otherTotal += Number(b.total || 0);
 
     if (b.order?.items) {
       for (const it of b.order.items) {

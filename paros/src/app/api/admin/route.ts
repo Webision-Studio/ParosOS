@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Fetch active shift, expenses, customers, menu items, and aggregate financial totals
-    const [activeShift, expenses, customers, menuItems, totalSalesAgg, upiSalesAgg, cashSalesAgg] = await Promise.all([
+    const [activeShift, expenses, customers, menuItems, totalSalesAgg, upiSalesAgg, cashSalesAgg, splitSalesAgg] = await Promise.all([
       prisma.cashShift.findFirst({
         where: { cafeId: cafe.id, status: 'OPEN' },
         include: { expenses: { orderBy: { createdAt: 'desc' } } },
@@ -67,12 +67,16 @@ export async function GET(req: NextRequest) {
         where: { cafeId: cafe.id, paymentStatus: 'PAID', paymentMethod: 'CASH' },
         _sum: { total: true },
       }),
+      prisma.bill.aggregate({
+        where: { cafeId: cafe.id, paymentStatus: 'PAID', paymentMethod: 'SPLIT' },
+        _sum: { cashAmount: true, upiAmount: true },
+      }),
     ]);
 
-    // Financial totals
+    // Financial totals with split reconciliation
     const grossSales = totalSalesAgg._sum.total || 0;
-    const upiSales = upiSalesAgg._sum.total || 0;
-    const cashSales = cashSalesAgg._sum.total || 0;
+    const upiSales = (upiSalesAgg._sum.total || 0) + (splitSalesAgg._sum?.upiAmount || 0);
+    const cashSales = (cashSalesAgg._sum.total || 0) + (splitSalesAgg._sum?.cashAmount || 0);
     const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
     const netCashFlow = grossSales - totalExpenses;
     const completedTickets = totalSalesAgg._count || 0;
@@ -405,6 +409,53 @@ export async function POST(req: NextRequest) {
       });
 
       return NextResponse.json({ success: true, item: updated });
+    }
+
+    // 5. Update Cafe Settings
+    if (action === 'update-cafe-settings') {
+      const {
+        name,
+        city,
+        address,
+        phone,
+        email,
+        upiId,
+        gstin,
+        fssai,
+        wifiName,
+        wifiPassword,
+        closingTime,
+        googleReviewUrl,
+        cashierPin,
+        kitchenPin,
+        qrMode,
+      } = body;
+
+      const safeCashierPin = cashierPin && /^\d{4}$/.test(String(cashierPin).trim()) ? String(cashierPin).trim() : undefined;
+      const safeKitchenPin = kitchenPin && /^\d{4}$/.test(String(kitchenPin).trim()) ? String(kitchenPin).trim() : undefined;
+
+      const updatedCafe = await prisma.tenant.update({
+        where: { id: targetCafeId },
+        data: {
+          name: name !== undefined ? String(name).slice(0, 100).trim() : undefined,
+          city: city !== undefined ? String(city).slice(0, 100).trim() : undefined,
+          address: address !== undefined ? String(address).slice(0, 250).trim() : undefined,
+          phone: phone !== undefined ? String(phone).slice(0, 20).trim() : undefined,
+          email: email !== undefined ? String(email).slice(0, 100).trim() : undefined,
+          upiId: upiId !== undefined ? String(upiId).slice(0, 80).trim() : undefined,
+          gstin: gstin !== undefined ? String(gstin).slice(0, 25).trim() : undefined,
+          fssai: fssai !== undefined ? String(fssai).slice(0, 20).trim() : undefined,
+          wifiName: wifiName !== undefined ? (wifiName ? String(wifiName).slice(0, 50).trim() : null) : undefined,
+          wifiPassword: wifiPassword !== undefined ? (wifiPassword ? String(wifiPassword).slice(0, 50).trim() : null) : undefined,
+          closingTime: closingTime !== undefined ? String(closingTime).slice(0, 10).trim() : undefined,
+          googleReviewUrl: googleReviewUrl !== undefined ? (googleReviewUrl ? String(googleReviewUrl).slice(0, 500).trim() : null) : undefined,
+          cashierPin: safeCashierPin,
+          kitchenPin: safeKitchenPin,
+          qrMode: qrMode !== undefined ? qrMode : undefined,
+        },
+      });
+
+      return NextResponse.json({ success: true, cafe: updatedCafe });
     }
 
     return NextResponse.json({ error: 'Unknown action' }, { status: 400 });

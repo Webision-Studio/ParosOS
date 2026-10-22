@@ -112,6 +112,9 @@ export async function GET(req: NextRequest) {
         cashCollected += b.total;
       } else if (b.paymentMethod === 'UPI') {
         upiCollected += b.total;
+      } else if (b.paymentMethod === 'SPLIT') {
+        cashCollected += (b.cashAmount || 0);
+        upiCollected += (b.upiAmount || 0);
       }
     }
 

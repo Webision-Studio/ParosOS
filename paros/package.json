@@ -10,6 +10,8 @@
     "postinstall": "prisma generate"
   },
   "dependencies": {
+    "@next/swc-wasm-nodejs": "^16.4.2",
+    "@next/swc-win32-x64-msvc": "^16.4.2",
     "@prisma/client": "^6.19.3",
     "clsx": "^2.1.1",
     "firebase": "^12.19.0",

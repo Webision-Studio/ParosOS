@@ -76,7 +76,7 @@ export default function AdminBillsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [dateFilter, setDateFilter] = useState<'today' | 'yesterday' | 'week' | 'month' | 'all'>('today');
-  const [paymentFilter, setPaymentFilter] = useState<'ALL' | 'CASH' | 'UPI'>('ALL');
+  const [paymentFilter, setPaymentFilter] = useState<'ALL' | 'CASH' | 'UPI' | 'SPLIT'>('ALL');
   const [sourceFilter, setSourceFilter] = useState<'ALL' | 'POS' | 'QR' | 'TAKEAWAY' | 'SWIGGY' | 'ZOMATO'>('ALL');
 
   // Modals & Active Receipts
@@ -411,6 +411,13 @@ export default function AdminBillsPage() {
               <span className="material-symbols-outlined text-[20px]">monitoring</span>
               <span>Financial Analytics</span>
             </Link>
+            <Link
+              href="/admin/settings"
+              className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-paros-yellow/40 transition-colors text-espresso font-bold"
+            >
+              <span className="material-symbols-outlined text-[20px]">settings</span>
+              <span>⚙️ Outlet Settings</span>
+            </Link>
           </nav>
         </div>
 
@@ -529,6 +536,14 @@ export default function AdminBillsPage() {
                 >
                   <span className="material-symbols-outlined text-[20px]">monitoring</span>
                   <span>Financial Analytics</span>
+                </Link>
+                <Link
+                  href="/admin/settings"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-paros-yellow/40 transition-colors text-espresso font-bold"
+                >
+                  <span className="material-symbols-outlined text-[20px]">settings</span>
+                  <span>⚙️ Outlet Settings</span>
                 </Link>
               </nav>
             </div>
@@ -704,7 +719,7 @@ export default function AdminBillsPage() {
               {/* Payment Filter */}
               <div className="flex items-center gap-1.5">
                 <span className="font-display text-[10px] font-black uppercase text-espresso/60 mr-1">Payment:</span>
-                {(['ALL', 'UPI', 'CASH'] as const).map((method) => (
+                {(['ALL', 'UPI', 'CASH', 'SPLIT'] as const).map((method) => (
                   <button
                     key={method}
                     onClick={() => setPaymentFilter(method)}

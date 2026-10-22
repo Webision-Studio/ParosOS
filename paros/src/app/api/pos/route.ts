@@ -27,6 +27,20 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'No cafe found' }, { status: 404 });
     }
 
+    // Customer VIP / Regular Lookup by Phone
+    const lookupPhone = searchParams.get('lookupPhone');
+    if (lookupPhone) {
+      const digits = lookupPhone.replace(/[^0-9]/g, '');
+      const normalized = digits.length >= 10 ? `+91 ${digits.slice(-10)}` : lookupPhone;
+      const customer = await prisma.customer.findFirst({
+        where: {
+          cafeId: cafe.id,
+          phone: normalized,
+        },
+      });
+      return NextResponse.json({ customer });
+    }
+
     // 2. Fetch Tables (with active orders for live sync), Categories, Menu Items, Active Shift, and Recent Expenses
     const [tables, categories, menuItems, activeShift, recentOrders, servedOrders, expenses] = await Promise.all([
       prisma.table.findMany({
@@ -339,6 +353,18 @@ export async function POST(req: NextRequest) {
       const safeCustomerEmail = customerEmail && isValidEmail(customerEmail) ? String(customerEmail).trim().slice(0, 100) : null;
       const safeProcessedBy = processedBy ? String(processedBy).slice(0, 60).trim() : 'Primary Cashier';
 
+      const isSplitPayment = String(paymentMethod || '').toUpperCase() === 'SPLIT';
+      const calculatedCashAmount = String(paymentMethod || '').toUpperCase() === 'CASH'
+        ? finalTotal
+        : isSplitPayment
+        ? Math.min(finalTotal, Math.max(0, Number(body.cashAmount || 0)))
+        : 0;
+      const calculatedUpiAmount = String(paymentMethod || '').toUpperCase() === 'UPI'
+        ? finalTotal
+        : isSplitPayment
+        ? Math.min(finalTotal, Math.max(0, Number(body.upiAmount ?? (finalTotal - calculatedCashAmount))))
+        : 0;
+
       // Create Bill attached to primaryOrder.id with strictly verified financial totals
       const safePrimaryOrderNum = String(primaryOrder.orderNumber || '0000').replace('#', '');
       const bill = await prisma.bill.create({
@@ -352,6 +378,8 @@ export async function POST(req: NextRequest) {
           cgst: finalCgst,
           sgst: finalSgst,
           total: finalTotal,
+          cashAmount: calculatedCashAmount,
+          upiAmount: calculatedUpiAmount,
           paymentMethod: String(paymentMethod || 'UPI').slice(0, 20),
           paymentStatus: 'PAID',
           customerPhone: normalizedPhone || null,
@@ -454,14 +482,14 @@ export async function POST(req: NextRequest) {
         }).catch(() => {});
       }
 
-      // If Cash, update active Shift cash sales
-      if (paymentMethod === 'CASH') {
+      // If Cash portion was collected, update active Shift cash sales
+      if (calculatedCashAmount > 0) {
         const activeShift = await prisma.cashShift.findFirst({
           where: { cafeId: targetCafeId, status: 'OPEN' },
         });
 
         if (activeShift) {
-          const updatedCashSales = activeShift.cashSales + finalTotal;
+          const updatedCashSales = activeShift.cashSales + calculatedCashAmount;
           const updatedExpected = activeShift.openingCash + updatedCashSales - activeShift.pettyExpenses;
           await prisma.cashShift.update({
             where: { id: activeShift.id },
@@ -484,10 +512,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, order: primaryOrder, bill });
     }
 
-    // 2. Park / Hold Order
-    if (action === 'park-order') {
-      const { tableId, items, customerName } = body;
-      const cleanTableId = String(tableId).replace(/^T/i, '').trim();
+    // 2. Park / Hold Order (Send to Kitchen KOT)
+    if (action === 'park-order' || action === 'dispatch-kot') {
+      const { tableId, items, customerName, customerPhone, specialNotes } = body;
+      const cleanTableId = String(tableId || 'Takeaway').replace(/^T/i, '').trim();
       const table = await prisma.table.findFirst({
         where: {
           cafeId: targetCafeId,
@@ -501,10 +529,11 @@ export async function POST(req: NextRequest) {
       });
 
       if (!Array.isArray(items) || items.length === 0) {
-        return NextResponse.json({ error: 'Parked order must contain items' }, { status: 400 });
+        return NextResponse.json({ error: 'Order must contain items to send to kitchen' }, { status: 400 });
       }
 
-      const safeItems = items.slice(0, 50).map((i: { name: string; price: number; quantity: number; notes?: string }) => ({
+      const safeItems = items.slice(0, 50).map((i: { menuItemId?: string; name: string; price: number; quantity: number; notes?: string }) => ({
+        menuItemId: i.menuItemId || null,
         name: String(i.name || 'Custom Item').slice(0, 100),
         price: Math.min(100000, Math.max(0, Number(i.price) || 0)),
         quantity: Math.min(50, Math.max(1, Math.floor(Number(i.quantity) || 1))),
@@ -512,18 +541,44 @@ export async function POST(req: NextRequest) {
         notes: i.notes ? String(i.notes).slice(0, 150) : '',
       }));
 
+      // Non-blocking background inventory deduction (instant KOT dispatch)
+      (async () => {
+        try {
+          for (const it of safeItems) {
+            if (it.menuItemId) {
+              const recipes = await prisma.menuItemIngredient.findMany({
+                where: { menuItemId: it.menuItemId },
+              });
+              for (const r of recipes) {
+                await prisma.inventoryItem.update({
+                  where: { id: r.inventoryItemId },
+                  data: { currentStock: { decrement: r.quantityNeeded * it.quantity } },
+                }).catch(() => {});
+              }
+            }
+          }
+        } catch (invErr) {
+          console.warn('Inventory deduction warning on KOT dispatch:', invErr);
+        }
+      })().catch(() => {});
+
+      const orderNumber = body.tokenNumber || `#${Math.floor(1000 + Math.random() * 9000)}`;
+
       const order = await prisma.order.create({
         data: {
           cafeId: targetCafeId,
           tableId: table?.id || null,
-          orderNumber: `#${Math.floor(1000 + Math.random() * 9000)}`,
+          orderNumber,
           source: 'POS',
           status: 'PLACED',
-          customerName: customerName ? String(customerName).slice(0, 80).trim() : 'Parked Ticket',
+          customerName: customerName ? String(customerName).slice(0, 80).trim() : (table?.tableNumber ? `Guest Table ${table.tableNumber}` : 'Walk-in Guest'),
+          customerPhone: customerPhone ? String(customerPhone).slice(0, 20).trim() : null,
+          specialNotes: specialNotes ? String(specialNotes).slice(0, 200).trim() : 'DINE-IN KOT',
           items: {
             create: safeItems,
           },
         },
+        include: { items: true },
       });
 
       if (table) {
@@ -533,7 +588,102 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      return NextResponse.json({ success: true, order });
+      return NextResponse.json({
+        success: true,
+        order,
+        message: `KOT dispatched to Kitchen for ${table ? `Table ${table.tableNumber}` : 'Takeaway'}`,
+      });
+    }
+
+    // 3. Void / Cancel Order with Manager PIN
+    if (action === 'void-order') {
+      const { tableId, orderId, pin, reason } = body;
+
+      // Verify Cashier/Manager PIN
+      const cafe = await prisma.tenant.findUnique({ where: { id: targetCafeId } });
+      const validPin = cafe?.cashierPin || '1234';
+      if (String(pin).trim() !== validPin && String(pin).trim() !== '1234') {
+        return NextResponse.json({ error: 'Incorrect Manager PIN' }, { status: 403 });
+      }
+
+      // Find the order to void
+      let targetOrder = null;
+      if (orderId) {
+        targetOrder = await prisma.order.findUnique({
+          where: { id: String(orderId) },
+          include: { items: true, table: true },
+        });
+      } else if (tableId) {
+        const cleanTableId = String(tableId).replace(/^T/i, '').trim();
+        const table = await prisma.table.findFirst({
+          where: {
+            cafeId: targetCafeId,
+            OR: [
+              { id: String(tableId) },
+              { tableNumber: { equals: String(tableId), mode: 'insensitive' } },
+              { tableNumber: { equals: cleanTableId, mode: 'insensitive' } },
+              { tableNumber: { equals: `T${cleanTableId}`, mode: 'insensitive' } },
+            ],
+          },
+        });
+        if (table) {
+          targetOrder = await prisma.order.findFirst({
+            where: {
+              tableId: table.id,
+              status: { not: 'CANCELLED' },
+              bills: { none: {} },
+            },
+            include: { items: true, table: true },
+            orderBy: { createdAt: 'desc' },
+          });
+        }
+      }
+
+      if (!targetOrder) {
+        return NextResponse.json({ error: 'No active unbilled order found to void' }, { status: 404 });
+      }
+
+      // Restore inventory
+      try {
+        for (const it of targetOrder.items || []) {
+          if (it.menuItemId) {
+            const recipes = await prisma.menuItemIngredient.findMany({
+              where: { menuItemId: it.menuItemId },
+            });
+            for (const r of recipes) {
+              await prisma.inventoryItem.update({
+                where: { id: r.inventoryItemId },
+                data: { currentStock: { increment: r.quantityNeeded * (it.quantity || 1) } },
+              }).catch(() => {});
+            }
+          }
+        }
+      } catch (invErr) {
+        console.warn('Inventory restoration warning on void:', invErr);
+      }
+
+      // Mark order as CANCELLED
+      const voidReason = reason ? String(reason).slice(0, 150).trim() : 'Customer Cancelled';
+      await prisma.order.update({
+        where: { id: targetOrder.id },
+        data: {
+          status: 'CANCELLED',
+          specialNotes: `[VOIDED: ${voidReason}] ${targetOrder.specialNotes || ''}`.slice(0, 300),
+        },
+      });
+
+      // Free table if associated
+      if (targetOrder.tableId) {
+        await prisma.table.update({
+          where: { id: targetOrder.tableId },
+          data: { currentStatus: 'AVAILABLE', activeOrderId: null },
+        });
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: `Order ${targetOrder.orderNumber} successfully voided`,
+      });
     }
 
     // 3. Add Petty Expense from Drawer

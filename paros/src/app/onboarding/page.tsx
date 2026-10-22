@@ -49,6 +49,10 @@ export default function OnboardingPage() {
   const [googleReviewUrl, setGoogleReviewUrl] = useState('');
   const [wifiName, setWifiName] = useState('');
   const [wifiPassword, setWifiPassword] = useState('');
+  const [ownerEmail, setOwnerEmail] = useState('');
+  const [upiId, setUpiId] = useState('artisan@okhdfcbank');
+  const [gstin, setGstin] = useState('');
+  const [fssai, setFssai] = useState('');
   const [savingLoading, setSavingLoading] = useState(false);
 
   // Step 3: Preview Item Selection
@@ -190,6 +194,10 @@ export default function OnboardingPage() {
           googleReviewUrl: googleReviewUrl || null,
           wifiName: wifiName || null,
           wifiPassword: wifiPassword || null,
+          upiId: upiId || 'artisan@okhdfcbank',
+          email: ownerEmail || null,
+          gstin: gstin || null,
+          fssai: fssai || null,
         }),
       });
       const data = await res.json();
@@ -550,6 +558,49 @@ export default function OnboardingPage() {
                     />
                     <span>I don&apos;t have tables (Counter Billing / Token Mode Only)</span>
                   </label>
+                </div>
+
+                {/* Direct UPI VPA Address */}
+                <div className="p-4 bg-emerald-50 rounded-2xl border-2 border-espresso flex flex-col gap-2">
+                  <div className="flex items-center justify-between">
+                    <label className="font-display text-xs font-black uppercase text-espresso flex items-center gap-1.5">
+                      <span className="material-symbols-outlined text-emerald-700 text-[18px]">account_balance</span>
+                      Direct UPI VPA (Bank Settlement) *
+                    </label>
+                    <span className="text-[10px] font-display font-black bg-paros-mint text-emerald-950 px-2 py-0.5 rounded border border-espresso">
+                      0% MDR FEE
+                    </span>
+                  </div>
+                  <input
+                    type="text"
+                    required
+                    value={upiId}
+                    onChange={(e) => setUpiId(e.target.value)}
+                    placeholder="e.g. cafe@okhdfcbank or 9845011223@paytm"
+                    className="w-full px-4 py-3 bg-white border-2 border-espresso rounded-xl font-mono text-sm font-bold text-espresso outline-none shadow-brutal-sm focus:ring-2 focus:ring-paros-orange"
+                  />
+                  <p className="font-body text-xs text-espresso/70">
+                    Customers ka online payment seedha aapke linked bank account me aayega — bina kisi aggregator delay ya 2% commission ke.
+                  </p>
+                </div>
+
+                {/* Owner Email for Nightly Closing Reports */}
+                <div className="flex flex-col gap-2">
+                  <label className="font-display text-xs font-black uppercase text-espresso flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-paros-orange text-[18px]">mail</span>
+                    Owner Email (for Nightly Closing Reports) *
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={ownerEmail}
+                    onChange={(e) => setOwnerEmail(e.target.value)}
+                    placeholder="e.g. owner@artisancafe.com"
+                    className="w-full px-4 py-3 bg-paros-cream border-2 border-espresso rounded-xl font-mono text-sm font-bold text-espresso outline-none shadow-brutal-sm focus:ring-2 focus:ring-paros-orange"
+                  />
+                  <p className="font-body text-xs text-espresso/70">
+                    Har raat closing time par Brevo ke zariye din ka Z-Report, cash drawer discrepancy aur bestselling items deliver honge.
+                  </p>
                 </div>
 
                 {/* Cafe Closing Time & Automated Daily Report */}

@@ -41,6 +41,7 @@ export default function TableQrOrderPage() {
   const [cafeInfo, setCafeInfo] = useState<{
     id?: string;
     name?: string;
+    upiId?: string | null;
     googleReviewUrl?: string | null;
     wifiName?: string | null;
     wifiPassword?: string | null;
@@ -52,13 +53,19 @@ export default function TableQrOrderPage() {
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
   const [wifiCopied, setWifiCopied] = useState(false);
 
-  // Customizer modal
+  // Context-aware Customizer modal
   const [customizingItem, setCustomizingItem] = useState<{
     name: string;
     price: number;
     desc: string;
+    category?: string;
+    isVeg?: boolean;
   } | null>(null);
-  const [selectedMilk, setSelectedMilk] = useState<'whole' | 'oat'>('oat');
+  const [selectedMilk, setSelectedMilk] = useState<'whole' | 'oat' | 'almond'>('whole');
+  const [selectedSweetness, setSelectedSweetness] = useState<'No Sugar' | 'Less Sugar' | 'Normal'>('Normal');
+  const [selectedTemp, setSelectedTemp] = useState<'Hot' | 'Iced'>('Hot');
+  const [foodCookingModifier, setFoodCookingModifier] = useState<string>('Standard');
+  const [customInstructionNote, setCustomInstructionNote] = useState<string>('');
 
   // Cart starts empty for a genuine customer experience
   const [cart, setCart] = useState<OrderItem[]>([]);
@@ -87,6 +94,9 @@ export default function TableQrOrderPage() {
   const [orderStatus, setOrderStatus] = useState<'BREWING' | 'PLATING' | 'READY' | 'SERVED'>('BREWING');
   const [chefAddedEtaMessage, setChefAddedEtaMessage] = useState<string | null>(null);
   const [paymentMode, setPaymentMode] = useState<'UPI_NOW' | 'PAY_LATER'>('UPI_NOW');
+  const [upiUtr, setUpiUtr] = useState<string>('');
+  const [isPlacingOrder, setIsPlacingOrder] = useState<boolean>(false);
+  const [orderError, setOrderError] = useState<string | null>(null);
 
   // Fetch live menu and tables from backend
   useEffect(() => {
@@ -235,9 +245,52 @@ export default function TableQrOrderPage() {
     };
   }, [step, placedOrderId, placedOrderNumber]);
 
+  function isBeverageCategory(categoryName?: string) {
+    if (!categoryName) return false;
+    const cat = categoryName.toLowerCase();
+    return (
+      cat.includes('coffee') ||
+      cat.includes('brew') ||
+      cat.includes('tea') ||
+      cat.includes('beverage') ||
+      cat.includes('drink') ||
+      cat.includes('iced') ||
+      cat.includes('latte')
+    );
+  }
+
   function addToCartWithCustomization() {
     if (!customizingItem) return;
-    const milkExtra = selectedMilk === 'oat' ? 40 : 0;
+    const isBev = isBeverageCategory(customizingItem.category);
+
+    let milkExtra = 0;
+    let customMilkLabel: string | undefined = undefined;
+    let notes: string | undefined = undefined;
+
+    if (isBev) {
+      if (selectedMilk === 'oat') milkExtra = 40;
+      else if (selectedMilk === 'almond') milkExtra = 40;
+
+      customMilkLabel =
+        selectedMilk === 'oat'
+          ? 'Minor Figures Oat Milk (+₹40)'
+          : selectedMilk === 'almond'
+          ? 'Almond Milk (+₹40)'
+          : 'Whole Milk';
+
+      const parts: string[] = [];
+      if (selectedTemp) parts.push(selectedTemp);
+      if (selectedSweetness !== 'Normal') parts.push(selectedSweetness);
+      if (customInstructionNote.trim()) parts.push(customInstructionNote.trim());
+      if (parts.length > 0) notes = parts.join(' • ');
+    } else {
+      // Food / Bakery / Hearth
+      const parts: string[] = [];
+      if (foodCookingModifier && foodCookingModifier !== 'Standard') parts.push(foodCookingModifier);
+      if (customInstructionNote.trim()) parts.push(customInstructionNote.trim());
+      if (parts.length > 0) notes = parts.join(' • ');
+    }
+
     const finalPrice = customizingItem.price + milkExtra;
 
     setCart((prev) => [
@@ -247,7 +300,8 @@ export default function TableQrOrderPage() {
         name: customizingItem.name,
         price: finalPrice,
         quantity: 1,
-        milk: selectedMilk === 'oat' ? 'Minor Figures Oat Milk (+₹40)' : 'Whole Milk',
+        milk: customMilkLabel,
+        notes: notes,
       },
     ]);
     setCustomizingItem(null);
@@ -275,7 +329,10 @@ export default function TableQrOrderPage() {
   }
 
   async function handlePlaceOrder() {
-    if (cart.length === 0) return;
+    if (cart.length === 0 || isPlacingOrder) return;
+
+    setIsPlacingOrder(true);
+    setOrderError(null);
 
     try {
       const res = await fetch('/api/order', {
@@ -291,10 +348,21 @@ export default function TableQrOrderPage() {
           customerEmail: customerEmail || null,
           whatsappOptIn,
           couponCode: appliedPromo?.code || undefined,
-          specialNotes: paymentMode === 'PAY_LATER' ? 'PAY LATER TO WAITER / COUNTER' : 'ONLINE PREPAID (UPI)',
+          specialNotes:
+            paymentMode === 'PAY_LATER'
+              ? 'PAY LATER TO WAITER / COUNTER'
+              : upiUtr.trim()
+              ? `ONLINE UPI [UTR: ${upiUtr.trim()}]`
+              : 'ONLINE PREPAID (UPI)',
         }),
       });
+
       const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to place order. Please try again.');
+      }
+
       if (data?.orderId || data?.order?.id) {
         setPlacedOrderId(data.orderId || data?.order?.id);
       }
@@ -304,14 +372,18 @@ export default function TableQrOrderPage() {
       if (data?.prepTimeMinutes || data?.order?.dynamicPrepMinutes) {
         setCountdownSeconds((data.prepTimeMinutes || data?.order?.dynamicPrepMinutes) * 60);
       }
-    } catch {
-      // Offline fallback
-    }
-    setStep(5);
 
-    // Request push notification permission after order is placed
-    // This triggers the browser "Allow Notifications?" prompt
-    subscribeToPush().catch(() => {});
+      // ONLY advance to tracking step when order was successfully created in DB!
+      setStep(5);
+      subscribeToPush().catch(() => {});
+    } catch (err: unknown) {
+      console.error('Order placement failed:', err);
+      const msg = err instanceof Error ? err.message : 'Could not place order. Please check connection.';
+      setOrderError(msg);
+      // DO NOT advance step! Keep customer on the cart page so selection is not lost!
+    } finally {
+      setIsPlacingOrder(false);
+    }
   }
 
   function formatTime(secs: number) {
@@ -570,15 +642,23 @@ export default function TableQrOrderPage() {
 
                   <div className="flex items-center gap-1.5 shrink-0">
                     <button
-                      onClick={() =>
+                      onClick={() => {
+                        const cat = item.category?.name || '';
                         setCustomizingItem({
                           name: item.name,
                           price: item.price,
                           desc: item.description || '',
-                        })
-                      }
+                          category: cat,
+                          isVeg: item.isVeg,
+                        });
+                        setSelectedMilk('whole');
+                        setSelectedSweetness('Normal');
+                        setSelectedTemp(cat.toLowerCase().includes('iced') ? 'Iced' : 'Hot');
+                        setFoodCookingModifier('Standard');
+                        setCustomInstructionNote('');
+                      }}
                       className="px-2 py-1.5 bg-paros-cream hover:bg-paros-yellow text-espresso font-display text-[11px] font-bold uppercase rounded-xl border border-espresso"
-                      title="Customize milk / notes"
+                      title="Customize options & notes"
                     >
                       Custom
                     </button>
@@ -873,19 +953,37 @@ export default function TableQrOrderPage() {
 
               {/* UPI Quick App Link / ID (shown when UPI selected) */}
               {paymentMode === 'UPI_NOW' && (
-                <div className="bg-white p-3 rounded-xl border-2 border-dashed border-emerald-600 flex items-center justify-between text-xs animate-in slide-in-from-top-1">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
-                    <span className="font-mono text-espresso font-semibold">
-                      UPI ID: <span className="font-bold text-emerald-850">artisan@okhdfcbank</span>
-                    </span>
+                <div className="bg-white p-3.5 rounded-xl border-2 border-dashed border-emerald-600 flex flex-col gap-2.5 text-xs animate-in slide-in-from-top-1">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
+                      <span className="font-mono text-espresso font-semibold">
+                        UPI ID: <span className="font-bold text-emerald-850">{cafeInfo?.upiId || 'artisan@okhdfcbank'}</span>
+                      </span>
+                    </div>
+                    <a
+                      href={`upi://pay?pa=${encodeURIComponent(cafeInfo?.upiId || 'artisan@okhdfcbank')}&pn=${encodeURIComponent(cafeInfo?.name || cafeName || 'Cafe')}&am=${total}&cu=INR`}
+                      className="px-2.5 py-1 bg-emerald-600 text-white font-display text-[10px] font-black uppercase rounded-lg border border-espresso hover:bg-emerald-700"
+                    >
+                      Open UPI App ↗
+                    </a>
                   </div>
-                  <a
-                    href={`upi://pay?pa=artisan@okhdfcbank&pn=ArtisanRoastery&am=${total}&cu=INR`}
-                    className="px-2.5 py-1 bg-emerald-600 text-white font-display text-[10px] font-black uppercase rounded-lg border border-espresso hover:bg-emerald-700"
-                  >
-                    Open UPI App ↗
-                  </a>
+                  <div className="pt-2 border-t border-dashed border-stone-200">
+                    <label className="block font-display text-[11px] font-bold text-espresso/80 mb-1">
+                      12-Digit UPI Ref / UTR No. (from GPay / PhonePe screen):
+                    </label>
+                    <input
+                      type="text"
+                      maxLength={16}
+                      value={upiUtr}
+                      onChange={(e) => setUpiUtr(e.target.value)}
+                      placeholder="e.g. 4289 1234 5678 (optional)"
+                      className="w-full px-3 py-1.5 bg-stone-50 border border-espresso/30 rounded-lg font-mono text-xs text-espresso outline-none focus:border-emerald-600"
+                    />
+                    <p className="text-[10px] text-espresso/60 mt-1 font-body">
+                      ⚡ Direct bank transfer. Staff will verify via Soundbox or Bank SMS.
+                    </p>
+                  </div>
                 </div>
               )}
 
@@ -927,19 +1025,38 @@ export default function TableQrOrderPage() {
               </button>
             </div>
 
+            {orderError && (
+              <div className="p-3 bg-red-100 border-2 border-red-500 rounded-xl text-red-800 text-xs font-bold mb-3 flex items-center justify-between shadow-xs">
+                <span>⚠️ {orderError}</span>
+                <button
+                  type="button"
+                  onClick={() => setOrderError(null)}
+                  className="text-red-900 hover:text-red-950 font-black px-2 py-0.5 rounded cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+
             {/* Confirm & Place Order */}
             <button
+              type="button"
               onClick={handlePlaceOrder}
-              disabled={cart.length === 0}
+              disabled={cart.length === 0 || isPlacingOrder}
               className={`brutal-btn mt-auto w-full py-4 font-display font-black text-sm uppercase rounded-2xl border-2 border-espresso shadow-brutal flex items-center justify-center gap-2 ${
-                cart.length === 0
+                cart.length === 0 || isPlacingOrder
                   ? 'bg-espresso/40 text-white/60 cursor-not-allowed'
                   : paymentMode === 'UPI_NOW'
                   ? 'bg-paros-matcha text-white hover:bg-emerald-700'
                   : 'bg-paros-orange text-white hover:bg-[#c84c28]'
               }`}
             >
-              {paymentMode === 'UPI_NOW' ? (
+              {isPlacingOrder ? (
+                <>
+                  <span className="material-symbols-outlined text-[20px] animate-spin">progress_activity</span>
+                  <span>Firing to Kitchen Screen...</span>
+                </>
+              ) : paymentMode === 'UPI_NOW' ? (
                 <>
                   <span className="material-symbols-outlined text-[20px]">payments</span>
                   <span>Pay ₹{total} via UPI & Fire to Kitchen ➔</span>
@@ -1235,36 +1352,205 @@ export default function TableQrOrderPage() {
                 </button>
               </div>
 
-              {/* Milk Option */}
-              <div className="flex flex-col gap-2">
-                <span className="font-display text-xs font-black uppercase text-espresso">
-                  Select Milk Option:
-                </span>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    onClick={() => setSelectedMilk('whole')}
-                    className={`p-3 rounded-xl border-2 border-espresso text-left transition-all ${
-                      selectedMilk === 'whole'
-                        ? 'bg-paros-yellow shadow-brutal-sm ring-2 ring-espresso'
-                        : 'bg-white hover:bg-paros-cream'
-                    }`}
-                  >
-                    <p className="font-display font-bold text-xs text-espresso">Whole Milk</p>
-                    <p className="font-mono text-[10px] text-espresso/60">Included (+₹0)</p>
-                  </button>
-                  <button
-                    onClick={() => setSelectedMilk('oat')}
-                    className={`p-3 rounded-xl border-2 border-espresso text-left transition-all ${
-                      selectedMilk === 'oat'
-                        ? 'bg-paros-orange text-white shadow-brutal-sm ring-2 ring-espresso'
-                        : 'bg-white hover:bg-paros-cream'
-                    }`}
-                  >
-                    <p className="font-display font-bold text-xs">Minor Figures Oat</p>
-                    <p className="font-mono text-[10px] opacity-80">+₹40</p>
-                  </button>
+              {/* ── Context-Aware Option Selectors ── */}
+              {isBeverageCategory(customizingItem.category) ? (
+                /* BEVERAGE CUSTOMIZER */
+                <div className="flex flex-col gap-3.5 max-h-[60vh] overflow-y-auto pr-0.5">
+                  <div className="flex items-center justify-between pb-1 border-b border-dashed border-espresso/15">
+                    <span className="font-display text-[11px] font-black uppercase text-espresso flex items-center gap-1">
+                      <span>☕</span> Barista Customization
+                    </span>
+                    <span className="text-[10px] font-mono text-espresso/60">Craft Brew</span>
+                  </div>
+
+                  {/* Milk Options */}
+                  <div className="flex flex-col gap-1.5">
+                    <span className="font-display text-xs font-black uppercase text-espresso">
+                      Select Milk Base:
+                    </span>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedMilk('whole')}
+                        className={`p-2.5 rounded-xl border-2 border-espresso text-left transition-all ${
+                          selectedMilk === 'whole'
+                            ? 'bg-paros-yellow shadow-brutal-sm ring-2 ring-espresso'
+                            : 'bg-white hover:bg-paros-cream'
+                        }`}
+                      >
+                        <p className="font-display font-bold text-[11px] text-espresso">Whole Milk</p>
+                        <p className="font-mono text-[9px] text-espresso/60">+₹0</p>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedMilk('oat')}
+                        className={`p-2.5 rounded-xl border-2 border-espresso text-left transition-all ${
+                          selectedMilk === 'oat'
+                            ? 'bg-paros-orange text-white shadow-brutal-sm ring-2 ring-espresso'
+                            : 'bg-white hover:bg-paros-cream'
+                        }`}
+                      >
+                        <p className="font-display font-bold text-[11px]">Minor Figures</p>
+                        <p className="font-mono text-[9px] opacity-80">+₹40</p>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedMilk('almond')}
+                        className={`p-2.5 rounded-xl border-2 border-espresso text-left transition-all ${
+                          selectedMilk === 'almond'
+                            ? 'bg-paros-orange text-white shadow-brutal-sm ring-2 ring-espresso'
+                            : 'bg-white hover:bg-paros-cream'
+                        }`}
+                      >
+                        <p className="font-display font-bold text-[11px]">Almond Milk</p>
+                        <p className="font-mono text-[9px] opacity-80">+₹40</p>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Sweetness Level */}
+                  <div className="flex flex-col gap-1.5">
+                    <span className="font-display text-xs font-black uppercase text-espresso">
+                      Sweetness:
+                    </span>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {(['No Sugar', 'Less Sugar', 'Normal'] as const).map((s) => (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => setSelectedSweetness(s)}
+                          className={`py-2 px-1.5 rounded-xl border-2 border-espresso text-center font-display text-[11px] font-bold transition-all ${
+                            selectedSweetness === s
+                              ? 'bg-paros-yellow shadow-brutal-sm ring-2 ring-espresso'
+                              : 'bg-white hover:bg-paros-cream'
+                          }`}
+                        >
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Temperature */}
+                  <div className="flex flex-col gap-1.5">
+                    <span className="font-display text-xs font-black uppercase text-espresso">
+                      Temperature:
+                    </span>
+                    <div className="grid grid-cols-2 gap-2">
+                      {(['Hot', 'Iced'] as const).map((t) => (
+                        <button
+                          key={t}
+                          type="button"
+                          onClick={() => setSelectedTemp(t)}
+                          className={`py-2 px-2 rounded-xl border-2 border-espresso text-center font-display text-xs font-bold transition-all flex items-center justify-center gap-1 ${
+                            selectedTemp === t
+                              ? 'bg-espresso text-white shadow-brutal-sm'
+                              : 'bg-white hover:bg-paros-cream'
+                          }`}
+                        >
+                          <span>{t === 'Hot' ? '🔥' : '🧊'}</span>
+                          <span>{t === 'Hot' ? 'Steamed Hot' : 'Over Clear Ice'}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Barista Instruction */}
+                  <div className="flex flex-col gap-1">
+                    <span className="font-display text-xs font-black uppercase text-espresso">
+                      Special Barista Note (Optional):
+                    </span>
+                    <input
+                      type="text"
+                      value={customInstructionNote}
+                      onChange={(e) => setCustomInstructionNote(e.target.value)}
+                      placeholder="e.g. Extra hot, double ristretto shot..."
+                      className="w-full px-3 py-2 bg-paros-cream border-2 border-espresso rounded-xl font-body text-xs outline-none focus:ring-2 focus:ring-paros-orange"
+                    />
+                  </div>
                 </div>
-              </div>
+              ) : (
+                /* FOOD & BAKERY CUSTOMIZER (NO MILK OPTIONS) */
+                <div className="flex flex-col gap-3.5 max-h-[60vh] overflow-y-auto pr-0.5">
+                  <div className="flex items-center justify-between pb-1 border-b border-dashed border-espresso/15">
+                    <span className="font-display text-[11px] font-black uppercase text-espresso flex items-center gap-1">
+                      <span>🍳</span> Hearth &amp; Kitchen Options
+                    </span>
+                    <span className="text-[10px] font-mono text-espresso/60">Fresh Prep</span>
+                  </div>
+
+                  {/* Serving Style */}
+                  <div className="flex flex-col gap-1.5">
+                    <span className="font-display text-xs font-black uppercase text-espresso">
+                      Serving Preparation:
+                    </span>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {['Standard', 'Warm & Toasted', 'Extra Crispy'].map((m) => (
+                        <button
+                          key={m}
+                          type="button"
+                          onClick={() => setFoodCookingModifier(m)}
+                          className={`p-2.5 rounded-xl border-2 border-espresso text-center transition-all font-display text-[11px] font-bold ${
+                            foodCookingModifier === m
+                              ? 'bg-paros-yellow shadow-brutal-sm ring-2 ring-espresso'
+                              : 'bg-white hover:bg-paros-cream'
+                          }`}
+                        >
+                          {m}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Quick Dietary Preferences */}
+                  <div className="flex flex-col gap-1.5">
+                    <span className="font-display text-xs font-black uppercase text-espresso">
+                      Quick Kitchen Preferences:
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {['No Onion / Garlic', 'Less Spicy', 'Sauce on Side', 'Extra Cutlery'].map((pref) => {
+                        const isSelected = customInstructionNote.includes(pref);
+                        return (
+                          <button
+                            key={pref}
+                            type="button"
+                            onClick={() => {
+                              if (isSelected) {
+                                setCustomInstructionNote((prev) =>
+                                  prev.replace(pref, '').replace(/,\s*,/g, ',').replace(/^,\s*|,\s*$/g, '').trim()
+                                );
+                              } else {
+                                setCustomInstructionNote((prev) => (prev ? `${prev}, ${pref}` : pref));
+                              }
+                            }}
+                            className={`px-2.5 py-1.5 rounded-lg border text-[11px] font-display font-bold transition-all ${
+                              isSelected
+                                ? 'bg-paros-orange text-white border-espresso shadow-xs'
+                                : 'bg-paros-cream text-espresso border-espresso/40 hover:bg-paros-yellow'
+                            }`}
+                          >
+                            {isSelected ? '✓ ' : '+ '}{pref}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Chef Instruction */}
+                  <div className="flex flex-col gap-1">
+                    <span className="font-display text-xs font-black uppercase text-espresso">
+                      Special Chef Note (Optional):
+                    </span>
+                    <input
+                      type="text"
+                      value={customInstructionNote}
+                      onChange={(e) => setCustomInstructionNote(e.target.value)}
+                      placeholder="e.g. Dressing on side, nut allergy..."
+                      className="w-full px-3 py-2 bg-paros-cream border-2 border-espresso rounded-xl font-body text-xs outline-none focus:ring-2 focus:ring-paros-orange"
+                    />
+                  </div>
+                </div>
+              )}
 
               {/* Add CTA */}
               <button
@@ -1272,7 +1558,12 @@ export default function TableQrOrderPage() {
                 className="brutal-btn w-full py-3.5 bg-espresso text-white font-display font-black text-xs uppercase rounded-xl border-2 border-espresso shadow-brutal flex items-center justify-center gap-1.5"
               >
                 <span>
-                  Add to Cart • ₹{customizingItem.price + (selectedMilk === 'oat' ? 40 : 0)}
+                  Add to Cart • ₹
+                  {customizingItem.price +
+                    (isBeverageCategory(customizingItem.category) &&
+                    (selectedMilk === 'oat' || selectedMilk === 'almond')
+                      ? 40
+                      : 0)}
                 </span>
               </button>
             </div>
